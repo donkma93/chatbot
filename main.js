@@ -676,6 +676,41 @@ app.whenReady().then(function() {
   loadAccounts()
   checkActivationLocal()
   createWindow()
+
+  // Auto Update check (Method 1: electron-updater)
+  try {
+    const { autoUpdater } = require('electron-updater')
+    autoUpdater.autoDownload = true
+    
+    autoUpdater.on('update-available', function() {
+      console.log('Update available! Downloading in background...')
+    })
+
+    autoUpdater.on('update-downloaded', function() {
+      console.log('Update downloaded. Prompting user to restart.')
+      const { dialog } = require('electron')
+      dialog.showMessageBox({
+        type: 'info',
+        title: 'Cập Nhật Hoàn Tất 🚀',
+        message: 'Bản cập nhật mới đã tải xuống hoàn tất. Bạn có muốn khởi động lại ứng dụng để áp dụng cập nhật ngay bây giờ?',
+        buttons: ['Khởi động lại ngay', 'Để sau'],
+        defaultId: 0
+      }).then(function(result) {
+        if (result.response === 0) {
+          autoUpdater.quitAndInstall()
+        }
+      })
+    })
+
+    autoUpdater.on('error', function(err) {
+      console.error('Lỗi khi tự động cập nhật:', err)
+    })
+
+    // Run update check
+    autoUpdater.checkForUpdatesAndNotify()
+  } catch (e) {
+    console.error('Không thể tải module auto updater:', e)
+  }
 })
 
 app.on('window-all-closed', function() {

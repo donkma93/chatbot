@@ -1,6 +1,6 @@
 {
   "name": "twitch-chat-viewer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Twitch Chat Viewer - Windows Desktop App",
   "main": "main.js",
   "scripts": {
@@ -9,17 +9,26 @@
     "dist": "electron-builder --win"
   },
   "dependencies": {
+    "electron-updater": "^6.3.9",
     "ws": "^8.21.0"
   },
   "devDependencies": {
-    "electron": "^42.4.1",
+    "electron": "^31.7.7",
     "electron-builder": "^24.13.3"
   },
   "build": {
     "appId": "com.twitch.chatviewer",
     "productName": "TwitchChatViewer",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "donkma93",
+        "repo": "chatbot"
+      }
+    ],
     "win": {
       "target": [
+        "nsis",
         "portable"
       ]
     },

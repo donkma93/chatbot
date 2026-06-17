@@ -1090,6 +1090,136 @@
         color: #ffb000;
       }
     }
+
+    /* ── Guide CSS ────────────────────────────────────────── */
+    #guide-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: transparent;
+      border: 2px dashed #3a3a3e;
+      color: #adadb8;
+      font-size: 20px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 8px;
+      flex-shrink: 0;
+      box-shadow: none;
+    }
+    #guide-btn:hover {
+      border-color: #00f0ff;
+      color: #00f0ff;
+      background: rgba(0, 240, 255, 0.05);
+      border-radius: 35%;
+    }
+
+    #empty-guide-btn {
+      background: rgba(145, 71, 255, 0.1);
+      border: 1px solid #9147ff;
+      color: #a970ff;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #empty-guide-btn:hover {
+      background: #9147ff;
+      color: white;
+    }
+
+    .guide-step {
+      background: #1f1f23;
+      border: 1px solid #2f2f35;
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .guide-step-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .guide-step-number {
+      width: 24px;
+      height: 24px;
+      background: #9147ff;
+      color: white;
+      font-weight: 700;
+      font-size: 13px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .guide-step-header h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #efeff1;
+      margin: 0;
+    }
+    .guide-step-desc {
+      font-size: 12.5px;
+      color: #adadb8;
+      line-height: 1.5;
+      margin: 0;
+    }
+    .guide-bullets {
+      padding-left: 20px;
+      font-size: 12.5px;
+      color: #adadb8;
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .guide-bullets b {
+      color: #efeff1;
+    }
+    .guide-link-btn {
+      background: rgba(145, 71, 255, 0.15);
+      color: #a970ff;
+      border: 1px solid #9147ff;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+    .guide-link-btn:hover {
+      background: #9147ff;
+      color: white;
+    }
+    .guide-note {
+      font-size: 11px;
+      color: #53535f;
+      margin-left: 10px;
+      display: inline-block;
+    }
+    .guide-note a {
+      color: #a970ff;
+      text-decoration: none;
+    }
+    .guide-note a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -1100,6 +1230,7 @@
       <!-- Generated dynamically -->
     </div>
     <button id="add-account-btn" title="Quản lý tài khoản">+</button>
+    <button id="guide-btn" title="Hướng dẫn sử dụng">?</button>
   </div>
 
   <!-- Main View -->
@@ -1122,6 +1253,7 @@
           <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
         </svg>
         <span>Nhập tên channel và nhấn <b>+ Thêm</b></span>
+        <button id="empty-guide-btn">📚 Xem hướng dẫn sử dụng</button>
       </div>
     </div>
   </div>
@@ -1232,6 +1364,79 @@
     </div>
   </div>
 
+  <!-- Guide Modal -->
+  <div id="guide-modal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2 style="display: flex; align-items: center; gap: 8px; margin: 0;">
+          <span>📚</span> Hướng Dẫn Sử Dụng
+        </h2>
+        <span class="guide-modal-close-btn modal-close-btn" id="close-guide-btn">&times;</span>
+      </div>
+      <div class="modal-body" style="padding: 20px; gap: 16px;">
+        
+        <!-- Step 1 -->
+        <div class="guide-step">
+          <div class="guide-step-header">
+            <span class="guide-step-number">1</span>
+            <h3>Lấy mã Token của kênh Twitch</h3>
+          </div>
+          <p class="guide-step-desc">Để có thể gửi tin nhắn và sử dụng Auto Bot, bạn cần lấy mã Token (OAuth Token) cho tài khoản Twitch của bạn.</p>
+          <div style="margin-top: 8px;">
+            <button class="guide-link-btn" id="guide-token-gen-btn">
+              🌐 Truy cập twitchtokengenerator.com
+            </button>
+            <span class="guide-note">Hoặc lấy nhanh tại <a href="#" id="guide-oauth-link-tmi">twitchapps.com/tmi</a></span>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="guide-step">
+          <div class="guide-step-header">
+            <span class="guide-step-number">2</span>
+            <h3>Thêm tài khoản vào ứng dụng</h3>
+          </div>
+          <p class="guide-step-desc">Click vào nút <b style="color: #9147ff;">+</b> ở dưới cùng góc trái thanh Sidebar.</p>
+          <ul class="guide-bullets">
+            <li>Điền <b>Tên hiển thị</b> tùy ý (ví dụ tên của bạn).</li>
+            <li>Dán mã Token nhận được từ bước 1 vào ô <b>Twitch OAuth Token</b>.</li>
+            <li>Điền thêm <b>Client ID</b> (tùy chọn) để hiển thị ảnh đại diện Twitch của bạn.</li>
+            <li>Nhấn <b>Lưu tài khoản</b>.</li>
+          </ul>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="guide-step">
+          <div class="guide-step-header">
+            <span class="guide-step-number">3</span>
+            <h3>Thêm Channel (Kênh Twitch) để xem chat</h3>
+          </div>
+          <p class="guide-step-desc">Sau khi thêm tài khoản, chọn tài khoản đó ở cột bên trái.</p>
+          <ul class="guide-bullets">
+            <li>Nhập tên kênh Twitch (Ví dụ: <code>xqc</code>, <code>ninja</code>) vào ô nhập liệu ở thanh công cụ phía trên.</li>
+            <li>Nhấn <b>+ Thêm</b> hoặc phím <b>Enter</b> để bắt đầu theo dõi chat trực tiếp.</li>
+          </ul>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="guide-step">
+          <div class="guide-step-header">
+            <span class="guide-step-number">4</span>
+            <h3>Cấu hình Auto Bot (Tự động nhận thưởng/Giveaway)</h3>
+          </div>
+          <p class="guide-step-desc">Ứng dụng hỗ trợ tự động tham gia Giveaway và gửi thông tin nhận thưởng khi trúng giải.</p>
+          <ul class="guide-bullets">
+            <li>Ở dưới góc phải khung chat, nhấn vào nút <b style="color: #a970ff;">🤖 Auto</b>.</li>
+            <li>Bật <b>Auto Join</b>: Thiết lập từ khóa phát hiện (vd: <code>!giveaway</code>) và nội dung phản hồi (vd: <code>!join</code>).</li>
+            <li>Bật <b>Auto Claim</b>: Nhập thông tin nhận thưởng của bạn (vd: <code>ID Game: ABC</code>). Khi bot phát hiện tên bạn trúng giải, nó sẽ tự động gửi thông tin này lên chat.</li>
+          </ul>
+        </div>
+
+        <button id="guide-close-confirm-btn" style="background: #9147ff; color: white; border: none; border-radius: 6px; padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; width: 100%; margin-top: 10px;">Tôi đã hiểu, bắt đầu thôi!</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     window.onerror = function(message, source, lineno, colno, error) {
       alert(`Lỗi giao diện: ${message} (tại ${source}:${lineno}:${colno})`);
@@ -1247,6 +1452,15 @@
     const notifBtn = document.getElementById('notif-btn')
     const accountsListEl = document.getElementById('accounts-list')
     const addAccountBtn = document.getElementById('add-account-btn')
+    
+    // Guide Elements
+    const guideModal = document.getElementById('guide-modal')
+    const guideBtn = document.getElementById('guide-btn')
+    const emptyGuideBtn = document.getElementById('empty-guide-btn')
+    const closeGuideBtn = document.getElementById('close-guide-btn')
+    const guideCloseConfirmBtn = document.getElementById('guide-close-confirm-btn')
+    const guideTokenGenBtn = document.getElementById('guide-token-gen-btn')
+    const guideOauthLinkTmi = document.getElementById('guide-oauth-link-tmi')
 
     // Activation Elements
     const activationOverlay = document.getElementById('activation-overlay')
@@ -1342,6 +1556,11 @@
           addAccountBtn.title = 'Quản lý tài khoản'
           
           await loadAndRenderAccounts()
+
+          // Open guide on first activation
+          if (!localStorage.getItem('guide_shown')) {
+            openGuideModal()
+          }
         } else {
           activationErrorMsg.textContent = res.message || 'Kích hoạt thất bại!'
           activationErrorMsg.style.display = 'block'
@@ -1358,6 +1577,9 @@
     bypassActivationBtn.addEventListener('click', function() {
       activationOverlay.classList.remove('open')
       applyBypassRestrictions()
+      if (!localStorage.getItem('guide_shown')) {
+        openGuideModal()
+      }
     })
 
     function applyBypassRestrictions() {
@@ -1497,6 +1719,38 @@
         accTokenInput.setAttribute('required', 'true')
         clientIdGroup.style.display = 'flex'
       }
+    })
+
+    // ── Guide Modal Actions ────────────────────────────────────────
+    function openGuideModal() {
+      guideModal.classList.add('open')
+    }
+
+    function closeGuideModal() {
+      guideModal.classList.remove('open')
+      localStorage.setItem('guide_shown', 'true')
+    }
+
+    if (guideBtn) guideBtn.addEventListener('click', openGuideModal)
+    if (emptyGuideBtn) emptyGuideBtn.addEventListener('click', openGuideModal)
+    if (closeGuideBtn) closeGuideBtn.addEventListener('click', closeGuideModal)
+    if (guideCloseConfirmBtn) guideCloseConfirmBtn.addEventListener('click', closeGuideModal)
+    
+    if (guideTokenGenBtn) {
+      guideTokenGenBtn.addEventListener('click', function(e) {
+        e.preventDefault()
+        window.twitch.openExternal('https://twitchtokengenerator.com/')
+      })
+    }
+    if (guideOauthLinkTmi) {
+      guideOauthLinkTmi.addEventListener('click', function(e) {
+        e.preventDefault()
+        window.twitch.openExternal('https://twitchapps.com/tmi/')
+      })
+    }
+
+    guideModal.addEventListener('click', function(e) {
+      if (e.target === guideModal) closeGuideModal()
     })
 
     // ── Modal Actions ─────────────────────────────────────────────
@@ -2541,6 +2795,9 @@
         activationOverlay.classList.remove('open')
         if (accounts.length > 0) {
           selectAccount(accounts[0].id)
+        }
+        if (!localStorage.getItem('guide_shown')) {
+          openGuideModal()
         }
       } else {
         activationOverlay.classList.add('open')
