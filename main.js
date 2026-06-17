@@ -535,6 +535,10 @@ ipcMain.handle('check-activation', function() {
   }
 })
 
+ipcMain.handle('get-app-version', function() {
+  return app.getVersion()
+})
+
 ipcMain.handle('activate-key', async function(event, key) {
   return await activateKeyOnline(key)
 })

@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('twitch', {
   // Settings
   toggleNotifications: (enabled) => ipcRenderer.send('toggle-notifications', enabled),
   openExternal: (url) => ipcRenderer.send('open-external', url),
+  getAppVersion: () => ipcRenderer.invoke('get-app-version'),
 
   // Events
   onMessage: (cb) => ipcRenderer.on('chat-message', (_, msg) => cb(msg)),

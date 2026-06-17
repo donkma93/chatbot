@@ -1117,6 +1117,17 @@
       border-radius: 35%;
     }
 
+    #version-label {
+      font-size: 10px;
+      color: #53535f;
+      font-weight: 600;
+      margin-top: 8px;
+      margin-bottom: 4px;
+      user-select: none;
+      text-align: center;
+      width: 100%;
+    }
+
     #empty-guide-btn {
       background: rgba(145, 71, 255, 0.1);
       border: 1px solid #9147ff;
@@ -1231,6 +1242,7 @@
     </div>
     <button id="add-account-btn" title="Quản lý tài khoản">+</button>
     <button id="guide-btn" title="Hướng dẫn sử dụng">?</button>
+    <div id="version-label">v1.0.2</div>
   </div>
 
   <!-- Main View -->
@@ -2764,6 +2776,15 @@
     // ── Application Initialization ─────────────────────────────────
     async function init() {
       notifBtn.classList.toggle('active', notifEnabled)
+
+      // Fetch and display version
+      try {
+        const ver = await window.twitch.getAppVersion()
+        const label = document.getElementById('version-label')
+        if (label) label.textContent = 'v' + ver
+      } catch (err) {
+        console.error('Không thể lấy phiên bản:', err)
+      }
 
       // Load auto settings
       const savedAuto = localStorage.getItem('auto_settings_by_channel')
