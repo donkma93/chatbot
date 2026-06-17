@@ -1350,8 +1350,12 @@
           <span class="help-text">Hệ thống sẽ tự động gửi nội dung này để tham gia.</span>
         </div>
         <div class="form-group">
-          <label for="auto-join-delay">Độ trễ gửi (giây):</label>
-          <input type="number" id="auto-join-delay" min="0" max="60" value="3" />
+          <label>Độ trễ phản hồi:</label>
+          <div style="font-size: 12px; color: #a970ff; font-weight: 500; background: rgba(145, 71, 255, 0.05); border: 1px dashed rgba(145, 71, 255, 0.2); padding: 8px 12px; border-radius: 6px; line-height: 1.4;">
+            🤖 Hệ thống tự động tính toán thời gian ngẫu nhiên:<br>
+            • <b>0s đến 30s</b> đối với Giveaway thông thường.<br>
+            • <b>0s đến 60s</b> đối với lệnh điểm danh (chứa từ khóa <i>điểm danh, diemdanh, dd</i>).
+          </div>
         </div>
 
         <hr class="modal-divider" style="margin: 15px 0;" />
@@ -1367,8 +1371,10 @@
           <span class="help-text">Gửi tin này lên chat khi phát hiện bạn trúng giải.</span>
         </div>
         <div class="form-group">
-          <label for="auto-claim-delay">Độ trễ gửi nhận thưởng (giây):</label>
-          <input type="number" id="auto-claim-delay" min="0" max="60" value="5" />
+          <label>Độ trễ gửi nhận thưởng:</label>
+          <div style="font-size: 12px; color: #a970ff; font-weight: 500; background: rgba(145, 71, 255, 0.05); border: 1px dashed rgba(145, 71, 255, 0.2); padding: 8px 12px; border-radius: 6px; line-height: 1.4;">
+            🤖 Hệ thống tự động gửi ngẫu nhiên trong khoảng từ <b>0s đến 29s</b> khi trúng giải.
+          </div>
         </div>
 
         <button type="button" id="save-auto-settings-btn" style="background: #9147ff; color: white; border: none; border-radius: 6px; padding: 11px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; width: 100%; margin-top: 10px;">Lưu cấu hình Auto</button>
@@ -1487,10 +1493,8 @@
     const autoJoinEnableCheckbox = document.getElementById('auto-join-enable')
     const autoJoinTriggerInput = document.getElementById('auto-join-trigger')
     const autoJoinResponseInput = document.getElementById('auto-join-response')
-    const autoJoinDelayInput = document.getElementById('auto-join-delay')
     const autoClaimEnableCheckbox = document.getElementById('auto-claim-enable')
     const autoClaimRewardInput = document.getElementById('auto-claim-reward')
-    const autoClaimDelayInput = document.getElementById('auto-claim-delay')
     const saveAutoSettingsBtn = document.getElementById('save-auto-settings-btn')
 
     // Modal
@@ -1622,11 +1626,9 @@
       autoJoinEnableCheckbox.checked = settings.joinEnable
       autoJoinTriggerInput.value = settings.joinTrigger || ''
       autoJoinResponseInput.value = settings.joinResponse || ''
-      autoJoinDelayInput.value = settings.joinDelay !== undefined ? settings.joinDelay : 3
       
       autoClaimEnableCheckbox.checked = settings.claimEnable
       autoClaimRewardInput.value = settings.claimReward || ''
-      autoClaimDelayInput.value = settings.claimDelay !== undefined ? settings.claimDelay : 5
       
       const modalHeader = autoSettingsModal.querySelector('.modal-header h2')
       if (modalHeader) {
@@ -1653,11 +1655,9 @@
         settings.joinEnable = autoJoinEnableCheckbox.checked
         settings.joinTrigger = autoJoinTriggerInput.value.trim()
         settings.joinResponse = autoJoinResponseInput.value.trim()
-        settings.joinDelay = parseInt(autoJoinDelayInput.value) || 0
         
         settings.claimEnable = autoClaimEnableCheckbox.checked
         settings.claimReward = autoClaimRewardInput.value.trim()
-        settings.claimDelay = parseInt(autoClaimDelayInput.value) || 0
         
         localStorage.setItem('auto_settings_by_channel', JSON.stringify(autoSettingsByChannel))
         
@@ -2533,17 +2533,36 @@
           // 1. Auto Join Giveaway
           if (settings.joinEnable && settings.joinTrigger && settings.joinResponse) {
             const triggers = settings.joinTrigger.split(',').map(t => t.trim().toLowerCase()).filter(Boolean)
-            const matchesTrigger = triggers.some(trigger => textLower.includes(trigger))
+            const matchedTriggerStr = triggers.find(trigger => textLower.includes(trigger)) || '';
+            const matchesTrigger = matchedTriggerStr !== '';
             
             if (matchesTrigger) {
               const now = Date.now()
               if (!pendingJoins[cooldownKey] && (!joinCooldowns[cooldownKey] || now - joinCooldowns[cooldownKey] > 15 * 60 * 1000)) {
-                const delayMs = (settings.joinDelay !== undefined ? settings.joinDelay : 3) * 1000
+                const isDiemDanh = matchedTriggerStr.includes('điểm danh') || 
+                                   matchedTriggerStr.includes('diemdanh') || 
+                                   matchedTriggerStr.includes('dd') || 
+                                   matchedTriggerStr === 'dđ' || 
+                                   textLower.includes('điểm danh') || 
+                                   textLower.includes('diemdanh') || 
+                                   textLower.includes('dd');
+                
+                const randomSeconds = Math.random() * (isDiemDanh ? 60 : 30);
+                const delayMs = randomSeconds * 1000;
+                
+                const c = channels[cooldownKey];
+                if (c && c.statusEl) {
+                  c.statusEl.textContent = `Auto Bot: Sẽ gửi phản hồi sau ${randomSeconds.toFixed(1)}s...`;
+                }
+
                 pendingJoins[cooldownKey] = setTimeout(() => {
                   if (settings.joinEnable) {
                     window.twitch.sendChat(accId, ch, settings.joinResponse)
                     joinCooldowns[cooldownKey] = Date.now()
                     updateChannelAutoButtonState(cooldownKey)
+                    if (c && c.statusEl) {
+                      c.statusEl.textContent = 'Đang xem: #' + ch
+                    }
                   }
                   delete pendingJoins[cooldownKey]
                 }, delayMs)
@@ -2560,12 +2579,22 @@
               if (matchesWin) {
                 const now = Date.now()
                 if (!pendingClaims[cooldownKey] && (!claimCooldowns[cooldownKey] || now - claimCooldowns[cooldownKey] > 15 * 60 * 1000)) {
-                  const delayMs = (settings.claimDelay !== undefined ? settings.claimDelay : 5) * 1000
+                  const randomSeconds = Math.random() * 29;
+                  const delayMs = randomSeconds * 1000;
+                  
+                  const c = channels[cooldownKey];
+                  if (c && c.statusEl) {
+                    c.statusEl.textContent = `Auto Bot: Sẽ gửi nhận thưởng sau ${randomSeconds.toFixed(1)}s...`;
+                  }
+
                   pendingClaims[cooldownKey] = setTimeout(() => {
                     if (settings.claimEnable) {
                       window.twitch.sendChat(accId, ch, settings.claimReward)
                       claimCooldowns[cooldownKey] = Date.now()
                       updateChannelAutoButtonState(cooldownKey)
+                      if (c && c.statusEl) {
+                        c.statusEl.textContent = 'Đang xem: #' + ch
+                      }
                     }
                     delete pendingClaims[cooldownKey]
                   }, delayMs)
