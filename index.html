@@ -1,0 +1,2564 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Twitch Chat Viewer</title>
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0e0e10;
+      color: #efeff1;
+      height: 100vh;
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+    }
+
+    /* ── Accounts Sidebar ────────────────────────────────────────── */
+    #sidebar {
+      width: 72px;
+      background: #1f1f23;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 0;
+      gap: 14px;
+      border-right: 1px solid #2f2f35;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    #accounts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+      width: 100%;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+    #accounts-list::-webkit-scrollbar { display: none; }
+
+    .account-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #3a3a3e;
+      color: #efeff1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+      user-select: none;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .account-btn:hover, .account-btn.active {
+      border-radius: 35%;
+      background: #9147ff;
+      color: #fff;
+    }
+
+    /* Active Indicator bar */
+    .account-btn::before {
+      content: '';
+      position: absolute;
+      left: -12px;
+      top: 14px;
+      width: 4px;
+      height: 20px;
+      background: #efeff1;
+      border-radius: 0 4px 4px 0;
+      opacity: 0;
+      transition: all 0.2s ease;
+    }
+    .account-btn:hover::before {
+      opacity: 0.5;
+      height: 20px;
+      top: 14px;
+    }
+    .account-btn.active::before {
+      opacity: 1;
+      height: 30px;
+      top: 9px;
+      background: #9147ff;
+    }
+
+    /* Status dot badge on avatar */
+    .account-badge {
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      border: 3px solid #1f1f23;
+      background: #6a6a70;
+      transition: background 0.2s;
+    }
+    .account-badge.online {
+      background: #00b31b;
+    }
+    .account-badge.error {
+      background: #e91916;
+    }
+
+    #add-account-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: transparent;
+      border: 2px dashed #3a3a3e;
+      color: #adadb8;
+      font-size: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: auto;
+      flex-shrink: 0;
+      box-shadow: none;
+    }
+    #add-account-btn:hover {
+      border-color: #9147ff;
+      color: #9147ff;
+      background: rgba(145, 71, 255, 0.05);
+      border-radius: 35%;
+    }
+
+    /* ── Main Content Area ──────────────────────────────────────── */
+    #main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Top bar */
+    #topbar {
+      background: #18181b;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid #2f2f35;
+      flex-shrink: 0;
+    }
+
+    #topbar-account-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #adadb8;
+      white-space: nowrap;
+    }
+    #topbar-account-label b {
+      color: #efeff1;
+    }
+
+    #channel-input {
+      flex: 1;
+      background: #0e0e10;
+      border: 1px solid #3a3a3e;
+      border-radius: 6px;
+      color: #efeff1;
+      padding: 8px 12px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    #channel-input:focus { border-color: #9147ff; }
+    #channel-input::placeholder { color: #53535f; }
+
+    #add-btn {
+      background: #9147ff;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    #add-btn:hover { background: #772ce8; }
+
+    #notif-btn {
+      background: #2a2a2e;
+      color: #efeff1;
+      border: 1px solid #3a3a3e;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #notif-btn:hover { background: #3a3a3e; border-color: #4a4a4e; }
+    #notif-btn.active { background: rgba(145, 71, 255, 0.15); border-color: #9147ff; color: #a970ff; }
+
+    #auto-settings-btn {
+      background: #2a2a2e;
+      color: #efeff1;
+      border: 1px solid #3a3a3e;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    #auto-settings-btn:hover { background: #3a3a3e; border-color: #4a4a4e; }
+    #auto-settings-btn.active { background: rgba(145, 71, 255, 0.15); border-color: #9147ff; color: #a970ff; }
+
+
+    /* Tabs */
+    #tabs {
+      display: flex;
+      background: #18181b;
+      border-bottom: 1px solid #2f2f35;
+      overflow-x: auto;
+      flex-shrink: 0;
+      scrollbar-width: none;
+    }
+    #tabs::-webkit-scrollbar { display: none; }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #adadb8;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .tab:hover { color: #efeff1; background: rgba(255, 255, 255, 0.02); }
+    .tab.active { color: #efeff1; border-bottom-color: #9147ff; background: rgba(145, 71, 255, 0.03); }
+
+    .tab-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #53535f;
+      flex-shrink: 0;
+    }
+    .tab-dot.live { background: #00b31b; }
+    .tab-dot.error { background: #e91916; }
+
+    .tab-unread {
+      background: #9147ff;
+      color: #fff;
+      border-radius: 10px;
+      padding: 1px 6px;
+      font-size: 10px;
+      min-width: 16px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .tab-close {
+      font-size: 16px;
+      color: #53535f;
+      line-height: 1;
+      padding: 0 4px;
+      border-radius: 4px;
+      margin-left: 4px;
+      transition: all 0.1s;
+    }
+    .tab-close:hover { color: #e91916; background: rgba(233, 25, 22, 0.1); }
+
+    /* Chat panels */
+    #panels {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+    }
+    .panel.active { display: flex; }
+
+    .chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .chat::-webkit-scrollbar { width: 6px; height: 6px; }
+    .chat::-webkit-scrollbar-track { background: transparent; }
+    .chat::-webkit-scrollbar-thumb { background: #3a3a3e; border-radius: 3px; }
+    .chat::-webkit-scrollbar-thumb:hover { background: #555; }
+
+    .msg {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 13px;
+      line-height: 1.5;
+      word-break: break-word;
+      animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .msg:hover { background: #18181b; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg-time { font-size: 11px; color: #53535f; margin-right: 8px; user-select: none; font-variant-numeric: tabular-nums; }
+    .badges { margin-right: 6px; display: inline-flex; gap: 3px; }
+    
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+      padding: 1px 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      user-select: none;
+    }
+    .badge.broadcaster { background: #e91916; color: white; }
+    .badge.moderator { background: #00ad03; color: white; }
+    .badge.subscriber { background: #8205b4; color: white; }
+
+    .username { font-weight: 600; margin-right: 4px; cursor: default; }
+    .msg-text { color: #efeff1; }
+
+    /* Chat input wrap */
+    .chat-input-wrap {
+      padding: 12px 16px;
+      background: #18181b;
+      border-top: 1px solid #2f2f35;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .chat-input-container {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+    .chat-input-field {
+      flex: 1;
+      background: #0e0e10;
+      border: 1px solid #3a3a3e;
+      border-radius: 6px;
+      color: #efeff1;
+      padding: 10px 14px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .chat-input-field:focus { border-color: #9147ff; }
+    .chat-input-field::placeholder { color: #53535f; }
+    
+    .chat-send-btn {
+      background: #9147ff;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0 18px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .chat-send-btn:hover { background: #772ce8; }
+
+    /* Auto Bot Row */
+    .auto-bot-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed #2f2f35;
+    }
+    .auto-bot-info {
+      font-size: 11px;
+      color: #adadb8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: inherit;
+    }
+    .auto-bot-status-indicator {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #53535f;
+    }
+    .auto-bot-status-indicator.active {
+      background: #00f0ff;
+      box-shadow: 0 0 8px #00f0ff;
+    }
+    .auto-bot-status-indicator.cooldown {
+      background: #ffb700;
+      box-shadow: 0 0 8px #ffb700;
+    }
+    .auto-settings-btn {
+      background: #2a2a2e;
+      color: #efeff1;
+      border: 1px solid #3a3a3e;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .auto-settings-btn:hover { background: #3a3a3e; border-color: #4a4a4e; }
+    .auto-settings-btn.active { background: rgba(145, 71, 255, 0.15); border-color: #9147ff; color: #a970ff; }
+
+    .anon-notice {
+      font-size: 13px;
+      color: #adadb8;
+      text-align: center;
+      padding: 10px;
+      background: rgba(145, 71, 255, 0.05);
+      border: 1px dashed rgba(145, 71, 255, 0.2);
+      border-radius: 6px;
+      line-height: 1.4;
+    }
+    .anon-notice a {
+      color: #a970ff;
+      text-decoration: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .anon-notice a:hover { text-decoration: underline; }
+
+    /* Status bar per panel */
+    .panel-status {
+      background: #0e0e10;
+      padding: 4px 16px;
+      font-size: 11px;
+      color: #53535f;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-top: 1px solid #1f1f23;
+      flex-shrink: 0;
+    }
+
+    .scroll-btn {
+      position: absolute;
+      bottom: 74px;
+      right: 24px;
+      background: #9147ff;
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: none;
+      z-index: 10;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      transition: all 0.2s;
+    }
+    .scroll-btn:hover { background: #772ce8; transform: translateY(-1px); }
+    .scroll-btn.visible { display: block; }
+
+    /* Empty state */
+    #empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #53535f;
+      gap: 14px;
+      font-size: 14px;
+    }
+    #empty-state svg { opacity: 0.25; }
+
+    /* ── Modal Overlay & Card ────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      animation: modalFadeIn 0.2s ease;
+    }
+    .modal-overlay.open { display: flex; }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-card {
+      background: #18181b;
+      border: 1px solid #2f2f35;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 480px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modalSlideUp {
+      from { transform: translateY(24px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #2f2f35;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #1f1f23;
+    }
+    .modal-header h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #efeff1;
+    }
+    .modal-close-btn {
+      font-size: 22px;
+      color: #adadb8;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px;
+      transition: color 0.1s;
+    }
+    .modal-close-btn:hover { color: #efeff1; }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .modal-body::-webkit-scrollbar { width: 4px; }
+    .modal-body::-webkit-scrollbar-thumb { background: #2f2f35; border-radius: 2px; }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 12px;
+      color: #adadb8;
+      font-weight: 600;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="password"] {
+      background: #0e0e10;
+      border: 1px solid #3a3a3e;
+      border-radius: 6px;
+      color: #efeff1;
+      padding: 10px 12px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus { border-color: #9147ff; }
+
+    .checkbox-group {
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+      margin: 4px 0;
+    }
+    .checkbox-group input {
+      width: 16px;
+      height: 16px;
+      accent-color: #9147ff;
+      cursor: pointer;
+    }
+    .checkbox-group label {
+      cursor: pointer;
+      user-select: none;
+      font-size: 13px;
+      color: #efeff1;
+    }
+
+    .help-text {
+      font-size: 11px;
+      color: #adadb8;
+      margin-top: 2px;
+    }
+    .help-text a {
+      color: #a970ff;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .help-text a:hover { text-decoration: underline; }
+
+    #save-account-btn {
+      background: #9147ff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 11px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #save-account-btn:hover { background: #772ce8; }
+
+    .modal-divider {
+      border: 0;
+      height: 1px;
+      background: #2f2f35;
+      margin: 6px 0;
+    }
+
+    .modal-body h3 {
+      font-size: 13px;
+      font-weight: 600;
+      color: #adadb8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    #modal-accounts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .modal-account-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #1f1f23;
+      padding: 10px 14px;
+      border-radius: 6px;
+      border: 1px solid #2f2f35;
+    }
+    .modal-account-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .modal-account-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #efeff1;
+    }
+    .modal-account-type {
+      font-size: 11px;
+      color: #adadb8;
+    }
+    .modal-account-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .modal-acc-btn {
+      background: transparent;
+      border: none;
+      color: #adadb8;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .modal-acc-btn:hover { color: #efeff1; background: #2a2a2e; }
+    .modal-acc-btn.delete:hover { color: #e91916; background: rgba(233, 25, 22, 0.1); }
+    
+    .modal-account-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .modal-account-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #3a3a3e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      color: #efeff1;
+      background-size: cover;
+      background-position: center;
+      flex-shrink: 0;
+    }
+
+    /* ── Translation UI ────────────────────────────────────────── */
+    #translate-trigger-btn {
+      position: fixed;
+      background: #9147ff;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 9999;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      font-size: 16px;
+      transition: transform 0.1s, background 0.2s;
+    }
+    #translate-trigger-btn:hover {
+      transform: scale(1.1);
+      background: #772ce8;
+    }
+
+    #translation-popup {
+      position: fixed;
+      background: rgba(24, 24, 27, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid #3a3a3e;
+      border-radius: 8px;
+      width: 280px;
+      padding: 12px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 9999;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      animation: modalSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .trans-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #2f2f35;
+      padding-bottom: 6px;
+    }
+    .trans-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #adadb8;
+      text-transform: uppercase;
+    }
+    .trans-close {
+      cursor: pointer;
+      color: #adadb8;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .trans-close:hover {
+      color: #efeff1;
+    }
+
+    .trans-lang-select {
+      background: #0e0e10;
+      border: 1px solid #3a3a3e;
+      border-radius: 4px;
+      color: #efeff1;
+      font-size: 12px;
+      padding: 4px 6px;
+      outline: none;
+      width: 100%;
+    }
+
+    .trans-text-original {
+      font-size: 11px;
+      color: #adadb8;
+      font-style: italic;
+      max-height: 50px;
+      overflow-y: auto;
+      border-left: 2px solid #53535f;
+      padding-left: 6px;
+      margin: 4px 0;
+      word-break: break-all;
+    }
+
+    .trans-result-container {
+      background: #0e0e10;
+      border: 1px solid #2f2f35;
+      border-radius: 4px;
+      padding: 8px;
+      min-height: 40px;
+      max-height: 100px;
+      overflow-y: auto;
+      font-size: 13px;
+      line-height: 1.4;
+      position: relative;
+      word-break: break-word;
+    }
+    .trans-loading {
+      color: #adadb8;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .trans-loading::after {
+      content: '';
+      width: 12px;
+      height: 12px;
+      border: 2px solid #9147ff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: trans-spin 0.6s linear infinite;
+      display: inline-block;
+    }
+    @keyframes trans-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .trans-copy-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: #2a2a2e;
+      border: 1px solid #3a3a3e;
+      color: #adadb8;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 10px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .trans-result-container:hover .trans-copy-btn {
+      opacity: 1;
+    }
+    .trans-copy-btn:hover {
+      background: #3a3a3e;
+      color: #efeff1;
+    }
+
+    /* ── Reply UI ──────────────────────────────────────────────── */
+    .msg-reply-context {
+      font-size: 11px;
+      color: #adadb8;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 2px;
+      opacity: 0.85;
+      user-select: none;
+    }
+    .msg-reply-context b {
+      color: #efeff1;
+    }
+    .reply-context-body {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 300px;
+      font-style: italic;
+    }
+    
+    .msg {
+      position: relative;
+    }
+    .msg-actions {
+      position: absolute;
+      top: 2px;
+      right: 8px;
+      display: none;
+      gap: 4px;
+      background: #1f1f23;
+      border: 1px solid #3a3a3e;
+      border-radius: 4px;
+      padding: 2px;
+      z-index: 5;
+    }
+    .msg:hover .msg-actions {
+      display: flex;
+    }
+    .msg-action-btn {
+      background: transparent;
+      border: none;
+      color: #adadb8;
+      cursor: pointer;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 2px;
+      transition: all 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .msg-action-btn:hover {
+      color: #efeff1;
+      background: #3a3a3e;
+    }
+    
+    .reply-preview-bar {
+      display: none;
+      background: #26262c;
+      border: 1px solid #3a3a3e;
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+      padding: 6px 12px;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #adadb8;
+    }
+    .reply-preview-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+      margin-right: 12px;
+    }
+    .reply-preview-text b {
+      color: #efeff1;
+    }
+    .reply-preview-close {
+      cursor: pointer;
+      font-size: 14px;
+      color: #adadb8;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .reply-preview-close:hover {
+      color: #e91916;
+    }
+
+    /* ── Activation UI ────────────────────────────────────────── */
+    #activation-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(14, 14, 16, 0.9);
+      backdrop-filter: blur(20px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      animation: modalFadeIn 0.3s ease;
+    }
+    #activation-overlay.open {
+      display: flex;
+    }
+    .activation-card {
+      background: rgba(24, 24, 27, 0.85);
+      border: 1px solid rgba(145, 71, 255, 0.3);
+      box-shadow: 0 8px 32px rgba(145, 71, 255, 0.15);
+      max-width: 420px;
+    }
+    .activation-desc {
+      font-size: 13px;
+      color: #adadb8;
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+    .activation-btn {
+      background: #9147ff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(145, 71, 255, 0.3);
+    }
+    .activation-btn:hover {
+      background: #772ce8;
+      box-shadow: 0 6px 16px rgba(145, 71, 255, 0.45);
+      transform: translateY(-1px);
+    }
+    .activation-divider {
+      text-align: center;
+      font-size: 11px;
+      color: #53535f;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 8px 0;
+      position: relative;
+    }
+    .activation-divider::before, .activation-divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 35%;
+      height: 1px;
+      background: #2f2f35;
+    }
+    .activation-divider::before { left: 0; }
+    .activation-divider::after { right: 0; }
+    
+    .activation-bypass-btn {
+      background: transparent;
+      border: 1px solid #3a3a3e;
+      color: #adadb8;
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+    }
+    .activation-bypass-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: #53535f;
+      color: #efeff1;
+    }
+    .activation-error {
+      color: #e91916;
+      font-size: 12px;
+      margin-top: 4px;
+      display: none;
+      font-weight: 500;
+    }
+    
+    /* Disabled Add Account button in sidebar */
+    #add-account-btn.locked {
+      border-color: #e91916 !important;
+      color: #e91916 !important;
+      cursor: not-allowed;
+      background: rgba(233, 25, 22, 0.03);
+    }
+    #add-account-btn.locked:hover {
+      background: rgba(233, 25, 22, 0.08);
+      border-radius: 50%;
+      transform: none;
+    }
+
+    /* Highlight mention message */
+    .msg.msg-mention {
+      background: rgba(255, 176, 0, 0.08) !important;
+      border-left: 3px solid #ffb000 !important;
+      border-radius: 0 6px 6px 0;
+    }
+    
+    /* Blinking tab when mentioned */
+    .tab.tab-mention-flash {
+      animation: tabBlink 1s infinite alternate;
+      border-bottom-color: #ffb000 !important;
+    }
+    .tab.tab-mention-flash .tab-dot {
+      background: #ffb000 !important;
+    }
+    
+    @keyframes tabBlink {
+      0% {
+        background: rgba(255, 176, 0, 0.03);
+        color: #adadb8;
+      }
+      100% {
+        background: rgba(255, 176, 0, 0.2);
+        color: #ffb000;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Accounts Sidebar -->
+  <div id="sidebar">
+    <div id="accounts-list">
+      <!-- Generated dynamically -->
+    </div>
+    <button id="add-account-btn" title="Quản lý tài khoản">+</button>
+  </div>
+
+  <!-- Main View -->
+  <div id="main-content">
+    <div id="topbar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#9147ff">
+        <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
+      </svg>
+      <div id="topbar-account-label">Tải khoản: <b>Đang tải...</b></div>
+      <input id="channel-input" type="text" placeholder="Thêm channel (vd: xqc, ninja...)" maxlength="50" />
+      <button id="add-btn">+ Thêm</button>
+      <button id="notif-btn" title="Bật/tắt thông báo">🔔</button>
+    </div>
+
+    <div id="tabs"></div>
+
+    <div id="panels">
+      <div id="empty-state">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="#53535f">
+          <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
+        </svg>
+        <span>Nhập tên channel và nhấn <b>+ Thêm</b></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account Manager Modal -->
+  <div id="account-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Quản lý tài khoản</h2>
+        <span class="modal-close-btn">&times;</span>
+      </div>
+      <div class="modal-body">
+        <form id="account-form">
+          <input type="hidden" id="edit-account-id" />
+          <div class="form-group">
+            <label for="acc-label">Tên hiển thị:</label>
+            <input type="text" id="acc-label" placeholder="Ví dụ: DonPV, Ẩn danh..." required />
+          </div>
+          <div class="form-group checkbox-group">
+            <input type="checkbox" id="acc-anon" />
+            <label for="acc-anon">Ẩn danh (Chỉ xem chat, không gửi tin nhắn)</label>
+          </div>
+          <div class="form-group" id="token-group">
+            <label for="acc-token">Twitch OAuth Token:</label>
+            <input type="password" id="acc-token" placeholder="oauth:xxxxxxxxxxxxxxxxxxxxx" />
+            <span class="help-text">Lấy OAuth Token tại <a href="#" id="oauth-link">twitchapps.com/tmi</a> hoặc <a href="#" id="oauth-gen-link">twitchtokengenerator.com</a></span>
+          </div>
+          <div class="form-group" id="client-id-group">
+            <label for="acc-client-id">Twitch Client ID (Tùy chọn - Để hiển thị ảnh đại diện):</label>
+            <input type="text" id="acc-client-id" placeholder="Client ID tương ứng với Token của bạn" />
+          </div>
+          <button type="submit" id="save-account-btn">Lưu tài khoản</button>
+        </form>
+
+        <hr class="modal-divider" />
+
+        <h3>Tài khoản đã lưu</h3>
+        <div id="modal-accounts-list"></div>
+      </div>
+    </div>
+  </div>
+  <!-- Activation Modal Overlay -->
+  <div id="activation-overlay" class="modal-overlay">
+    <div class="modal-card activation-card">
+      <div class="modal-header">
+        <h2>KÍCH HOẠT BẢN QUYỀN</h2>
+      </div>
+      <div class="modal-body">
+        <p class="activation-desc">Chào mừng bạn đến với <b>Twitch Chat Viewer</b>! Vui lòng nhập mã kích hoạt gồm 50 key của bạn để sử dụng toàn bộ tính năng.</p>
+        <div class="form-group">
+          <label for="activation-key-input">Mã Kích hoạt (Key):</label>
+          <input type="text" id="activation-key-input" placeholder="TV-XXXX-XXXX-XXXX" />
+          <div id="activation-error-msg" class="activation-error"></div>
+        </div>
+        <button id="activate-submit-btn" class="activation-btn">Kích hoạt</button>
+        <div class="activation-divider">hoặc</div>
+        <button id="bypass-activation-btn" class="activation-bypass-btn">Sử dụng Chế độ Theo dõi (Ẩn danh)</button>
+      </div>
+    </div>
+  </div>
+  <!-- Auto Settings Modal -->
+  <div id="auto-settings-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Cài đặt Auto Bot 🤖</h2>
+        <span class="auto-modal-close-btn modal-close-btn">&times;</span>
+      </div>
+      <div class="modal-body">
+        <h3>1. Tự động tham gia Giveaway (Auto Join)</h3>
+        <div class="form-group checkbox-group">
+          <input type="checkbox" id="auto-join-enable" />
+          <label for="auto-join-enable">Bật tự động tham gia</label>
+        </div>
+        <div class="form-group">
+          <label for="auto-join-trigger">Từ khóa phát hiện (Trigger):</label>
+          <input type="text" id="auto-join-trigger" placeholder="Ví dụ: !giveaway, !roll (phân tách bằng dấu phẩy)" />
+          <span class="help-text">Nhận diện khi có ai đó gõ từ khóa này trong chat.</span>
+        </div>
+        <div class="form-group">
+          <label for="auto-join-response">Nội dung gửi phản hồi (Response):</label>
+          <input type="text" id="auto-join-response" placeholder="Ví dụ: !join, !enter" />
+          <span class="help-text">Hệ thống sẽ tự động gửi nội dung này để tham gia.</span>
+        </div>
+        <div class="form-group">
+          <label for="auto-join-delay">Độ trễ gửi (giây):</label>
+          <input type="number" id="auto-join-delay" min="0" max="60" value="3" />
+        </div>
+
+        <hr class="modal-divider" style="margin: 15px 0;" />
+
+        <h3>2. Tự động gửi thông tin nhận thưởng (Auto Claim)</h3>
+        <div class="form-group checkbox-group">
+          <input type="checkbox" id="auto-claim-enable" />
+          <label for="auto-claim-enable">Bật tự động nhận thưởng</label>
+        </div>
+        <div class="form-group">
+          <label for="auto-claim-reward">Thông tin tài khoản nhận thưởng:</label>
+          <input type="text" id="auto-claim-reward" placeholder="Ví dụ: ID Game: donpv93, UID: 123456" />
+          <span class="help-text">Gửi tin này lên chat khi phát hiện bạn trúng giải.</span>
+        </div>
+        <div class="form-group">
+          <label for="auto-claim-delay">Độ trễ gửi nhận thưởng (giây):</label>
+          <input type="number" id="auto-claim-delay" min="0" max="60" value="5" />
+        </div>
+
+        <button type="button" id="save-auto-settings-btn" style="background: #9147ff; color: white; border: none; border-radius: 6px; padding: 11px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; width: 100%; margin-top: 10px;">Lưu cấu hình Auto</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      alert(`Lỗi giao diện: ${message} (tại ${source}:${lineno}:${colno})`);
+      console.error(error);
+      return false;
+    };
+
+    const tabsEl = document.getElementById('tabs')
+    const panelsEl = document.getElementById('panels')
+    const emptyState = document.getElementById('empty-state')
+    const channelInput = document.getElementById('channel-input')
+    const addBtn = document.getElementById('add-btn')
+    const notifBtn = document.getElementById('notif-btn')
+    const accountsListEl = document.getElementById('accounts-list')
+    const addAccountBtn = document.getElementById('add-account-btn')
+
+    // Activation Elements
+    const activationOverlay = document.getElementById('activation-overlay')
+    const activationKeyInput = document.getElementById('activation-key-input')
+    const activationErrorMsg = document.getElementById('activation-error-msg')
+    const activateSubmitBtn = document.getElementById('activate-submit-btn')
+    const bypassActivationBtn = document.getElementById('bypass-activation-btn')
+
+    // Auto Settings Elements
+    const autoSettingsModal = document.getElementById('auto-settings-modal')
+    const autoModalCloseBtn = document.querySelector('.auto-modal-close-btn')
+    const autoJoinEnableCheckbox = document.getElementById('auto-join-enable')
+    const autoJoinTriggerInput = document.getElementById('auto-join-trigger')
+    const autoJoinResponseInput = document.getElementById('auto-join-response')
+    const autoJoinDelayInput = document.getElementById('auto-join-delay')
+    const autoClaimEnableCheckbox = document.getElementById('auto-claim-enable')
+    const autoClaimRewardInput = document.getElementById('auto-claim-reward')
+    const autoClaimDelayInput = document.getElementById('auto-claim-delay')
+    const saveAutoSettingsBtn = document.getElementById('save-auto-settings-btn')
+
+    // Modal
+    const accountModal = document.getElementById('account-modal')
+    const modalCloseBtn = document.querySelector('.modal-close-btn')
+    const accountForm = document.getElementById('account-form')
+    const editAccountId = document.getElementById('edit-account-id')
+    const accLabelInput = document.getElementById('acc-label')
+    const accAnonCheckbox = document.getElementById('acc-anon')
+    const accTokenInput = document.getElementById('acc-token')
+    const tokenGroup = document.getElementById('token-group')
+    const oauthLink = document.getElementById('oauth-link')
+    const modalAccountsList = document.getElementById('modal-accounts-list')
+    const topbarAccountLabel = document.getElementById('topbar-account-label')
+
+    const MAX_MESSAGES = 300
+    let accounts = []
+    let activeAccountId = null
+    let activeChannel = null // channel name of currently viewed panel for the active account
+    let accountActiveChannels = {} // accountId -> channelName
+    let notifEnabled = false
+    let isActivated = false
+
+    let autoSettingsByChannel = {}
+
+    function getChannelAutoSettings(key) {
+      if (!autoSettingsByChannel[key]) {
+        autoSettingsByChannel[key] = {
+          joinEnable: false,
+          joinTrigger: '!giveaway',
+          joinResponse: '!join',
+          joinDelay: 3,
+          claimEnable: false,
+          claimReward: '',
+          claimDelay: 5
+        }
+      }
+      return autoSettingsByChannel[key]
+    }
+
+    let currentEditingChannelKey = null
+
+    const pendingJoins = {}
+    const joinCooldowns = {}
+    const pendingClaims = {}
+    const claimCooldowns = {}
+
+    // channels: (accountId + ':' + channelName) -> { accountId, channel, tab, panel, chat, scrollBtn, statusEl, dotEl, unreadEl, unread, autoScroll, msgCount }
+    const channels = {}
+
+    // ── Activation Event Listeners ─────────────────────────────────
+    activateSubmitBtn.addEventListener('click', async function() {
+      const key = activationKeyInput.value.trim()
+      activationErrorMsg.style.display = 'none'
+      activationErrorMsg.textContent = ''
+
+      if (!key) {
+        activationErrorMsg.textContent = 'Vui lòng nhập Key kích hoạt!'
+        activationErrorMsg.style.display = 'block'
+        return
+      }
+
+      activateSubmitBtn.disabled = true
+      activateSubmitBtn.textContent = 'Đang kích hoạt...'
+
+      try {
+        const res = await window.twitch.activateKey(key)
+        if (res.success) {
+          alert('Kích hoạt bản quyền thành công!')
+          isActivated = true
+          activationOverlay.classList.remove('open')
+          
+          // Remove lock state from add button
+          addAccountBtn.classList.remove('locked')
+          addAccountBtn.title = 'Quản lý tài khoản'
+          
+          await loadAndRenderAccounts()
+        } else {
+          activationErrorMsg.textContent = res.message || 'Kích hoạt thất bại!'
+          activationErrorMsg.style.display = 'block'
+        }
+      } catch (err) {
+        activationErrorMsg.textContent = 'Lỗi kết nối: ' + err.message
+        activationErrorMsg.style.display = 'block'
+      } finally {
+        activateSubmitBtn.disabled = false
+        activateSubmitBtn.textContent = 'Kích hoạt'
+      }
+    })
+
+    bypassActivationBtn.addEventListener('click', function() {
+      activationOverlay.classList.remove('open')
+      applyBypassRestrictions()
+    })
+
+    function applyBypassRestrictions() {
+      // Add locked class to addAccountBtn
+      addAccountBtn.classList.add('locked')
+      addAccountBtn.title = 'Yêu cầu kích hoạt bản quyền để quản lý tài khoản'
+      
+      // Auto select anonymous account if exists
+      const anonAcc = accounts.find(a => !a.hasToken || a.id === 'default-anon')
+      if (anonAcc) {
+        selectAccount(anonAcc.id)
+      }
+    }
+
+    // ── Settings & Notification ────────────────────────────────────
+    notifBtn.addEventListener('click', function() {
+      notifEnabled = !notifEnabled
+      notifBtn.classList.toggle('active', notifEnabled)
+      notifBtn.title = notifEnabled ? 'Tắt thông báo' : 'Bật thông báo'
+      window.twitch.toggleNotifications(notifEnabled)
+    })
+
+    // ── Auto Settings Actions ─────────────────────────────────────
+    function openAutoSettingsModal(key) {
+      currentEditingChannelKey = key
+      const settings = getChannelAutoSettings(key)
+      
+      autoJoinEnableCheckbox.checked = settings.joinEnable
+      autoJoinTriggerInput.value = settings.joinTrigger || ''
+      autoJoinResponseInput.value = settings.joinResponse || ''
+      autoJoinDelayInput.value = settings.joinDelay !== undefined ? settings.joinDelay : 3
+      
+      autoClaimEnableCheckbox.checked = settings.claimEnable
+      autoClaimRewardInput.value = settings.claimReward || ''
+      autoClaimDelayInput.value = settings.claimDelay !== undefined ? settings.claimDelay : 5
+      
+      const modalHeader = autoSettingsModal.querySelector('.modal-header h2')
+      if (modalHeader) {
+        const chName = key.split(':')[1]
+        modalHeader.textContent = `Cài đặt Auto Bot - #${chName} 🤖`
+      }
+      
+      autoSettingsModal.classList.add('open')
+    }
+
+    autoModalCloseBtn.addEventListener('click', function() {
+      autoSettingsModal.classList.remove('open')
+    })
+
+    autoSettingsModal.addEventListener('click', function(e) {
+      if (e.target === autoSettingsModal) {
+        autoSettingsModal.classList.remove('open')
+      }
+    })
+
+    saveAutoSettingsBtn.addEventListener('click', function() {
+      if (currentEditingChannelKey) {
+        const settings = getChannelAutoSettings(currentEditingChannelKey)
+        settings.joinEnable = autoJoinEnableCheckbox.checked
+        settings.joinTrigger = autoJoinTriggerInput.value.trim()
+        settings.joinResponse = autoJoinResponseInput.value.trim()
+        settings.joinDelay = parseInt(autoJoinDelayInput.value) || 0
+        
+        settings.claimEnable = autoClaimEnableCheckbox.checked
+        settings.claimReward = autoClaimRewardInput.value.trim()
+        settings.claimDelay = parseInt(autoClaimDelayInput.value) || 0
+        
+        localStorage.setItem('auto_settings_by_channel', JSON.stringify(autoSettingsByChannel))
+        
+        updateChannelAutoButtonState(currentEditingChannelKey)
+        autoSettingsModal.classList.remove('open')
+        alert('Đã lưu cấu hình Auto Bot cho kênh thành công!')
+      }
+    })
+
+    function updateChannelAutoButtonState(key) {
+      const c = channels[key]
+      if (!c || !c.autoSettingsBtn || !c.autoStatusIndicator || !c.autoStatusText) return
+      const settings = getChannelAutoSettings(key)
+      const isAutoActive = settings.joinEnable || settings.claimEnable
+      
+      const now = Date.now()
+      const isJoinCooldown = settings.joinEnable && joinCooldowns[key] && (now - joinCooldowns[key] < 15 * 60 * 1000)
+      const isClaimCooldown = settings.claimEnable && claimCooldowns[key] && (now - claimCooldowns[key] < 15 * 60 * 1000)
+      
+      c.autoSettingsBtn.classList.toggle('active', isAutoActive)
+      
+      if (isAutoActive) {
+        if (isJoinCooldown || isClaimCooldown) {
+          c.autoStatusIndicator.className = 'auto-bot-status-indicator cooldown'
+          
+          let cooldownMsgs = []
+          if (isJoinCooldown) {
+            const remMin = Math.ceil((15 * 60 * 1000 - (now - joinCooldowns[key])) / 60000)
+            cooldownMsgs.push(`Join chờ reset (${remMin}ph)`)
+          }
+          if (isClaimCooldown) {
+            const remMin = Math.ceil((15 * 60 * 1000 - (now - claimCooldowns[key])) / 60000)
+            cooldownMsgs.push(`Claim chờ reset (${remMin}ph)`)
+          }
+          c.autoStatusText.textContent = `Auto Bot: ${cooldownMsgs.join(' / ')}`
+          c.autoStatusText.style.color = '#ffb700'
+        } else {
+          c.autoStatusIndicator.className = 'auto-bot-status-indicator active'
+          let statusDesc = []
+          if (settings.joinEnable) statusDesc.push('Auto Join')
+          if (settings.claimEnable) statusDesc.push('Auto Claim')
+          c.autoStatusText.textContent = `Auto Bot: Đang bật (${statusDesc.join(', ')})`
+          c.autoStatusText.style.color = '#a970ff'
+        }
+      } else {
+        c.autoStatusIndicator.className = 'auto-bot-status-indicator'
+        c.autoStatusText.textContent = 'Auto Bot: Tắt'
+        c.autoStatusText.style.color = '#adadb8'
+      }
+    }
+
+    // ── External URL ──────────────────────────────────────────────
+    oauthLink.addEventListener('click', function(e) {
+      e.preventDefault()
+      window.twitch.openExternal('https://twitchapps.com/tmi/')
+    })
+    document.getElementById('oauth-gen-link').addEventListener('click', function(e) {
+      e.preventDefault()
+      window.twitch.openExternal('https://twitchtokengenerator.com/')
+    })
+
+    // ── Form Checkbox toggle ──────────────────────────────────────
+    accAnonCheckbox.addEventListener('change', function() {
+      const clientIdGroup = document.getElementById('client-id-group')
+      if (accAnonCheckbox.checked) {
+        tokenGroup.style.display = 'none'
+        accTokenInput.removeAttribute('required')
+        clientIdGroup.style.display = 'none'
+      } else {
+        tokenGroup.style.display = 'flex'
+        accTokenInput.setAttribute('required', 'true')
+        clientIdGroup.style.display = 'flex'
+      }
+    })
+
+    // ── Modal Actions ─────────────────────────────────────────────
+    addAccountBtn.addEventListener('click', function() {
+      if (!isActivated) {
+        alert('Chức năng thêm tài khoản yêu cầu kích hoạt bản quyền! Vui lòng nhập Key kích hoạt.')
+        activationOverlay.classList.add('open')
+        activationKeyInput.focus()
+        return
+      }
+      openAccountModal()
+    })
+    modalCloseBtn.addEventListener('click', closeAccountModal)
+    accountModal.addEventListener('click', function(e) {
+      if (e.target === accountModal) closeAccountModal()
+    })
+
+    function openAccountModal(editId = null) {
+      accountForm.reset()
+      tokenGroup.style.display = 'flex'
+      accTokenInput.setAttribute('required', 'true')
+      
+      const clientIdGroup = document.getElementById('client-id-group')
+      const accClientIdInput = document.getElementById('acc-client-id')
+      clientIdGroup.style.display = 'flex'
+      accClientIdInput.value = ''
+      editAccountId.value = ''
+      
+      if (editId) {
+        const acc = accounts.find(a => a.id === editId)
+        if (acc) {
+          editAccountId.value = acc.id
+          accLabelInput.value = acc.label
+          accClientIdInput.value = acc.clientId || ''
+          if (!acc.hasToken) {
+            accAnonCheckbox.checked = true
+            tokenGroup.style.display = 'none'
+            clientIdGroup.style.display = 'none'
+            accTokenInput.removeAttribute('required')
+          } else {
+            accAnonCheckbox.checked = false
+            accTokenInput.value = ''
+            accTokenInput.placeholder = 'Nhập token mới hoặc để trống để giữ nguyên'
+            accTokenInput.removeAttribute('required')
+          }
+        }
+      } else {
+        accTokenInput.placeholder = 'oauth:xxxxxxxxxxxxxxxxxxxxx'
+      }
+
+      renderModalAccountsList()
+      accountModal.classList.add('open')
+    }
+
+    function closeAccountModal() {
+      accountModal.classList.remove('open')
+    }
+
+    accountForm.addEventListener('submit', async function(e) {
+      e.preventDefault()
+      const editId = editAccountId.value
+      const label = accLabelInput.value.trim()
+      const isAnon = accAnonCheckbox.checked
+      const token = accTokenInput.value.trim()
+      const clientId = document.getElementById('acc-client-id').value.trim()
+
+      if (!isAnon && !token && !editId) {
+        alert('Vui lòng cung cấp OAuth Token Twitch hoặc kích hoạt Ẩn danh.')
+        return
+      }
+
+      try {
+        if (editId) {
+          const tokenVal = isAnon ? 'anonymous' : token
+          const clientVal = isAnon ? '' : clientId
+          await window.twitch.updateAccount(editId, label, tokenVal, clientVal)
+        } else {
+          const tokenVal = isAnon ? 'anonymous' : token
+          const clientVal = isAnon ? '' : clientId
+          await window.twitch.addAccount(label, tokenVal, clientVal)
+        }
+
+        closeAccountModal()
+        await loadAndRenderAccounts()
+      } catch (err) {
+        alert('Lỗi lưu tài khoản: ' + err.message)
+      }
+    })
+
+    function renderModalAccountsList() {
+      modalAccountsList.innerHTML = ''
+      accounts.forEach(acc => {
+        const item = document.createElement('div')
+        item.className = 'modal-account-item'
+
+        const leftWrap = document.createElement('div')
+        leftWrap.className = 'modal-account-left'
+
+        const avatar = document.createElement('div')
+        avatar.className = 'modal-account-avatar'
+        if (acc.profileImageUrl) {
+          avatar.style.backgroundImage = 'url(' + acc.profileImageUrl + ')'
+        } else {
+          const initials = (acc.label || '')
+            .split(/\s+/)
+            .map(w => w[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2)
+          avatar.textContent = initials || '?'
+        }
+
+        const info = document.createElement('div')
+        info.className = 'modal-account-info'
+
+        const name = document.createElement('span')
+        name.className = 'modal-account-name'
+        name.textContent = acc.label
+
+        const type = document.createElement('span')
+        type.className = 'modal-account-type'
+        type.textContent = acc.hasToken ? 'Tài khoản Twitch' : 'Ẩn danh (Chỉ xem)'
+
+        info.appendChild(name)
+        info.appendChild(type)
+        leftWrap.appendChild(avatar)
+        leftWrap.appendChild(info)
+
+        const actions = document.createElement('div')
+        actions.className = 'modal-account-actions'
+
+        const editBtn = document.createElement('button')
+        editBtn.className = 'modal-acc-btn'
+        editBtn.textContent = 'Sửa'
+        editBtn.type = 'button'
+        editBtn.addEventListener('click', () => {
+          openAccountModal(acc.id)
+        })
+
+        const deleteBtn = document.createElement('button')
+        deleteBtn.className = 'modal-acc-btn delete'
+        deleteBtn.textContent = 'Xóa'
+        deleteBtn.type = 'button'
+        deleteBtn.addEventListener('click', async () => {
+          if (confirm(`Bạn có chắc chắn muốn xóa tài khoản "${acc.label}"?`)) {
+            await window.twitch.deleteAccount(acc.id)
+
+            // Remove all local elements of this account
+            Object.keys(channels).forEach(key => {
+              if (key.startsWith(acc.id + ':')) {
+                channels[key].tab.remove()
+                channels[key].panel.remove()
+                delete channels[key]
+              }
+            })
+
+            if (activeAccountId === acc.id) {
+              activeAccountId = null
+            }
+
+            await loadAndRenderAccounts()
+            renderModalAccountsList()
+          }
+        })
+
+        actions.appendChild(editBtn)
+        actions.appendChild(deleteBtn)
+        item.appendChild(leftWrap)
+        item.appendChild(actions)
+        modalAccountsList.appendChild(item)
+      })
+    }
+
+    // ── Accounts Rendering & Selector ─────────────────────────────
+    async function loadAndRenderAccounts() {
+      accounts = await window.twitch.getAccounts()
+      renderSidebar()
+
+      if (accounts.length > 0) {
+        if (!activeAccountId || !accounts.some(a => a.id === activeAccountId)) {
+          selectAccount(accounts[0].id)
+        } else {
+          selectAccount(activeAccountId)
+        }
+      } else {
+        activeAccountId = null
+        topbarAccountLabel.textContent = 'Chưa có tài khoản'
+        emptyState.style.display = 'flex'
+      }
+    }
+
+    function renderSidebar() {
+      accountsListEl.innerHTML = ''
+      accounts.forEach(acc => {
+        const btn = document.createElement('div')
+        btn.className = 'account-btn'
+        btn.dataset.accountId = acc.id
+        if (acc.id === activeAccountId) {
+          btn.classList.add('active')
+        }
+
+        if (acc.profileImageUrl) {
+          btn.style.backgroundImage = 'url(' + acc.profileImageUrl + ')'
+          btn.style.backgroundSize = 'cover'
+          btn.style.backgroundPosition = 'center'
+          btn.textContent = ''
+        } else {
+          // Initials (e.g. "DonPV" -> "DP", "Ẩn danh" -> "ẨD")
+          const initials = (acc.label || '')
+            .split(/\s+/)
+            .map(w => w[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2)
+          btn.textContent = initials || '?'
+          btn.style.backgroundImage = 'none'
+        }
+
+        btn.title = acc.label + (acc.hasToken ? ' (Twitch)' : ' (Ẩn danh)')
+
+        // Status badge indicator
+        const badge = document.createElement('span')
+        badge.className = 'account-badge'
+
+        let hasLive = false
+        let hasError = false
+        let hasChannels = false
+
+        Object.keys(channels).forEach(key => {
+          if (key.startsWith(acc.id + ':')) {
+            hasChannels = true
+            const c = channels[key]
+            if (c.dotEl.classList.contains('live')) hasLive = true
+            if (c.dotEl.classList.contains('error')) hasError = true
+          }
+        })
+
+        if (hasChannels) {
+          if (hasLive) badge.classList.add('online')
+          else if (hasError) badge.classList.add('error')
+        }
+
+        btn.appendChild(badge)
+        btn.addEventListener('click', () => {
+          if (!isActivated && acc.hasToken) {
+            alert('Chức năng sử dụng tài khoản thật yêu cầu kích hoạt bản quyền! Vui lòng nhập Key kích hoạt.')
+            activationOverlay.classList.add('open')
+            activationKeyInput.focus()
+            return
+          }
+          selectAccount(acc.id)
+        })
+
+        accountsListEl.appendChild(btn)
+      })
+    }
+
+    function selectAccount(accountId) {
+      activeAccountId = accountId
+
+      // Highlight sidebar icon
+      document.querySelectorAll('.account-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.accountId === accountId)
+      })
+
+      const acc = accounts.find(a => a.id === accountId)
+      if (!acc) return
+
+      const imgHtml = acc.profileImageUrl ? `<img src="${acc.profileImageUrl}" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:6px;object-fit:cover;" />` : ''
+      topbarAccountLabel.innerHTML = `${imgHtml}Tài khoản: <b>${escapeHtml(acc.label)}</b> ${acc.hasToken ? '🔑' : '🕵️'}`
+
+      // Toggle tab and panel visibility
+      Object.keys(channels).forEach(key => {
+        const c = channels[key]
+        if (c.accountId === activeAccountId) {
+          c.tab.style.display = 'flex'
+        } else {
+          c.tab.style.display = 'none'
+          c.panel.classList.remove('active')
+        }
+      })
+
+      // Get active channel for this account
+      const curChan = accountActiveChannels[accountId]
+      if (curChan && channels[accountId + ':' + curChan]) {
+        switchTab(accountId, curChan)
+        emptyState.style.display = 'none'
+      } else {
+        // Look at account's saved channels list
+        const accChannels = acc.channels || []
+        if (accChannels.length > 0) {
+          switchTab(accountId, accChannels[0])
+          emptyState.style.display = 'none'
+        } else {
+          activeChannel = null
+          emptyState.style.display = 'flex'
+        }
+      }
+    }
+
+    // ── Helper functions ──────────────────────────────────────────
+    function escapeHtml(str) {
+      if (!str) return ''
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+    }
+
+    function formatTime(ts) {
+      var d = new Date(ts)
+      return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0')
+    }
+
+    function getBadges(msg) {
+      var b = ''
+      if (msg.isBroadcaster) b += '<span class="badge broadcaster" title="Broadcaster">Broadcaster</span>'
+      else if (msg.isMod) b += '<span class="badge moderator" title="Moderator">Mod</span>'
+      if (msg.isSub) b += '<span class="badge subscriber" title="Subscriber">Sub</span>'
+      return b
+    }
+
+    // ── Tab Management ────────────────────────────────────────────
+    function switchTab(accountId, ch) {
+      // Deactivate previous active channel
+      if (activeAccountId && activeChannel) {
+        const prevKey = activeAccountId + ':' + activeChannel
+        if (channels[prevKey]) {
+          channels[prevKey].tab.classList.remove('active')
+          channels[prevKey].panel.classList.remove('active')
+        }
+      }
+
+      activeAccountId = accountId
+      activeChannel = ch
+      accountActiveChannels[accountId] = ch
+
+      const key = accountId + ':' + ch
+      const c = channels[key]
+      if (c) {
+        c.tab.classList.add('active')
+        c.panel.classList.add('active')
+
+        // Reset unread count
+        c.unread = 0
+        c.unreadEl.style.display = 'none'
+        c.unreadEl.textContent = ''
+
+        // Clear mention flash
+        c.tab.classList.remove('tab-mention-flash')
+
+        if (c.autoScroll) {
+          c.chat.scrollTop = c.chat.scrollHeight
+        }
+      }
+    }
+
+    function addChannel(accountId, channel, skipJoin = false) {
+      const ch = channel.toLowerCase().trim()
+      if (!ch) return
+
+      const key = accountId + ':' + ch
+      if (channels[key]) {
+        if (accountId === activeAccountId) switchTab(accountId, ch)
+        return
+      }
+
+      // Hide empty state if we are adding to current active account
+      if (accountId === activeAccountId) {
+        emptyState.style.display = 'none'
+      }
+
+      // 1. Tab Creation
+      const tab = document.createElement('div')
+      tab.className = 'tab'
+      tab.dataset.accountId = accountId
+      tab.dataset.channel = ch
+
+      const dot = document.createElement('span')
+      dot.className = 'tab-dot'
+
+      const label = document.createElement('span')
+      label.textContent = '#' + ch
+
+      const unreadBadge = document.createElement('span')
+      unreadBadge.className = 'tab-unread'
+      unreadBadge.style.display = 'none'
+
+      const closeBtn = document.createElement('span')
+      closeBtn.className = 'tab-close'
+      closeBtn.textContent = '×'
+      closeBtn.title = 'Đóng channel'
+      closeBtn.addEventListener('click', function(e) {
+        e.stopPropagation()
+        removeChannel(accountId, ch)
+      })
+
+      tab.appendChild(dot)
+      tab.appendChild(label)
+      tab.appendChild(unreadBadge)
+      tab.appendChild(closeBtn)
+
+      tab.addEventListener('click', function() {
+        switchTab(accountId, ch)
+      })
+      tabsEl.appendChild(tab)
+
+      // 2. Panel Creation
+      const panel = document.createElement('div')
+      panel.className = 'panel'
+      panel.dataset.accountId = accountId
+      panel.dataset.channel = ch
+
+      const chatWrap = document.createElement('div')
+      chatWrap.style.position = 'relative'
+      chatWrap.style.flex = '1'
+      chatWrap.style.overflow = 'hidden'
+      chatWrap.style.display = 'flex'
+      chatWrap.style.flexDirection = 'column'
+
+      const chat = document.createElement('div')
+      chat.className = 'chat'
+
+      const scrollBtn = document.createElement('button')
+      scrollBtn.className = 'scroll-btn'
+      scrollBtn.textContent = '↓ Tin mới'
+
+      const statusBar = document.createElement('div')
+      statusBar.className = 'panel-status'
+      statusBar.textContent = 'Đang kết nối #' + ch + '...'
+
+      chatWrap.appendChild(chat)
+      chatWrap.appendChild(scrollBtn)
+
+      // 3. Chat Input / Anonymous Notice wrapper
+      const acc = accounts.find(a => a.id === accountId)
+      const inputWrap = document.createElement('div')
+      inputWrap.className = 'chat-input-wrap'
+
+      let replyPreviewBar = null
+      let replyPreviewText = null
+      let inputField = null
+      let btnAuto = null
+      let autoBotStatusIndicator = null
+      let autoBotStatusText = null
+
+      if (acc && acc.hasToken) {
+        replyPreviewBar = document.createElement('div')
+        replyPreviewBar.className = 'reply-preview-bar'
+        
+        replyPreviewText = document.createElement('span')
+        replyPreviewText.className = 'reply-preview-text'
+        
+        const replyPreviewClose = document.createElement('span')
+        replyPreviewClose.className = 'reply-preview-close'
+        replyPreviewClose.textContent = '×'
+        
+        replyPreviewBar.appendChild(replyPreviewText)
+        replyPreviewBar.appendChild(replyPreviewClose)
+        inputWrap.appendChild(replyPreviewBar)
+
+        const container = document.createElement('div')
+        container.className = 'chat-input-container'
+
+        inputField = document.createElement('input')
+        inputField.type = 'text'
+        inputField.className = 'chat-input-field'
+        inputField.placeholder = `Chat với tư cách ${acc.label}...`
+        inputField.maxLength = 500
+
+        const sendBtn = document.createElement('button')
+        sendBtn.className = 'chat-send-btn'
+        sendBtn.textContent = 'Gửi'
+
+        const performSend = () => {
+          const text = inputField.value.trim()
+          if (text) {
+            let parentId = ''
+            let parentUser = ''
+            let parentBody = ''
+            
+            if (channels[key] && channels[key].replyingTo) {
+              parentId = channels[key].replyingTo.id
+              parentUser = channels[key].replyingTo.username
+              parentBody = channels[key].replyingTo.text
+            }
+            
+            window.twitch.sendChat(accountId, ch, text, parentId, parentUser, parentBody)
+            if (channels[key]) cancelReply(channels[key])
+            inputField.value = ''
+          }
+        }
+
+        inputField.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') performSend()
+        })
+        sendBtn.addEventListener('click', performSend)
+
+        replyPreviewClose.addEventListener('click', () => {
+          if (channels[key]) cancelReply(channels[key])
+        })
+
+        container.appendChild(inputField)
+        container.appendChild(sendBtn)
+        inputWrap.appendChild(container)
+
+        // Auto Bot Row
+        const autoBotRow = document.createElement('div')
+        autoBotRow.className = 'auto-bot-row'
+
+        autoBotInfo = document.createElement('div')
+        autoBotInfo.className = 'auto-bot-info'
+
+        autoBotStatusIndicator = document.createElement('div')
+        autoBotStatusIndicator.className = 'auto-bot-status-indicator'
+
+        autoBotStatusText = document.createElement('span')
+        autoBotStatusText.textContent = 'Auto Bot: Tắt'
+
+        autoBotInfo.appendChild(autoBotStatusIndicator)
+        autoBotInfo.appendChild(autoBotStatusText)
+
+        btnAuto = document.createElement('button')
+        btnAuto.type = 'button'
+        btnAuto.className = 'auto-settings-btn'
+        btnAuto.innerHTML = '🤖 Auto'
+        btnAuto.title = 'Cài đặt Auto Bot cho kênh này'
+        btnAuto.addEventListener('click', function() {
+          openAutoSettingsModal(key)
+        })
+
+        autoBotRow.appendChild(autoBotInfo)
+        autoBotRow.appendChild(btnAuto)
+        inputWrap.appendChild(autoBotRow)
+      } else {
+        const notice = document.createElement('div')
+        notice.className = 'anon-notice'
+        notice.innerHTML = `Bạn đang xem ở chế độ ẩn danh. <a class="modal-trigger">Thêm hoặc chọn tài khoản Twitch</a> để bắt đầu gửi tin nhắn.`
+        
+        notice.querySelector('.modal-trigger').addEventListener('click', (e) => {
+          e.preventDefault()
+          openAccountModal()
+        })
+        inputWrap.appendChild(notice)
+      }
+
+      panel.appendChild(chatWrap)
+      panel.appendChild(inputWrap)
+      panel.appendChild(statusBar)
+      panelsEl.appendChild(panel)
+
+      // Scrolling listener
+      chat.addEventListener('scroll', function() {
+        const atBottom = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 40
+        channels[key].autoScroll = atBottom
+        scrollBtn.classList.toggle('visible', !atBottom)
+      })
+
+      scrollBtn.addEventListener('click', function() {
+        channels[key].autoScroll = true
+        chat.scrollTop = chat.scrollHeight
+        scrollBtn.classList.remove('visible')
+      })
+
+      // Store in memory
+      channels[key] = {
+        accountId: accountId,
+        channel: ch,
+        tab: tab,
+        panel: panel,
+        chat: chat,
+        scrollBtn: scrollBtn,
+        statusEl: statusBar,
+        dotEl: dot,
+        unreadEl: unreadBadge,
+        unread: 0,
+        autoScroll: true,
+        msgCount: 0,
+        replyPreviewBar: acc && acc.hasToken ? replyPreviewBar : null,
+        replyPreviewText: acc && acc.hasToken ? replyPreviewText : null,
+        inputField: acc && acc.hasToken ? inputField : null,
+        replyingTo: null,
+        autoSettingsBtn: acc && acc.hasToken ? btnAuto : null,
+        autoStatusIndicator: acc && acc.hasToken ? autoBotStatusIndicator : null,
+        autoStatusText: acc && acc.hasToken ? autoBotStatusText : null
+      }
+
+      if (acc && acc.hasToken) {
+        updateChannelAutoButtonState(key)
+      }
+
+      // Add Channel to Account on Backend if not from boot
+      if (!skipJoin) {
+        window.twitch.joinChannel(accountId, ch)
+      }
+
+      // Display/visibility handling
+      if (accountId === activeAccountId) {
+        tab.style.display = 'flex'
+        switchTab(accountId, ch)
+      } else {
+        tab.style.display = 'none'
+      }
+    }
+
+    function removeChannel(accountId, channel) {
+      const ch = channel.toLowerCase().trim()
+      const key = accountId + ':' + ch
+      if (!channels[key]) return
+
+      window.twitch.leaveChannel(accountId, ch)
+      channels[key].tab.remove()
+      channels[key].panel.remove()
+      delete channels[key]
+
+      renderSidebar()
+
+      if (activeAccountId === accountId && activeChannel === ch) {
+        activeChannel = null
+        accountActiveChannels[accountId] = null
+
+        const remaining = Object.keys(channels)
+          .filter(k => k.startsWith(accountId + ':'))
+          .map(k => channels[k].channel)
+
+        if (remaining.length > 0) {
+          switchTab(accountId, remaining[remaining.length - 1])
+        } else {
+          emptyState.style.display = 'flex'
+        }
+      }
+    }
+
+    // ── Reply Management ──────────────────────────────────────────
+    function initiateReply(c, msg) {
+      if (!c.replyPreviewBar) return
+      
+      c.replyingTo = {
+        id: msg.id,
+        username: msg.username,
+        text: msg.text
+      }
+
+      c.replyPreviewText.innerHTML = `Đang trả lời <b>@${escapeHtml(msg.username)}</b>: "${escapeHtml(msg.text)}"`
+      c.replyPreviewBar.style.display = 'flex'
+      if (c.inputField) c.inputField.focus()
+    }
+
+    function cancelReply(c) {
+      if (!c.replyPreviewBar) return
+      c.replyingTo = null
+      c.replyPreviewBar.style.display = 'none'
+      c.replyPreviewText.textContent = ''
+    }
+
+    function selectTextAndTranslate(element, event) {
+      selectedText = element.textContent.replace(/^:\s*/, '')
+      popupX = event.clientX - 140
+      popupY = event.clientY - 45
+      if (popupY < 10) popupY = event.clientY + 15
+      
+      translateTriggerBtn.style.left = popupX + 124 + 'px'
+      translateTriggerBtn.style.top = popupY + 'px'
+      translateTriggerBtn.click()
+    }
+
+    // ── Twitch IPC Events ──────────────────────────────────────────
+    window.twitch.onMessage(function(msg) {
+      const accId = msg.accountId
+      const ch = msg.channel
+      const key = accId + ':' + ch
+
+      if (!channels[key]) return
+      const c = channels[key]
+
+      // Trim messages to fit max list size
+      while (c.chat.children.length >= MAX_MESSAGES) {
+        c.chat.removeChild(c.chat.firstChild)
+      }
+
+      c.msgCount++
+
+      const div = document.createElement('div')
+      div.className = 'msg'
+      
+      // Render parent reply line if it is a reply
+      if (msg.replyParentMsgId && msg.replyParentUser) {
+        const replyLine = document.createElement('div')
+        replyLine.className = 'msg-reply-context'
+        replyLine.innerHTML = `┌── Trả lời <b>@${escapeHtml(msg.replyParentUser)}</b>: <span class="reply-context-body">${escapeHtml(msg.replyParentBody)}</span>`
+        div.appendChild(replyLine)
+      }
+
+      const mainLine = document.createElement('div')
+      mainLine.style.display = 'inline'
+
+      const badges = getBadges(msg)
+      mainLine.innerHTML =
+        '<span class="msg-time">' + formatTime(msg.timestamp) + '</span>' +
+        (badges ? '<span class="badges">' + badges + '</span>' : '') +
+        '<span class="username" style="color:' + escapeHtml(msg.color) + '">' + escapeHtml(msg.username) + '</span>' +
+        '<span class="msg-text">: ' + escapeHtml(msg.text) + '</span>'
+
+      div.appendChild(mainLine)
+
+      // Add actions on hover
+      const acc = accounts.find(a => a.id === accId)
+
+      // Highlight mention
+      let isMention = false
+      if (acc && acc.label && acc.label !== 'Ẩn danh') {
+        const escName = acc.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        const userPattern = new RegExp(`@?\\b${escName}\\b`, 'i')
+        isMention = userPattern.test(msg.text)
+      }
+      if (isMention) {
+        div.classList.add('msg-mention')
+      }
+
+      const actionsDiv = document.createElement('div')
+      actionsDiv.className = 'msg-actions'
+
+      if (acc && acc.hasToken && msg.id && !msg.id.startsWith('local-')) {
+        const replyBtn = document.createElement('button')
+        replyBtn.className = 'msg-action-btn'
+        replyBtn.title = 'Trả lời tin nhắn'
+        replyBtn.textContent = '↩️'
+        replyBtn.addEventListener('click', function() {
+          initiateReply(c, msg)
+        })
+        actionsDiv.appendChild(replyBtn)
+      }
+
+      const transBtn = document.createElement('button')
+      transBtn.className = 'msg-action-btn'
+      transBtn.title = 'Dịch tin nhắn'
+      transBtn.textContent = '🌐'
+      transBtn.addEventListener('click', function(e) {
+        const textNode = mainLine.querySelector('.msg-text')
+        selectTextAndTranslate(textNode, e)
+      })
+      actionsDiv.appendChild(transBtn)
+      
+      div.appendChild(actionsDiv)
+
+      c.chat.appendChild(div)
+
+      if (c.autoScroll) {
+        c.chat.scrollTop = c.chat.scrollHeight
+      }
+
+      // Process unread badge
+      if (activeAccountId !== accId || activeChannel !== ch) {
+        c.unread++
+        c.unreadEl.textContent = c.unread > 99 ? '99+' : c.unread
+        c.unreadEl.style.display = 'inline-block'
+        if (isMention) {
+          c.tab.classList.add('tab-mention-flash')
+        }
+      }
+
+      // Auto Bot logic (Auto Join / Auto Claim)
+      if (acc && acc.hasToken) {
+        const isOurselves = msg.id.startsWith('local-') || (acc.label && msg.username.toLowerCase() === acc.label.toLowerCase())
+        
+        if (!isOurselves) {
+          const cooldownKey = accId + ':' + ch
+          const settings = getChannelAutoSettings(cooldownKey)
+          const textLower = msg.text.toLowerCase()
+
+          // 1. Auto Join Giveaway
+          if (settings.joinEnable && settings.joinTrigger && settings.joinResponse) {
+            const triggers = settings.joinTrigger.split(',').map(t => t.trim().toLowerCase()).filter(Boolean)
+            const matchesTrigger = triggers.some(trigger => textLower.includes(trigger))
+            
+            if (matchesTrigger) {
+              const now = Date.now()
+              if (!pendingJoins[cooldownKey] && (!joinCooldowns[cooldownKey] || now - joinCooldowns[cooldownKey] > 15 * 60 * 1000)) {
+                const delayMs = (settings.joinDelay !== undefined ? settings.joinDelay : 3) * 1000
+                pendingJoins[cooldownKey] = setTimeout(() => {
+                  if (settings.joinEnable) {
+                    window.twitch.sendChat(accId, ch, settings.joinResponse)
+                    joinCooldowns[cooldownKey] = Date.now()
+                    updateChannelAutoButtonState(cooldownKey)
+                  }
+                  delete pendingJoins[cooldownKey]
+                }, delayMs)
+              }
+            }
+          }
+
+          // 2. Auto Claim Reward
+          if (settings.claimEnable && settings.claimReward) {
+            const isRecipient = acc.label && textLower.includes(acc.label.toLowerCase())
+            if (isRecipient) {
+              const winKeywords = ['won', 'winner', 'congratulations', 'trúng', 'thắng', 'giveaway', 'chúc mừng', 'phần quà', 'giải thưởng']
+              const matchesWin = winKeywords.some(keyword => textLower.includes(keyword))
+              if (matchesWin) {
+                const now = Date.now()
+                if (!pendingClaims[cooldownKey] && (!claimCooldowns[cooldownKey] || now - claimCooldowns[cooldownKey] > 15 * 60 * 1000)) {
+                  const delayMs = (settings.claimDelay !== undefined ? settings.claimDelay : 5) * 1000
+                  pendingClaims[cooldownKey] = setTimeout(() => {
+                    if (settings.claimEnable) {
+                      window.twitch.sendChat(accId, ch, settings.claimReward)
+                      claimCooldowns[cooldownKey] = Date.now()
+                      updateChannelAutoButtonState(cooldownKey)
+                    }
+                    delete pendingClaims[cooldownKey]
+                  }, delayMs)
+                }
+              }
+            }
+          }
+        }
+      }
+    })
+
+    window.twitch.onChannelStatus(function(s) {
+      const accId = s.accountId
+      const ch = s.channel
+      const key = accId + ':' + ch
+
+      if (!channels[key]) return
+      
+      if (s.connected) {
+        channels[key].dotEl.className = 'tab-dot live'
+        channels[key].statusEl.textContent = 'Đang xem: #' + ch
+      } else {
+        channels[key].dotEl.className = 'tab-dot'
+        channels[key].statusEl.textContent = 'Đã ngắt kết nối'
+      }
+
+      renderSidebar()
+    })
+
+    window.twitch.onChannelError(function(e) {
+      const accId = e.accountId
+      const ch = e.channel
+      const key = accId + ':' + ch
+
+      if (!channels[key]) return
+
+      channels[key].dotEl.className = 'tab-dot error'
+      channels[key].statusEl.textContent = 'Lỗi: ' + e.error
+
+      renderSidebar()
+    })
+
+    // ── Join Channel Event Handlers ────────────────────────────────
+    addBtn.addEventListener('click', function() {
+      const ch = channelInput.value.trim()
+      if (ch && activeAccountId) {
+        addChannel(activeAccountId, ch)
+        channelInput.value = ''
+      } else if (!activeAccountId) {
+        alert('Vui lòng tạo hoặc chọn một tài khoản trước.')
+      } else {
+        channelInput.focus()
+      }
+    })
+
+    channelInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        const ch = channelInput.value.trim()
+        if (ch && activeAccountId) {
+          addChannel(activeAccountId, ch)
+          channelInput.value = ''
+        }
+      }
+    })
+
+    // ── Translation Tooling ───────────────────────────────────────
+    let selectedText = ''
+    const translateTriggerBtn = document.createElement('button')
+    translateTriggerBtn.id = 'translate-trigger-btn'
+    translateTriggerBtn.title = 'Dịch đoạn chat'
+    translateTriggerBtn.innerHTML = '🌐'
+    document.body.appendChild(translateTriggerBtn)
+
+    const translationPopup = document.createElement('div')
+    translationPopup.id = 'translation-popup'
+    translationPopup.innerHTML = `
+      <div class="trans-header">
+        <span class="trans-title">Dịch thuật</span>
+        <span class="trans-close">&times;</span>
+      </div>
+      <select class="trans-lang-select">
+        <option value="vi" selected>Tiếng Việt</option>
+        <option value="en">Tiếng Anh (English)</option>
+        <option value="ja">Tiếng Nhật (日本語)</option>
+        <option value="ko">Tiếng Hàn (한국어)</option>
+        <option value="zh-CN">Tiếng Trung (简体中文)</option>
+        <option value="fr">Tiếng Pháp (Français)</option>
+        <option value="de">Tiếng Đức (Deutsch)</option>
+        <option value="es">Tiếng Tây Ban Nha (Español)</option>
+      </select>
+      <div class="trans-text-original"></div>
+      <div class="trans-result-container">
+        <div class="trans-result-text"></div>
+        <button class="trans-copy-btn">Sao chép</button>
+      </div>
+    `
+    document.body.appendChild(translationPopup)
+
+    const transClose = translationPopup.querySelector('.trans-close')
+    const transLangSelect = translationPopup.querySelector('.trans-lang-select')
+    const transTextOrig = translationPopup.querySelector('.trans-text-original')
+    const transResultText = translationPopup.querySelector('.trans-result-text')
+    const transCopyBtn = translationPopup.querySelector('.trans-copy-btn')
+
+    let popupX = 0
+    let popupY = 0
+
+    function isSelectionInChat(sel) {
+      if (!sel.rangeCount) return false
+      const range = sel.getRangeAt(0)
+      let node = range.commonAncestorContainer
+      while (node) {
+        if (node.classList && node.classList.contains('chat')) {
+          return true
+        }
+        node = node.parentNode
+      }
+      return false
+    }
+
+    document.addEventListener('mouseup', function(e) {
+      if (e.target.closest('#translate-trigger-btn') || e.target.closest('#translation-popup')) {
+        return
+      }
+
+      setTimeout(() => {
+        const sel = window.getSelection()
+        const text = sel.toString().trim()
+
+        if (text && isSelectionInChat(sel)) {
+          selectedText = text
+          const range = sel.getRangeAt(0)
+          const rect = range.getBoundingClientRect()
+
+          popupX = rect.left + rect.width / 2 - 16
+          popupY = rect.top - 38
+
+          if (popupY < 10) popupY = rect.bottom + 10
+
+          translateTriggerBtn.style.left = popupX + 'px'
+          translateTriggerBtn.style.top = popupY + 'px'
+          translateTriggerBtn.style.display = 'flex'
+        } else {
+          hideTranslationWidgets()
+        }
+      }, 50)
+    })
+
+    function hideTranslationWidgets() {
+      translateTriggerBtn.style.display = 'none'
+    }
+
+    transClose.addEventListener('click', function() {
+      translationPopup.style.display = 'none'
+    })
+
+    translateTriggerBtn.addEventListener('click', function() {
+      translateTriggerBtn.style.display = 'none'
+      
+      translationPopup.style.left = Math.max(10, Math.min(window.innerWidth - 300, popupX - 124)) + 'px'
+      translationPopup.style.top = popupY + 'px'
+      translationPopup.style.display = 'flex'
+
+      transTextOrig.textContent = selectedText
+      performTranslation()
+    })
+
+    transLangSelect.addEventListener('change', performTranslation)
+
+    transCopyBtn.addEventListener('click', function() {
+      const textToCopy = transResultText.textContent
+      if (textToCopy) {
+        navigator.clipboard.writeText(textToCopy)
+        transCopyBtn.textContent = 'Đã chép!'
+        setTimeout(() => {
+          transCopyBtn.textContent = 'Sao chép'
+        }, 1500)
+      }
+    })
+
+    async function performTranslation() {
+      const targetLang = transLangSelect.value
+      transResultText.innerHTML = '<div class="trans-loading">Đang dịch...</div>'
+      
+      try {
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(selectedText)}`
+        const res = await fetch(url)
+        if (!res.ok) throw new Error('API Error')
+        
+        const data = await res.json()
+        if (data && data[0]) {
+          const translated = data[0].map(item => item[0]).join('')
+          transResultText.textContent = translated
+        } else {
+          transResultText.textContent = 'Không thể phân tích dữ liệu dịch.'
+        }
+      } catch (err) {
+        transResultText.textContent = 'Lỗi kết nối dịch thuật. Vui lòng thử lại.'
+      }
+    }
+
+    document.addEventListener('mousedown', function(e) {
+      if (!e.target.closest('#translation-popup') && !e.target.closest('#translate-trigger-btn')) {
+        translationPopup.style.display = 'none'
+      }
+    })
+
+    // ── Application Initialization ─────────────────────────────────
+    async function init() {
+      notifBtn.classList.toggle('active', notifEnabled)
+
+      // Load auto settings
+      const savedAuto = localStorage.getItem('auto_settings_by_channel')
+      if (savedAuto) {
+        try {
+          autoSettingsByChannel = JSON.parse(savedAuto)
+        } catch(e) {}
+      }
+      
+      // Check activation status
+      const act = await window.twitch.checkActivation()
+      isActivated = act.isActivated
+
+      // Load accounts initially
+      accounts = await window.twitch.getAccounts()
+      
+      // Render channels saved inside each account from db (without double joining)
+      accounts.forEach(acc => {
+        const accChannels = acc.channels || []
+        accChannels.forEach(ch => {
+          addChannel(acc.id, ch, true) // skipJoin = true because reconnectAll connects them
+        })
+      })
+
+      // Setup sidebar & active account selection
+      renderSidebar()
+      
+      if (isActivated) {
+        activationOverlay.classList.remove('open')
+        if (accounts.length > 0) {
+          selectAccount(accounts[0].id)
+        }
+      } else {
+        activationOverlay.classList.add('open')
+        applyBypassRestrictions()
+      }
+
+      // Periodic Auto Bot status indicator updater (every 10 seconds)
+      setInterval(() => {
+        for (const key in channels) {
+          updateChannelAutoButtonState(key)
+        }
+      }, 10000)
+
+      // Start connection on backend for all channels
+      window.twitch.reconnectAll()
+    }
+
+    window.addEventListener('DOMContentLoaded', init)
+  </script>
+</body>
+</html>

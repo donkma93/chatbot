@@ -1,0 +1,30 @@
+{
+  "name": "twitch-chat-viewer",
+  "version": "1.0.0",
+  "description": "Twitch Chat Viewer - Windows Desktop App",
+  "main": "main.js",
+  "scripts": {
+    "start": "node_modules\\electron\\dist\\electron.exe .",
+    "install-deps": "npm install",
+    "dist": "electron-builder --win"
+  },
+  "dependencies": {
+    "ws": "^8.21.0"
+  },
+  "devDependencies": {
+    "electron": "^42.4.1",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.twitch.chatviewer",
+    "productName": "TwitchChatViewer",
+    "win": {
+      "target": [
+        "portable"
+      ]
+    },
+    "directories": {
+      "output": "dist"
+    }
+  }
+}
