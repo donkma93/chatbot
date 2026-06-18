@@ -233,15 +233,59 @@
 
 
     /* Tabs */
-    #tabs {
+    #tabs-container {
       display: flex;
+      position: relative;
       background: #18181b;
       border-bottom: 1px solid #2f2f35;
-      overflow-x: auto;
+      align-items: center;
+      width: 100%;
       flex-shrink: 0;
+    }
+    #tabs {
+      display: flex;
+      flex: 1;
+      overflow-x: hidden;
       scrollbar-width: none;
     }
     #tabs::-webkit-scrollbar { display: none; }
+
+    #tabs-dropdown-btn {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      border-left: 1px solid #2f2f35;
+      color: #adadb8;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+      outline: none;
+      white-space: nowrap;
+      height: 39px; /* matches tab height */
+    }
+    #tabs-dropdown-btn:hover {
+      color: #efeff1;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    
+    #tabs-dropdown-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 100%;
+      background: #1f1f23;
+      border: 1px solid #2f2f35;
+      border-radius: 0 0 6px 6px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      z-index: 1000;
+      min-width: 180px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
 
     .tab {
       display: flex;
@@ -1257,7 +1301,11 @@
       <button id="notif-btn" title="Bật/tắt thông báo">🔔</button>
     </div>
 
-    <div id="tabs"></div>
+    <div id="tabs-container">
+      <div id="tabs"></div>
+      <button id="tabs-dropdown-btn">Kênh ▼</button>
+      <div id="tabs-dropdown-menu"></div>
+    </div>
 
     <div id="panels">
       <div id="empty-state">
@@ -2061,6 +2109,7 @@
           emptyState.style.display = 'flex'
         }
       }
+      updateTabsDropdownVisibility()
     }
 
     // ── Helper functions ──────────────────────────────────────────
@@ -2103,6 +2152,12 @@
         c.tab.classList.add('active')
         c.panel.classList.add('active')
 
+        // Move active tab to the beginning of the tabs list
+        const parent = c.tab.parentNode
+        if (parent && parent.firstChild !== c.tab) {
+          parent.insertBefore(c.tab, parent.firstChild)
+        }
+
         // Reset unread count
         c.unread = 0
         c.unreadEl.style.display = 'none'
@@ -2115,6 +2170,7 @@
           c.chat.scrollTop = c.chat.scrollHeight
         }
       }
+      updateTabsDropdownVisibility()
     }
 
     function addChannel(accountId, channel, skipJoin = false) {
@@ -2363,6 +2419,7 @@
       } else {
         tab.style.display = 'none'
       }
+      updateTabsDropdownVisibility()
     }
 
     function removeChannel(accountId, channel) {
@@ -2391,6 +2448,7 @@
           emptyState.style.display = 'flex'
         }
       }
+      updateTabsDropdownVisibility()
     }
 
     // ── Reply Management ──────────────────────────────────────────
@@ -2574,9 +2632,19 @@
           if (settings.claimEnable && settings.claimReward) {
             const isRecipient = acc.label && textLower.includes(acc.label.toLowerCase())
             if (isRecipient) {
-              const winKeywords = ['won', 'winner', 'congratulations', 'trúng', 'thắng', 'giveaway', 'chúc mừng', 'phần quà', 'giải thưởng']
+              const winKeywords = [
+                'won', 'winner', 'win', 'giveaway', 'congratulations', 'congrats', 
+                'trúng', 'trung', 'thắng', 'thang', 'chúc mừng', 'chuc mung', 'phần quà', 'phan qua', 'giải thưởng', 'giai thuong',
+                'parabéns', 'parabens', 'ganhou', 'vencedor', 'ganhador', 'venceu'
+              ]
+              const excludeKeywords = [
+                'checkin', 'check-in', 'check in', 'checking in', 'checking',
+                'điểm danh', 'diem danh', 'điểm danh thành công', 'diem danh thanh cong',
+                'presença', 'presenca'
+              ]
               const matchesWin = winKeywords.some(keyword => textLower.includes(keyword))
-              if (matchesWin) {
+              const matchesExclude = excludeKeywords.some(keyword => textLower.includes(keyword))
+              if (matchesWin && !matchesExclude) {
                 const now = Date.now()
                 if (!pendingClaims[cooldownKey] && (!claimCooldowns[cooldownKey] || now - claimCooldowns[cooldownKey] > 15 * 60 * 1000)) {
                   const randomSeconds = Math.random() * 29;
@@ -2802,6 +2870,116 @@
       }
     })
 
+    // ── Tab Dropdown Logic ─────────────────────────────────────────
+    const tabsDropdownBtn = document.getElementById('tabs-dropdown-btn')
+    const tabsDropdownMenu = document.getElementById('tabs-dropdown-menu')
+
+    function updateTabsDropdownVisibility() {
+      const tabsEl = document.getElementById('tabs')
+      if (tabsEl && tabsDropdownBtn) {
+        const hasOverflow = tabsEl.scrollWidth > tabsEl.clientWidth
+        tabsDropdownBtn.style.display = hasOverflow ? 'flex' : 'none'
+      }
+    }
+
+    function toggleTabsDropdown() {
+      if (!tabsDropdownMenu) return
+      if (tabsDropdownMenu.style.display === 'block') {
+        tabsDropdownMenu.style.display = 'none'
+        return
+      }
+
+      tabsDropdownMenu.innerHTML = ''
+      
+      const activeChs = Object.values(channels).filter(c => c.accountId === activeAccountId)
+      
+      if (activeChs.length === 0) {
+        const empty = document.createElement('div')
+        empty.style.padding = '10px 16px'
+        empty.style.color = '#53535f'
+        empty.style.fontSize = '12px'
+        empty.textContent = 'Không có kênh nào'
+        tabsDropdownMenu.appendChild(empty)
+      } else {
+        activeChs.forEach(c => {
+          const item = document.createElement('div')
+          item.style.display = 'flex'
+          item.style.alignItems = 'center'
+          item.style.gap = '8px'
+          item.style.padding = '10px 16px'
+          item.style.cursor = 'pointer'
+          item.style.fontSize = '13px'
+          item.style.color = c.channel === activeChannel ? '#efeff1' : '#adadb8'
+          item.style.fontWeight = c.channel === activeChannel ? '700' : '600'
+          item.style.background = c.channel === activeChannel ? 'rgba(145, 71, 255, 0.1)' : 'transparent'
+          item.style.borderBottom = '1px solid #2f2f35'
+          item.style.transition = 'all 0.15s'
+
+          const dot = document.createElement('span')
+          dot.className = c.dotEl.className
+          dot.style.width = '6px'
+          dot.style.height = '6px'
+          dot.style.borderRadius = '50%'
+          dot.style.flexShrink = '0'
+
+          const label = document.createElement('span')
+          label.textContent = '#' + c.channel
+          label.style.flex = '1'
+          label.style.whiteSpace = 'nowrap'
+          label.style.overflow = 'hidden'
+          label.style.textOverflow = 'ellipsis'
+
+          item.appendChild(dot)
+          item.appendChild(label)
+
+          if (c.unread > 0) {
+            const badge = document.createElement('span')
+            badge.className = 'tab-unread'
+            badge.textContent = c.unread > 99 ? '99+' : c.unread
+            badge.style.marginLeft = 'auto'
+            item.appendChild(badge)
+          }
+
+          item.addEventListener('click', () => {
+            switchTab(activeAccountId, c.channel)
+            tabsDropdownMenu.style.display = 'none'
+          })
+
+          item.addEventListener('mouseenter', () => {
+            if (c.channel !== activeChannel) {
+              item.style.background = 'rgba(255, 255, 255, 0.05)'
+              item.style.color = '#efeff1'
+            }
+          })
+          item.addEventListener('mouseleave', () => {
+            if (c.channel !== activeChannel) {
+              item.style.background = 'transparent'
+              item.style.color = '#adadb8'
+            }
+          })
+
+          tabsDropdownMenu.appendChild(item)
+        })
+      }
+
+      tabsDropdownMenu.style.display = 'block'
+    }
+
+    if (tabsDropdownBtn) {
+      tabsDropdownBtn.addEventListener('click', function(e) {
+        e.stopPropagation()
+        toggleTabsDropdown()
+      })
+    }
+
+    document.addEventListener('click', function(e) {
+      if (tabsDropdownMenu && tabsDropdownBtn && !tabsDropdownMenu.contains(e.target) && !tabsDropdownBtn.contains(e.target)) {
+        tabsDropdownMenu.style.display = 'none'
+      }
+    })
+
+    window.addEventListener('resize', updateTabsDropdownVisibility)
+
     // ── Application Initialization ─────────────────────────────────
     async function init() {
       notifBtn.classList.toggle('active', notifEnabled)
@@ -2860,6 +3038,9 @@
           updateChannelAutoButtonState(key)
         }
       }, 10000)
+
+      // Update responsive tabs dropdown visibility
+      updateTabsDropdownVisibility()
 
       // Start connection on backend for all channels
       window.twitch.reconnectAll()
