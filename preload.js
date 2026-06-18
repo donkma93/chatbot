@@ -21,9 +21,19 @@ contextBridge.exposeInMainWorld('twitch', {
   toggleNotifications: (enabled) => ipcRenderer.send('toggle-notifications', enabled),
   openExternal: (url) => ipcRenderer.send('open-external', url),
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+  setWindowOpacity: (opacity) => ipcRenderer.send('set-window-opacity', opacity),
 
   // Events
   onMessage: (cb) => ipcRenderer.on('chat-message', (_, msg) => cb(msg)),
   onChannelStatus: (cb) => ipcRenderer.on('channel-status', (_, s) => cb(s)),
-  onChannelError: (cb) => ipcRenderer.on('channel-error', (_, e) => cb(e))
+  onChannelError: (cb) => ipcRenderer.on('channel-error', (_, e) => cb(e)),
+
+  // Giveaway
+  checkGiveawayActivation: () => ipcRenderer.invoke('check-giveaway-activation'),
+  activateGiveawayKey: (key) => ipcRenderer.invoke('activate-giveaway-key', key),
+  startGiveawayConnection: (channel, modBotAccountId) => ipcRenderer.send('start-giveaway-connection', channel, modBotAccountId),
+  stopGiveawayConnection: () => ipcRenderer.send('stop-giveaway-connection'),
+  sendGiveawayChat: (text) => ipcRenderer.send('send-giveaway-chat', text),
+  onGiveawayMessage: (cb) => ipcRenderer.on('giveaway-chat-message', (_, msg) => cb(msg)),
+  onGiveawayStatus: (cb) => ipcRenderer.on('giveaway-status', (_, s) => cb(s))
 })

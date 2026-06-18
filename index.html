@@ -11,10 +11,28 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* ── Theme CSS Variables ─────────────────────────────────────── */
+    :root {
+      --color-bg:           #0e0e10;
+      --color-sidebar:      #1f1f23;
+      --color-surface:      #18181b;
+      --color-surface2:     #2a2a2e;
+      --color-surface3:     #3a3a3e;
+      --color-border:       #2f2f35;
+      --color-accent:       #9147ff;
+      --color-accent-dark:  #772ce8;
+      --color-accent-light: #a970ff;
+      --color-accent-rgb:   145, 71, 255;
+      --color-text-primary: #efeff1;
+      --color-text-muted:   #adadb8;
+      --color-text-faint:   #53535f;
+    }
+
+
     body {
       font-family: 'Inter', sans-serif;
-      background: #0e0e10;
-      color: #efeff1;
+      background: var(--color-bg);
+      color: var(--color-text-primary);
       height: 100vh;
       display: flex;
       flex-direction: row;
@@ -24,13 +42,13 @@
     /* ── Accounts Sidebar ────────────────────────────────────────── */
     #sidebar {
       width: 72px;
-      background: #1f1f23;
+      background: var(--color-sidebar);
       display: flex;
       flex-direction: column;
       align-items: center;
       padding: 16px 0;
       gap: 14px;
-      border-right: 1px solid #2f2f35;
+      border-right: 1px solid var(--color-border);
       flex-shrink: 0;
       z-index: 10;
     }
@@ -50,8 +68,8 @@
       width: 48px;
       height: 48px;
       border-radius: 50%;
-      background: #3a3a3e;
-      color: #efeff1;
+      background: var(--color-surface3);
+      color: var(--color-text-primary);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -65,7 +83,7 @@
     }
     .account-btn:hover, .account-btn.active {
       border-radius: 35%;
-      background: #9147ff;
+      background: var(--color-accent);
       color: #fff;
     }
 
@@ -91,7 +109,7 @@
       opacity: 1;
       height: 30px;
       top: 9px;
-      background: #9147ff;
+      background: var(--color-accent);
     }
 
     /* Status dot badge on avatar */
@@ -102,7 +120,7 @@
       width: 15px;
       height: 15px;
       border-radius: 50%;
-      border: 3px solid #1f1f23;
+      border: 3px solid var(--color-sidebar);
       background: #6a6a70;
       transition: background 0.2s;
     }
@@ -118,8 +136,8 @@
       height: 48px;
       border-radius: 50%;
       background: transparent;
-      border: 2px dashed #3a3a3e;
-      color: #adadb8;
+      border: 2px dashed var(--color-surface3);
+      color: var(--color-text-muted);
       font-size: 22px;
       display: flex;
       align-items: center;
@@ -131,9 +149,9 @@
       box-shadow: none;
     }
     #add-account-btn:hover {
-      border-color: #9147ff;
-      color: #9147ff;
-      background: rgba(145, 71, 255, 0.05);
+      border-color: var(--color-accent);
+      color: var(--color-accent);
+      background: rgba(var(--color-accent-rgb), 0.05);
       border-radius: 35%;
     }
 
@@ -148,41 +166,41 @@
 
     /* Top bar */
     #topbar {
-      background: #18181b;
+      background: var(--color-surface);
       padding: 12px 16px;
       display: flex;
       align-items: center;
       gap: 12px;
-      border-bottom: 1px solid #2f2f35;
+      border-bottom: 1px solid var(--color-border);
       flex-shrink: 0;
     }
 
     #topbar-account-label {
       font-size: 14px;
       font-weight: 500;
-      color: #adadb8;
+      color: var(--color-text-muted);
       white-space: nowrap;
     }
     #topbar-account-label b {
-      color: #efeff1;
+      color: var(--color-text-primary);
     }
 
     #channel-input {
       flex: 1;
-      background: #0e0e10;
-      border: 1px solid #3a3a3e;
+      background: var(--color-bg);
+      border: 1px solid var(--color-surface3);
       border-radius: 6px;
-      color: #efeff1;
+      color: var(--color-text-primary);
       padding: 8px 12px;
       font-size: 13px;
       outline: none;
       transition: border-color 0.2s;
     }
-    #channel-input:focus { border-color: #9147ff; }
-    #channel-input::placeholder { color: #53535f; }
+    #channel-input:focus { border-color: var(--color-accent); }
+    #channel-input::placeholder { color: var(--color-text-faint); }
 
     #add-btn {
-      background: #9147ff;
+      background: var(--color-accent);
       color: #fff;
       border: none;
       border-radius: 6px;
@@ -193,12 +211,12 @@
       transition: background 0.2s;
       white-space: nowrap;
     }
-    #add-btn:hover { background: #772ce8; }
+    #add-btn:hover { background: var(--color-accent-dark); }
 
     #notif-btn {
-      background: #2a2a2e;
-      color: #efeff1;
-      border: 1px solid #3a3a3e;
+      background: var(--color-surface2);
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-surface3);
       border-radius: 6px;
       padding: 8px 12px;
       font-size: 14px;
@@ -209,13 +227,13 @@
       align-items: center;
       justify-content: center;
     }
-    #notif-btn:hover { background: #3a3a3e; border-color: #4a4a4e; }
-    #notif-btn.active { background: rgba(145, 71, 255, 0.15); border-color: #9147ff; color: #a970ff; }
+    #notif-btn:hover { background: var(--color-surface3); border-color: #4a4a4e; }
+    #notif-btn.active { background: rgba(var(--color-accent-rgb), 0.15); border-color: var(--color-accent); color: var(--color-accent-light); }
 
     #auto-settings-btn {
-      background: #2a2a2e;
-      color: #efeff1;
-      border: 1px solid #3a3a3e;
+      background: var(--color-surface2);
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-surface3);
       border-radius: 6px;
       padding: 8px 12px;
       font-size: 13px;
@@ -228,16 +246,16 @@
       justify-content: center;
       gap: 6px;
     }
-    #auto-settings-btn:hover { background: #3a3a3e; border-color: #4a4a4e; }
-    #auto-settings-btn.active { background: rgba(145, 71, 255, 0.15); border-color: #9147ff; color: #a970ff; }
+    #auto-settings-btn:hover { background: var(--color-surface3); border-color: #4a4a4e; }
+    #auto-settings-btn.active { background: rgba(var(--color-accent-rgb), 0.15); border-color: var(--color-accent); color: var(--color-accent-light); }
 
 
     /* Tabs */
     #tabs-container {
       display: flex;
       position: relative;
-      background: #18181b;
-      border-bottom: 1px solid #2f2f35;
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
       align-items: center;
       width: 100%;
       flex-shrink: 0;
@@ -256,8 +274,8 @@
       justify-content: center;
       background: transparent;
       border: none;
-      border-left: 1px solid #2f2f35;
-      color: #adadb8;
+      border-left: 1px solid var(--color-border);
+      color: var(--color-text-muted);
       padding: 10px 16px;
       cursor: pointer;
       font-size: 13px;
@@ -265,10 +283,10 @@
       transition: all 0.2s;
       outline: none;
       white-space: nowrap;
-      height: 39px; /* matches tab height */
+      height: 39px;
     }
     #tabs-dropdown-btn:hover {
-      color: #efeff1;
+      color: var(--color-text-primary);
       background: rgba(255, 255, 255, 0.02);
     }
     
@@ -277,8 +295,8 @@
       position: absolute;
       right: 0;
       top: 100%;
-      background: #1f1f23;
-      border: 1px solid #2f2f35;
+      background: var(--color-sidebar);
+      border: 1px solid var(--color-border);
       border-radius: 0 0 6px 6px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
       z-index: 1000;
@@ -294,15 +312,15 @@
       padding: 10px 16px;
       font-size: 13px;
       font-weight: 600;
-      color: #adadb8;
+      color: var(--color-text-muted);
       cursor: pointer;
       border-bottom: 2px solid transparent;
       white-space: nowrap;
       transition: all 0.15s;
       user-select: none;
     }
-    .tab:hover { color: #efeff1; background: rgba(255, 255, 255, 0.02); }
-    .tab.active { color: #efeff1; border-bottom-color: #9147ff; background: rgba(145, 71, 255, 0.03); }
+    .tab:hover { color: var(--color-text-primary); background: rgba(255, 255, 255, 0.02); }
+    .tab.active { color: var(--color-text-primary); border-bottom-color: var(--color-accent); background: rgba(var(--color-accent-rgb), 0.03); }
 
     .tab-dot {
       width: 8px; height: 8px;
@@ -314,7 +332,7 @@
     .tab-dot.error { background: #e91916; }
 
     .tab-unread {
-      background: #9147ff;
+      background: var(--color-accent);
       color: #fff;
       border-radius: 10px;
       padding: 1px 6px;
@@ -360,7 +378,7 @@
     }
     .chat::-webkit-scrollbar { width: 6px; height: 6px; }
     .chat::-webkit-scrollbar-track { background: transparent; }
-    .chat::-webkit-scrollbar-thumb { background: #3a3a3e; border-radius: 3px; }
+    .chat::-webkit-scrollbar-thumb { background: var(--color-surface3); border-radius: 3px; }
     .chat::-webkit-scrollbar-thumb:hover { background: #555; }
 
     .msg {
@@ -371,14 +389,14 @@
       word-break: break-word;
       animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .msg:hover { background: #18181b; }
+    .msg:hover { background: var(--color-surface); }
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(6px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    .msg-time { font-size: 11px; color: #53535f; margin-right: 8px; user-select: none; font-variant-numeric: tabular-nums; }
+    .msg-time { font-size: 11px; color: var(--color-text-faint); margin-right: 8px; user-select: none; font-variant-numeric: tabular-nums; }
     .badges { margin-right: 6px; display: inline-flex; gap: 3px; }
     
     .badge {
@@ -397,13 +415,13 @@
     .badge.subscriber { background: #8205b4; color: white; }
 
     .username { font-weight: 600; margin-right: 4px; cursor: default; }
-    .msg-text { color: #efeff1; }
+    .msg-text { color: var(--color-text-primary); }
 
     /* Chat input wrap */
     .chat-input-wrap {
       padding: 12px 16px;
-      background: #18181b;
-      border-top: 1px solid #2f2f35;
+      background: var(--color-surface);
+      border-top: 1px solid var(--color-border);
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
@@ -415,20 +433,20 @@
     }
     .chat-input-field {
       flex: 1;
-      background: #0e0e10;
-      border: 1px solid #3a3a3e;
+      background: var(--color-bg);
+      border: 1px solid var(--color-surface3);
       border-radius: 6px;
-      color: #efeff1;
+      color: var(--color-text-primary);
       padding: 10px 14px;
       font-size: 13px;
       outline: none;
       transition: border-color 0.2s;
     }
-    .chat-input-field:focus { border-color: #9147ff; }
-    .chat-input-field::placeholder { color: #53535f; }
+    .chat-input-field:focus { border-color: var(--color-accent); }
+    .chat-input-field::placeholder { color: var(--color-text-faint); }
     
     .chat-send-btn {
-      background: #9147ff;
+      background: var(--color-accent);
       color: #fff;
       border: none;
       border-radius: 6px;
@@ -438,7 +456,7 @@
       cursor: pointer;
       transition: background 0.2s;
     }
-    .chat-send-btn:hover { background: #772ce8; }
+    .chat-send-btn:hover { background: var(--color-accent-dark); }
 
     /* Auto Bot Row */
     .auto-bot-row {
@@ -472,9 +490,9 @@
       box-shadow: 0 0 8px #ffb700;
     }
     .auto-settings-btn {
-      background: #2a2a2e;
-      color: #efeff1;
-      border: 1px solid #3a3a3e;
+      background: var(--color-surface2);
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-surface3);
       border-radius: 6px;
       padding: 6px 10px;
       font-size: 11px;
@@ -485,8 +503,8 @@
       align-items: center;
       gap: 4px;
     }
-    .auto-settings-btn:hover { background: #3a3a3e; border-color: #4a4a4e; }
-    .auto-settings-btn.active { background: rgba(145, 71, 255, 0.15); border-color: #9147ff; color: #a970ff; }
+    .auto-settings-btn:hover { background: var(--color-surface3); border-color: #4a4a4e; }
+    .auto-settings-btn.active { background: rgba(var(--color-accent-rgb), 0.15); border-color: var(--color-accent); color: var(--color-accent-light); }
 
     .anon-notice {
       font-size: 13px;
@@ -508,14 +526,14 @@
 
     /* Status bar per panel */
     .panel-status {
-      background: #0e0e10;
+      background: var(--color-bg);
       padding: 4px 16px;
       font-size: 11px;
-      color: #53535f;
+      color: var(--color-text-faint);
       display: flex;
       align-items: center;
       gap: 6px;
-      border-top: 1px solid #1f1f23;
+      border-top: 1px solid var(--color-sidebar);
       flex-shrink: 0;
     }
 
@@ -523,7 +541,7 @@
       position: absolute;
       bottom: 74px;
       right: 24px;
-      background: #9147ff;
+      background: var(--color-accent);
       color: #fff;
       border: none;
       border-radius: 20px;
@@ -536,7 +554,7 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.5);
       transition: all 0.2s;
     }
-    .scroll-btn:hover { background: #772ce8; transform: translateY(-1px); }
+    .scroll-btn:hover { background: var(--color-accent-dark); transform: translateY(-1px); }
     .scroll-btn.visible { display: block; }
 
     /* Empty state */
@@ -546,7 +564,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: #53535f;
+      color: var(--color-text-faint);
       gap: 14px;
       font-size: 14px;
     }
@@ -572,8 +590,8 @@
     }
 
     .modal-card {
-      background: #18181b;
-      border: 1px solid #2f2f35;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
       border-radius: 12px;
       width: 90%;
       max-width: 480px;
@@ -592,26 +610,26 @@
 
     .modal-header {
       padding: 16px 20px;
-      border-bottom: 1px solid #2f2f35;
+      border-bottom: 1px solid var(--color-border);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #1f1f23;
+      background: var(--color-sidebar);
     }
     .modal-header h2 {
       font-size: 16px;
       font-weight: 600;
-      color: #efeff1;
+      color: var(--color-text-primary);
     }
     .modal-close-btn {
       font-size: 22px;
-      color: #adadb8;
+      color: var(--color-text-muted);
       cursor: pointer;
       line-height: 1;
       padding: 4px;
       transition: color 0.1s;
     }
-    .modal-close-btn:hover { color: #efeff1; }
+    .modal-close-btn:hover { color: var(--color-text-primary); }
 
     .modal-body {
       padding: 20px;
@@ -621,7 +639,7 @@
       gap: 16px;
     }
     .modal-body::-webkit-scrollbar { width: 4px; }
-    .modal-body::-webkit-scrollbar-thumb { background: #2f2f35; border-radius: 2px; }
+    .modal-body::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 2px; }
 
     .form-group {
       display: flex;
@@ -630,21 +648,21 @@
     }
     .form-group label {
       font-size: 12px;
-      color: #adadb8;
+      color: var(--color-text-muted);
       font-weight: 600;
     }
     .form-group input[type="text"],
     .form-group input[type="password"] {
-      background: #0e0e10;
-      border: 1px solid #3a3a3e;
+      background: var(--color-bg);
+      border: 1px solid var(--color-surface3);
       border-radius: 6px;
-      color: #efeff1;
+      color: var(--color-text-primary);
       padding: 10px 12px;
       font-size: 13px;
       outline: none;
       transition: border-color 0.2s;
     }
-    .form-group input:focus { border-color: #9147ff; }
+    .form-group input:focus { border-color: var(--color-accent); }
 
     .checkbox-group {
       flex-direction: row;
@@ -655,14 +673,14 @@
     .checkbox-group input {
       width: 16px;
       height: 16px;
-      accent-color: #9147ff;
+      accent-color: var(--color-accent);
       cursor: pointer;
     }
     .checkbox-group label {
       cursor: pointer;
       user-select: none;
       font-size: 13px;
-      color: #efeff1;
+      color: var(--color-text-primary);
     }
 
     .help-text {
@@ -678,7 +696,7 @@
     .help-text a:hover { text-decoration: underline; }
 
     #save-account-btn {
-      background: #9147ff;
+      background: var(--color-accent);
       color: white;
       border: none;
       border-radius: 6px;
@@ -688,19 +706,19 @@
       cursor: pointer;
       transition: background 0.2s;
     }
-    #save-account-btn:hover { background: #772ce8; }
+    #save-account-btn:hover { background: var(--color-accent-dark); }
 
     .modal-divider {
       border: 0;
       height: 1px;
-      background: #2f2f35;
+      background: var(--color-border);
       margin: 6px 0;
     }
 
     .modal-body h3 {
       font-size: 13px;
       font-weight: 600;
-      color: #adadb8;
+      color: var(--color-text-muted);
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
@@ -715,10 +733,10 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: #1f1f23;
+      background: var(--color-sidebar);
       padding: 10px 14px;
       border-radius: 6px;
-      border: 1px solid #2f2f35;
+      border: 1px solid var(--color-border);
     }
     .modal-account-info {
       display: flex;
@@ -728,11 +746,11 @@
     .modal-account-name {
       font-size: 13px;
       font-weight: 600;
-      color: #efeff1;
+      color: var(--color-text-primary);
     }
     .modal-account-type {
       font-size: 11px;
-      color: #adadb8;
+      color: var(--color-text-muted);
     }
     .modal-account-actions {
       display: flex;
@@ -741,7 +759,7 @@
     .modal-acc-btn {
       background: transparent;
       border: none;
-      color: #adadb8;
+      color: var(--color-text-muted);
       cursor: pointer;
       padding: 4px 8px;
       border-radius: 4px;
@@ -749,7 +767,7 @@
       font-weight: 500;
       transition: all 0.15s;
     }
-    .modal-acc-btn:hover { color: #efeff1; background: #2a2a2e; }
+    .modal-acc-btn:hover { color: var(--color-text-primary); background: var(--color-surface2); }
     .modal-acc-btn.delete:hover { color: #e91916; background: rgba(233, 25, 22, 0.1); }
     
     .modal-account-left {
@@ -761,13 +779,13 @@
       width: 36px;
       height: 36px;
       border-radius: 50%;
-      background: #3a3a3e;
+      background: var(--color-surface3);
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
       font-size: 12px;
-      color: #efeff1;
+      color: var(--color-text-primary);
       background-size: cover;
       background-position: center;
       flex-shrink: 0;
@@ -776,7 +794,7 @@
     /* ── Translation UI ────────────────────────────────────────── */
     #translate-trigger-btn {
       position: fixed;
-      background: #9147ff;
+      background: var(--color-accent);
       color: white;
       border: none;
       border-radius: 50%;
@@ -793,7 +811,7 @@
     }
     #translate-trigger-btn:hover {
       transform: scale(1.1);
-      background: #772ce8;
+      background: var(--color-accent-dark);
     }
 
     #translation-popup {
@@ -882,7 +900,7 @@
       content: '';
       width: 12px;
       height: 12px;
-      border: 2px solid #9147ff;
+      border: 2px solid var(--color-accent);
       border-top-color: transparent;
       border-radius: 50%;
       animation: trans-spin 0.6s linear infinite;
@@ -1161,6 +1179,216 @@
       border-radius: 35%;
     }
 
+    #transparency-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: transparent;
+      border: 2px dashed var(--color-surface3);
+      color: var(--color-text-muted);
+      font-size: 20px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 8px;
+      flex-shrink: 0;
+      box-shadow: none;
+    }
+    #transparency-btn:hover {
+      border-color: #ff007f;
+      color: #ff007f;
+      background: rgba(255, 0, 127, 0.05);
+      border-radius: 35%;
+    }
+    #transparency-btn.active {
+      border-color: #00ff66;
+      color: #00ff66;
+      background: rgba(0, 255, 102, 0.1);
+      border-style: solid;
+      border-radius: 35%;
+    }
+
+    #theme-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: transparent;
+      border: 2px dashed var(--color-surface3);
+      color: var(--color-text-muted);
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 8px;
+      flex-shrink: 0;
+      box-shadow: none;
+    }
+    #theme-btn:hover {
+      border-color: var(--color-accent);
+      color: var(--color-accent);
+      background: rgba(var(--color-accent-rgb), 0.05);
+      border-radius: 35%;
+    }
+    #theme-btn.active {
+      border-color: var(--color-accent);
+      color: var(--color-accent);
+      background: rgba(var(--color-accent-rgb), 0.1);
+      border-style: solid;
+      border-radius: 35%;
+    }
+
+    /* ── Theme Panel ─────────────────────────────────────────────── */
+    #theme-panel {
+      position: fixed;
+      left: 80px;
+      bottom: 80px;
+      width: 280px;
+      background: var(--color-sidebar);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+      z-index: 2000;
+      padding: 0;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      animation: modalSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #theme-panel.open { display: flex; }
+
+    .theme-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .theme-panel-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .theme-panel-close {
+      color: var(--color-text-muted);
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: color 0.1s;
+    }
+    .theme-panel-close:hover { color: var(--color-text-primary); }
+
+    .theme-panel-body {
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    .theme-panel-body::-webkit-scrollbar { width: 4px; }
+    .theme-panel-body::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 2px; }
+
+    .theme-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 8px;
+    }
+
+    /* Preset accent chips */
+    .theme-presets {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .theme-preset-chip {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: all 0.15s;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .theme-preset-chip:hover { transform: scale(1.15); }
+    .theme-preset-chip.selected { border-color: var(--color-text-primary); transform: scale(1.1); }
+
+    /* Color row with picker */
+    .theme-color-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .theme-color-label {
+      font-size: 12px;
+      color: var(--color-text-muted);
+      font-weight: 500;
+    }
+    .theme-color-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .theme-color-swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 2px solid var(--color-border);
+      cursor: pointer;
+      transition: border-color 0.2s;
+      flex-shrink: 0;
+    }
+    .theme-color-swatch:hover { border-color: var(--color-text-muted); }
+    input[type="color"].theme-color-picker {
+      width: 0;
+      height: 0;
+      padding: 0;
+      border: none;
+      opacity: 0;
+      position: absolute;
+    }
+    .theme-color-hex {
+      font-size: 11px;
+      font-family: monospace;
+      color: var(--color-text-faint);
+      width: 52px;
+      text-align: right;
+    }
+
+    /* Reset button */
+    .theme-reset-btn {
+      width: 100%;
+      padding: 8px;
+      background: transparent;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      color: var(--color-text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 2px;
+    }
+    .theme-reset-btn:hover {
+      border-color: var(--color-text-muted);
+      color: var(--color-text-primary);
+      background: rgba(255,255,255,0.04);
+    }
+
+
     #version-label {
       font-size: 10px;
       color: #53535f;
@@ -1275,6 +1503,419 @@
     .guide-note a:hover {
       text-decoration: underline;
     }
+    /* ── Giveaway Styles ────────────────────────────────────────── */
+    .giveaway-layout {
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+      padding: 20px;
+      flex: 1;
+      overflow: hidden;
+      height: calc(100vh - 65px);
+    }
+    .giveaway-left {
+      width: 380px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      flex-shrink: 0;
+      overflow-y: auto;
+    }
+    .giveaway-right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow: hidden;
+    }
+    .giveaway-card {
+      background: rgba(31, 31, 35, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+    .giveaway-right .giveaway-card {
+      padding: 12px 16px;
+      gap: 8px;
+    }
+    .giveaway-card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #efeff1;
+      border-left: 3px solid #9147ff;
+      padding-left: 10px;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .giveaway-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .giveaway-field label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #adadb8;
+    }
+    .giveaway-field input, .giveaway-field select {
+      background: #0e0e10;
+      border: 1px solid #3a3a3e;
+      border-radius: 6px;
+      color: #efeff1;
+      padding: 8px 12px;
+      font-size: 13px;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .giveaway-field input:focus, .giveaway-field select:focus {
+      border-color: #9147ff;
+      box-shadow: 0 0 8px rgba(145, 71, 255, 0.2);
+    }
+    .giveaway-field input:disabled, .giveaway-field select:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .giveaway-btn {
+      background: #9147ff;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: center;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      user-select: none;
+    }
+    .giveaway-btn:hover:not(:disabled) {
+      background: #772ce8;
+      transform: translateY(-1px);
+    }
+    .giveaway-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+    .giveaway-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .giveaway-btn.btn-success { background: #00b31b; }
+    .giveaway-btn.btn-success:hover:not(:disabled) { background: #008f15; }
+    .giveaway-btn.btn-danger { background: #e91916; }
+    .giveaway-btn.btn-danger:hover:not(:disabled) { background: #c21210; }
+    .giveaway-btn.btn-secondary { background: #3a3a3e; color: #efeff1; }
+    .giveaway-btn.btn-secondary:hover:not(:disabled) { background: #4a4a4e; }
+    
+    .participant-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      grid-auto-rows: max-content;
+      align-content: start;
+      gap: 8px;
+      overflow-y: auto;
+      flex: 1;
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.25);
+    }
+    .participant-grid::-webkit-scrollbar { width: 6px; }
+    .participant-grid::-webkit-scrollbar-thumb { background: #3a3a3e; border-radius: 3px; }
+    
+    .participant-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: linear-gradient(135deg, rgba(145, 71, 255, 0.08) 0%, rgba(145, 71, 255, 0.02) 100%);
+      border: 1px solid rgba(145, 71, 255, 0.15);
+      padding: 8px 6px;
+      border-radius: 8px;
+      width: 90px;
+      height: 90px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+      position: relative;
+      box-sizing: border-box;
+    }
+    .participant-item:hover {
+      background: linear-gradient(135deg, #9147ff 0%, #5c26b5 100%);
+      border-color: #a970ff;
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 4px 10px rgba(145, 71, 255, 0.4);
+    }
+    .participant-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      object-fit: cover;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      flex-shrink: 0;
+      margin-bottom: 2px;
+    }
+    .participant-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: #efeff1;
+      width: 100%;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .participant-item:hover .participant-name {
+      color: #fff;
+    }
+    .participant-time {
+      font-size: 9px;
+      font-weight: 500;
+      color: #adadb8;
+    }
+    .participant-item:hover .participant-time {
+      color: #dfdffd;
+    }
+    
+    @keyframes cardEntrance {
+      0% { transform: translateY(8px) scale(0.8); opacity: 0; filter: blur(1px); }
+      100% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0); }
+    }
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 0 0 rgba(145, 71, 255, 0.6); }
+      70% { box-shadow: 0 0 0 5px rgba(145, 71, 255, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(145, 71, 255, 0); }
+    }
+    .participant-item.new-join {
+      animation: cardEntrance 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), pulseGlow 1.2s ease-in-out;
+    }
+    
+    .participant-item.winner-claimed-item {
+      opacity: 0.35;
+      border-color: rgba(233, 25, 22, 0.3) !important;
+      background: rgba(233, 25, 22, 0.08) !important;
+      pointer-events: none;
+      box-shadow: none;
+    }
+    .participant-item.winner-claimed-item img {
+      filter: grayscale(100%);
+    }
+    .participant-item.winner-claimed-item .participant-name {
+      text-decoration: line-through;
+      color: #9e9eb4;
+    }
+    .participant-item.winner-claimed-item .participant-time {
+      color: #727280;
+    }
+    
+    .winner-showcase {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      border: 1.5px dashed rgba(145, 71, 255, 0.3);
+      background: radial-gradient(circle at center, rgba(145, 71, 255, 0.08), rgba(14, 14, 16, 0.6));
+      padding: 8px 15px;
+      border-radius: 12px;
+      min-height: 70px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.6);
+    }
+    .winner-showcase.rolling {
+      border-style: solid;
+      border-color: #9147ff;
+      box-shadow: 0 0 25px rgba(145, 71, 255, 0.25);
+    }
+    .winner-showcase.claimed {
+      border-style: solid;
+      border-color: #00b31b;
+      box-shadow: 0 0 25px rgba(0, 179, 27, 0.2);
+      background: radial-gradient(circle at center, rgba(0, 179, 27, 0.08), rgba(14, 14, 16, 0.6));
+    }
+    .winner-showcase.expired {
+      border-style: solid;
+      border-color: #e91916;
+      box-shadow: 0 0 25px rgba(233, 25, 22, 0.2);
+      background: radial-gradient(circle at center, rgba(233, 25, 22, 0.08), rgba(14, 14, 16, 0.6));
+    }
+    .winner-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: #adadb8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .winner-name {
+      font-size: 20px;
+      font-weight: 800;
+      color: #ffd700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5), 0 0 25px rgba(145, 71, 255, 0.4);
+      letter-spacing: 0.5px;
+      min-height: unset;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      user-select: none;
+    }
+    .winner-showcase.rolling .winner-name {
+      color: #efeff1;
+      text-shadow: 0 0 10px rgba(255,255,255,0.4);
+    }
+    .winner-showcase.claimed .winner-name {
+      color: #00ff2b;
+      text-shadow: 0 0 15px rgba(0, 255, 43, 0.5);
+    }
+    .winner-showcase.expired .winner-name {
+      color: #ff3b30;
+      text-shadow: 0 0 15px rgba(255, 59, 48, 0.5);
+    }
+    
+    .countdown-circle-container {
+      position: relative;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .countdown-timer {
+      font-size: 18px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2.5px solid #9147ff;
+      box-shadow: 0 0 8px rgba(145, 71, 255, 0.3);
+      color: #efeff1;
+      background: #0e0e10;
+      transition: all 0.2s;
+    }
+    .countdown-timer.warning {
+      border-color: #ff9900;
+      box-shadow: 0 0 12px rgba(255, 153, 0, 0.4);
+    }
+    .countdown-timer.danger {
+      border-color: #e91916;
+      box-shadow: 0 0 12px rgba(233, 25, 22, 0.5);
+      animation: heartbeat 0.8s infinite;
+    }
+    
+    @keyframes heartbeat {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    #giveaway-log {
+      background: rgba(0,0,0,0.35);
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.06);
+      padding: 10px 12px;
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+      height: 75px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      color: #adadb8;
+    }
+    .log-item {
+      line-height: 1.4;
+      display: flex;
+      gap: 6px;
+    }
+    .log-item-time {
+      color: #53535f;
+      flex-shrink: 0;
+      user-select: none;
+    }
+    .log-item.info .log-item-text { color: #00dbff; }
+    .log-item.success .log-item-text { color: #00ff2b; }
+    .log-item.warn .log-item-text { color: #ffaa00; }
+    .log-item.danger .log-item-text { color: #ff3b30; }
+
+    #giveaway-activation-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(14, 14, 16, 0.95);
+      backdrop-filter: blur(15px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .giveaway-act-card {
+      background: rgba(31, 31, 35, 0.8);
+      border: 1px solid rgba(145, 71, 255, 0.25);
+      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.7), 0 0 30px rgba(145, 71, 255, 0.1);
+      border-radius: 16px;
+      padding: 35px;
+      width: 440px;
+      max-width: 100%;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .giveaway-act-card h2 {
+      font-size: 20px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #efeff1, #a970ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .giveaway-act-card p {
+      font-size: 13.5px;
+      color: #adadb8;
+      line-height: 1.6;
+    }
+    .giveaway-act-card input {
+      background: #0e0e10;
+      border: 1px solid #3a3a3e;
+      border-radius: 8px;
+      color: #efeff1;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-weight: 600;
+      text-align: center;
+      letter-spacing: 1px;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .giveaway-act-card input:focus {
+      border-color: #9147ff;
+      box-shadow: 0 0 15px rgba(145, 71, 255, 0.3);
+    }
+    
+    .guide-btn-purple {
+      background: rgba(145, 71, 255, 0.15);
+      color: #a970ff;
+      border: 1px solid rgba(145, 71, 255, 0.3);
+    }
+    .guide-btn-purple:hover:not(:disabled) {
+      background: rgba(145, 71, 255, 0.25);
+    }
   </style>
 </head>
 <body>
@@ -1285,14 +1926,93 @@
       <!-- Generated dynamically -->
     </div>
     <button id="add-account-btn" title="Quản lý tài khoản">+</button>
+    <button id="giveaway-sidebar-btn" class="account-btn" style="background: rgba(145, 71, 255, 0.1); border: 1px dashed rgba(145, 71, 255, 0.4); color: #a970ff; margin-top: 10px; font-size: 20px; display: flex; align-items: center; justify-content: center; box-shadow: none;" title="Chương trình Giveaway">🎁</button>
+    <button id="transparency-btn" title="Chế độ trong suốt">👻</button>
+    <button id="theme-btn" title="Tùy chỉnh màu sắc">🎨</button>
     <button id="guide-btn" title="Hướng dẫn sử dụng">?</button>
     <div id="version-label">v1.0.2</div>
+  </div>
+
+  <!-- Theme Customizer Panel -->
+  <div id="theme-panel">
+    <div class="theme-panel-header">
+      <div class="theme-panel-title">🎨 Tùy chỉnh màu sắc</div>
+      <span class="theme-panel-close" id="theme-panel-close">✕</span>
+    </div>
+    <div class="theme-panel-body">
+      <!-- Accent Color Section -->
+      <div>
+        <div class="theme-section-label">🎨 Màu nhấn (Accent)</div>
+        <div class="theme-presets" id="theme-accent-presets">
+          <div class="theme-preset-chip" style="background:#9147ff" data-accent="#9147ff" data-accent-dark="#772ce8" data-accent-light="#a970ff" data-accent-rgb="145,71,255" title="Twitch Purple"></div>
+          <div class="theme-preset-chip" style="background:#1e90ff" data-accent="#1e90ff" data-accent-dark="#1470cc" data-accent-light="#56adff" data-accent-rgb="30,144,255" title="Blue"></div>
+          <div class="theme-preset-chip" style="background:#00b31b" data-accent="#00b31b" data-accent-dark="#008a14" data-accent-light="#33d84c" data-accent-rgb="0,179,27" title="Green"></div>
+          <div class="theme-preset-chip" style="background:#e91916" data-accent="#e91916" data-accent-dark="#c21210" data-accent-light="#ff5350" data-accent-rgb="233,25,22" title="Red"></div>
+          <div class="theme-preset-chip" style="background:#ff7b00" data-accent="#ff7b00" data-accent-dark="#cc6200" data-accent-light="#ffa040" data-accent-rgb="255,123,0" title="Orange"></div>
+          <div class="theme-preset-chip" style="background:#ff3b8a" data-accent="#ff3b8a" data-accent-dark="#cc2f6f" data-accent-light="#ff73aa" data-accent-rgb="255,59,138" title="Pink"></div>
+          <div class="theme-preset-chip" style="background:#00c8c8" data-accent="#00c8c8" data-accent-dark="#009f9f" data-accent-light="#40e0e0" data-accent-rgb="0,200,200" title="Teal"></div>
+          <div class="theme-preset-chip" style="background:#ffd700" data-accent="#ffd700" data-accent-dark="#ccac00" data-accent-light="#ffe240" data-accent-rgb="255,215,0" title="Gold"></div>
+        </div>
+        <div class="theme-color-row" style="margin-top:10px">
+          <span class="theme-color-label">Tùy chỉnh</span>
+          <div class="theme-color-input-wrap">
+            <div class="theme-color-swatch" id="accent-swatch" title="Nhấn để chọn màu"></div>
+            <input type="color" class="theme-color-picker" id="accent-picker" />
+            <span class="theme-color-hex" id="accent-hex">#9147ff</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Background Color -->
+      <div>
+        <div class="theme-section-label">🖼️ Màu nền</div>
+        <div class="theme-color-row">
+          <span class="theme-color-label">Nền chính</span>
+          <div class="theme-color-input-wrap">
+            <div class="theme-color-swatch" id="bg-swatch" title="Nhấn để chọn màu"></div>
+            <input type="color" class="theme-color-picker" id="bg-picker" />
+            <span class="theme-color-hex" id="bg-hex">#0e0e10</span>
+          </div>
+        </div>
+        <div class="theme-color-row" style="margin-top:10px">
+          <span class="theme-color-label">Sidebar</span>
+          <div class="theme-color-input-wrap">
+            <div class="theme-color-swatch" id="sidebar-swatch" title="Nhấn để chọn màu"></div>
+            <input type="color" class="theme-color-picker" id="sidebar-picker" />
+            <span class="theme-color-hex" id="sidebar-hex">#1f1f23</span>
+          </div>
+        </div>
+        <div class="theme-color-row" style="margin-top:10px">
+          <span class="theme-color-label">Surface / Card</span>
+          <div class="theme-color-input-wrap">
+            <div class="theme-color-swatch" id="surface-swatch" title="Nhấn để chọn màu"></div>
+            <input type="color" class="theme-color-picker" id="surface-picker" />
+            <span class="theme-color-hex" id="surface-hex">#18181b</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Text Colors -->
+      <div>
+        <div class="theme-section-label">✍️ Màu chữ</div>
+        <div class="theme-color-row">
+          <span class="theme-color-label">Chữ chính</span>
+          <div class="theme-color-input-wrap">
+            <div class="theme-color-swatch" id="text-primary-swatch" title="Nhấn để chọn màu"></div>
+            <input type="color" class="theme-color-picker" id="text-primary-picker" />
+            <span class="theme-color-hex" id="text-primary-hex">#efeff1</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="theme-reset-btn" id="theme-reset-btn">↺ Đặt lại về mặc định</button>
+    </div>
   </div>
 
   <!-- Main View -->
   <div id="main-content">
     <div id="topbar">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="#9147ff">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--color-accent)">
         <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
       </svg>
       <div id="topbar-account-label">Tải khoản: <b>Đang tải...</b></div>
@@ -1314,6 +2034,171 @@
         </svg>
         <span>Nhập tên channel và nhấn <b>+ Thêm</b></span>
         <button id="empty-guide-btn">📚 Xem hướng dẫn sử dụng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Giveaway View -->
+  <div id="giveaway-content" style="display: none; flex: 1; flex-direction: column; overflow: hidden; position: relative;">
+    <!-- Giveaway Activation Overlay -->
+    <div id="giveaway-activation-overlay" style="display: none;">
+      <div class="giveaway-act-card">
+        <h2>Kích Hoạt Giveaway Premium</h2>
+        <p>Tính năng Giveaway Premium hỗ trợ quản lý sự kiện và quay thưởng tự động qua cú pháp. Vui lòng nhập Key để mở khóa tính năng này.</p>
+        <input type="text" id="giveaway-activation-input" placeholder="GW-XXXX-XXXX-XXXX" maxlength="30" />
+        <button id="giveaway-activate-btn" class="giveaway-btn">Kích Hoạt Ngay</button>
+        <p id="giveaway-activation-status" style="margin-top: 10px; font-weight: 600; color: #ff3b30; font-size: 13px;"></p>
+      </div>
+    </div>
+
+    <!-- Giveaway Top Bar -->
+    <div id="topbar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#9147ff">
+        <path d="M17 3H21C22.11 3 23 3.9 23 5V19C23 20.1 22.11 21 21 21H3C1.9 21 1 20.1 1 19V5C1 3.9 1.9 3 3 3H7C7 1.8 7.9 1 9 1H15C16.1 1 17 1.8 17 3M9 3H15V2H9V3M3 5V19H21V5H3M12 17.5L8.5 14L9.9 12.6L12 14.7L14.1 12.6L15.5 14L12 17.5Z"/>
+      </svg>
+      <div id="topbar-account-label">Hệ thống: <b>GIVEAWAY TWITCH PREMIUM</b></div>
+      <div id="giveaway-connection-badge" class="account-badge" style="position: static; display: inline-block; width: 10px; height: 10px; border: none; background: #e91916; border-radius: 50%; margin-left: 10px;" title="Chưa kết nối"></div>
+      <span id="giveaway-connection-text" style="font-size: 13px; color: #adadb8; margin-left: 5px;">Mất kết nối</span>
+    </div>
+
+    <!-- Giveaway Main Layout -->
+    <div class="giveaway-layout">
+      <!-- Cột Trái: Cài đặt và Điều khiển -->
+      <div class="giveaway-left">
+        <div class="giveaway-card">
+          <h3>Cài Đặt Giveaway</h3>
+          
+          <div class="giveaway-field">
+            <label for="gw-channel">Twitch Channel chạy Giveaway:</label>
+            <input type="text" id="gw-channel" placeholder="Ví dụ: donkma93, ninja..." />
+          </div>
+
+          <div class="giveaway-field">
+            <label for="gw-keyword">Từ khóa điểm danh (Check-in):</label>
+            <input type="text" id="gw-keyword" value="!giveaway" placeholder="Ví dụ: !join, !giveaway" />
+          </div>
+
+          <div class="giveaway-field">
+            <label for="gw-mod-bot">Tài khoản Bot Mod thông báo:</label>
+            <select id="gw-mod-bot">
+              <option value="">Không sử dụng (Ẩn danh / Read-only)</option>
+              <!-- Will be populated dynamically -->
+            </select>
+          </div>
+
+          <div class="giveaway-field">
+            <label for="gw-timer">Thời gian đếm ngược xác nhận (giây):</label>
+            <input type="number" id="gw-timer" value="60" min="10" max="600" />
+          </div>
+
+          <div class="giveaway-field">
+            <label for="gw-confirm-prefix">Tiền tố xác nhận trúng giải:</label>
+            <input type="text" id="gw-confirm-prefix" value="#" placeholder="Ví dụ: #, !xacnhan" />
+          </div>
+
+          <div class="giveaway-field">
+            <label>Đối tượng được điểm danh:</label>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;">
+              <label style="display: inline-flex; align-items: center; font-size: 13px; font-weight: normal; cursor: pointer; color: #adadb8; gap: 4px; user-select: none;">
+                <input type="checkbox" id="gw-allow-everyone" checked style="width: 14px; height: 14px; margin: 0; accent-color: #9147ff;" /> Mọi người
+              </label>
+              <label style="display: inline-flex; align-items: center; font-size: 13px; font-weight: normal; cursor: pointer; color: #adadb8; gap: 4px; user-select: none;">
+                <input type="checkbox" id="gw-allow-mod" checked disabled style="width: 14px; height: 14px; margin: 0; accent-color: #9147ff;" /> Moderator
+              </label>
+              <label style="display: inline-flex; align-items: center; font-size: 13px; font-weight: normal; cursor: pointer; color: #adadb8; gap: 4px; user-select: none;">
+                <input type="checkbox" id="gw-allow-vip" checked disabled style="width: 14px; height: 14px; margin: 0; accent-color: #9147ff;" /> VIP
+              </label>
+              <label style="display: inline-flex; align-items: center; font-size: 13px; font-weight: normal; cursor: pointer; color: #adadb8; gap: 4px; user-select: none;">
+                <input type="checkbox" id="gw-allow-sub" checked disabled style="width: 14px; height: 14px; margin: 0; accent-color: #9147ff;" /> Subscriber
+              </label>
+              <label style="display: inline-flex; align-items: center; font-size: 13px; font-weight: normal; cursor: pointer; color: #adadb8; gap: 4px; user-select: none;">
+                <input type="checkbox" id="gw-allow-regular" checked disabled style="width: 14px; height: 14px; margin: 0; accent-color: #9147ff;" /> Thường
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="giveaway-card">
+          <h3>Bảng Điều Khiển</h3>
+          <button id="gw-start-btn" class="giveaway-btn btn-success">Bắt Đầu Điểm Danh</button>
+          <button id="gw-stop-btn" class="giveaway-btn btn-danger" disabled>Kết Thúc Điểm Danh</button>
+          <button id="gw-roll-btn" class="giveaway-btn" disabled>Quay Số (Roll)</button>
+          <button id="gw-reset-btn" class="giveaway-btn btn-secondary">Đặt Lại (Reset)</button>
+        </div>
+      </div>
+
+      <!-- Cột Phải: Danh sách tham gia và Vòng quay -->
+      <div class="giveaway-right">
+        <!-- Showcase người thắng & Thời gian xác nhận -->
+        <div class="giveaway-card">
+          <h3>Bảng Quay Số & Xác Nhận</h3>
+          <div id="gw-winner-card" class="winner-showcase">
+            <!-- Left side: title, winner name, math instruction -->
+            <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; flex: 1; min-width: 0;">
+              <div class="winner-title" id="gw-showcase-title">ĐANG CHỜ BẮT ĐẦU</div>
+              <div class="winner-name" id="gw-winner-name">---</div>
+              <div id="gw-winner-math-instruction" style="font-size: 13px; font-weight: 700; color: #ffd700; display: none; margin-top: 4px; background: rgba(145,71,255,0.15); border: 1px solid rgba(145,71,255,0.25); border-radius: 6px; padding: 4px 10px; letter-spacing: 0.5px; white-space: nowrap;"></div>
+              <div id="gw-winner-character-name" style="font-size: 13px; font-weight: 700; color: #00ff2b; display: none; margin-top: 2px;"></div>
+            </div>
+            
+            <!-- Middle: countdown -->
+            <div class="countdown-circle-container" id="gw-countdown-container" style="display: none; flex-shrink: 0;">
+              <div class="countdown-timer" id="gw-countdown-timer">60</div>
+            </div>
+            
+            <!-- Right: actions -->
+            <div id="gw-winner-action-container" style="display: none; gap: 8px; flex-shrink: 0; align-items: center;">
+              <button id="gw-winner-done-btn" class="giveaway-btn btn-success" style="padding: 8px 12px; font-size: 12px;">Hoàn thành & Tiếp tục</button>
+              <button id="gw-winner-reroll-btn" class="giveaway-btn btn-danger" style="padding: 8px 12px; font-size: 12px;">Quay lại (Reroll)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bảng người tham gia -->
+        <div class="giveaway-card" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <h3>Danh Sách Điểm Danh</h3>
+            <span id="gw-participant-count" style="font-size: 13px; font-weight: 700; color: #a970ff; background: rgba(145, 71, 255, 0.15); padding: 4px 10px; border-radius: 20px;">Đã tham gia: 0</span>
+          </div>
+          <div id="gw-participant-grid" class="participant-grid">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Log hệ thống -->
+        <div class="giveaway-card">
+          <h3>Nhật Ký Giveaway</h3>
+          <div id="giveaway-log">
+            <!-- System log items -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Winner Announcement Modal -->
+  <div id="gw-winner-modal" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 1100; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);">
+    <div class="giveaway-act-card" style="border-color: #ffd700; box-shadow: 0 0 40px rgba(255, 215, 0, 0.25);">
+      <div style="font-size: 50px;">🎉</div>
+      <h2 style="color: #ffd700; text-shadow: 0 0 10px rgba(255,215,0,0.5);">Chúc Mừng Người Chiến Thắng</h2>
+      <div id="gw-modal-winner-name" style="font-size: 36px; font-weight: 800; color: #efeff1; margin: 15px 0 5px 0;">username</div>
+      <div id="gw-modal-character-name" style="font-size: 18px; font-weight: 700; color: #00ff2b; display: none; margin: 0 0 15px 0; text-transform: uppercase;"></div>
+      <p style="font-size: 14px; color: #adadb8;" id="gw-modal-instruction-text">Vui lòng giải phép tính sau trên chat Twitch để xác nhận bạn không phải là Bot:</p>
+      
+      <div id="gw-modal-math-box" style="font-size: 32px; font-weight: 800; color: #a970ff; background: rgba(145,71,255,0.1); border: 1px solid rgba(145,71,255,0.3); border-radius: 8px; padding: 15px; margin: 15px 0; letter-spacing: 2px;">
+        12 + 5 = ?
+      </div>
+      
+      <div style="display: flex; flex-direction: column; gap: 8px; align-items: center;">
+        <div class="countdown-circle-container">
+          <div class="countdown-timer" id="gw-modal-countdown-timer">60</div>
+        </div>
+        <p id="gw-modal-winner-status" style="font-size: 13px; font-weight: 600; color: #ff9900; margin-top: 5px;">Đang chờ phản hồi từ người thắng...</p>
+      </div>
+
+      <div style="margin-top: 15px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <button id="gw-modal-roll-next-btn" class="giveaway-btn" style="background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-dark) 100%); color: white; font-size: 14px; font-weight: 700; padding: 10px 20px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 16px rgba(var(--color-accent-rgb),0.35);">🎲 Roll Người Khác</button>
+        <button id="gw-modal-close-btn" class="giveaway-btn btn-secondary">Đóng Cửa Sổ</button>
       </div>
     </div>
   </div>
@@ -1522,6 +2407,7 @@
     // Guide Elements
     const guideModal = document.getElementById('guide-modal')
     const guideBtn = document.getElementById('guide-btn')
+    const transparencyBtn = document.getElementById('transparency-btn')
     const emptyGuideBtn = document.getElementById('empty-guide-btn')
     const closeGuideBtn = document.getElementById('close-guide-btn')
     const guideCloseConfirmBtn = document.getElementById('guide-close-confirm-btn')
@@ -1565,10 +2451,52 @@
     let accountActiveChannels = {} // accountId -> channelName
     let notifEnabled = false
     let isActivated = false
+    let isGiveawayActivated = false
+    let giveawayParticipants = []
+    let giveawayState = 'idle'
+    let giveawayWinner = ''
+    let giveawayWinnerCharacterName = ''
+    let giveawayWinnerNames = []
+    let giveawayTimerInterval = null
+    let giveawayTimeLeft = 0
+    let giveawayMathAnswer = null
+    let giveawayMathProblem = ''
+    let isCheckinActive = false
 
     let autoSettingsByChannel = {}
 
     function getChannelAutoSettings(key) {
+      const parts = key.split(':')
+      const accId = parts[0]
+      const chName = parts[1]
+      const activeGwChannel = gwChannelInput ? gwChannelInput.value.trim().toLowerCase() : ''
+      
+      // If it is the Giveaway channel, fallback/clone settings from any active channel of the same account
+      if (chName.toLowerCase() === activeGwChannel) {
+        let foundSettings = null
+        for (const k in autoSettingsByChannel) {
+          const kParts = k.split(':')
+          if (kParts[0] === accId && kParts[1].toLowerCase() !== activeGwChannel) {
+            const s = autoSettingsByChannel[k]
+            if (s.joinEnable || s.claimEnable) {
+              foundSettings = s
+              break
+            }
+          }
+        }
+        if (foundSettings) {
+          return {
+            joinEnable: foundSettings.joinEnable,
+            joinTrigger: foundSettings.joinTrigger,
+            joinResponse: foundSettings.joinResponse,
+            joinDelay: foundSettings.joinDelay,
+            claimEnable: foundSettings.claimEnable,
+            claimReward: foundSettings.claimReward,
+            claimDelay: foundSettings.claimDelay
+          }
+        }
+      }
+
       if (!autoSettingsByChannel[key]) {
         autoSettingsByChannel[key] = {
           joinEnable: false,
@@ -1667,6 +2595,28 @@
     })
 
     // ── Auto Settings Actions ─────────────────────────────────────
+    function resetAutoBotTimers(key) {
+      if (!key) return
+
+      if (pendingJoins[key]) {
+        clearTimeout(pendingJoins[key])
+        delete pendingJoins[key]
+      }
+
+      if (pendingClaims[key]) {
+        clearTimeout(pendingClaims[key])
+        delete pendingClaims[key]
+      }
+
+      delete joinCooldowns[key]
+      delete claimCooldowns[key]
+
+      const c = channels[key]
+      if (c && c.statusEl) {
+        c.statusEl.textContent = 'Đang xem: #' + c.channel
+      }
+    }
+
     function openAutoSettingsModal(key) {
       currentEditingChannelKey = key
       const settings = getChannelAutoSettings(key)
@@ -1708,10 +2658,11 @@
         settings.claimReward = autoClaimRewardInput.value.trim()
         
         localStorage.setItem('auto_settings_by_channel', JSON.stringify(autoSettingsByChannel))
+        resetAutoBotTimers(currentEditingChannelKey)
         
         updateChannelAutoButtonState(currentEditingChannelKey)
         autoSettingsModal.classList.remove('open')
-        alert('Đã lưu cấu hình Auto Bot cho kênh thành công!')
+        alert('Đã lưu cấu hình Auto Bot và reset thời gian chờ cho kênh này!')
       }
     })
 
@@ -2066,14 +3017,22 @@
 
         accountsListEl.appendChild(btn)
       })
+      renderGiveawayModBotDropdown()
     }
 
     function selectAccount(accountId) {
       activeAccountId = accountId
 
+      // Hide giveaway and show main chat view
+      document.getElementById('giveaway-content').style.display = 'none'
+      document.getElementById('main-content').style.display = 'flex'
+      document.getElementById('giveaway-sidebar-btn').classList.remove('active')
+
       // Highlight sidebar icon
       document.querySelectorAll('.account-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.accountId === accountId)
+        if (btn.id !== 'giveaway-sidebar-btn') {
+          btn.classList.toggle('active', btn.dataset.accountId === accountId)
+        }
       })
 
       const acc = accounts.find(a => a.id === accountId)
@@ -2485,10 +3444,117 @@
     }
 
     // ── Twitch IPC Events ──────────────────────────────────────────
+    // Helper function to process Auto Bot for background and active channels
+    function runAutoBotLogicForMessage(accId, ch, msg, acc) {
+      const isOurselves = msg.id.startsWith('local-') || (acc.label && msg.username.toLowerCase() === acc.label.toLowerCase())
+      if (isOurselves) return
+
+      const cooldownKey = accId + ':' + ch
+      const settings = getChannelAutoSettings(cooldownKey)
+      const textLower = msg.text.toLowerCase()
+
+      // 1. Auto Join Giveaway
+      if (settings.joinEnable && settings.joinTrigger && settings.joinResponse) {
+        const triggers = settings.joinTrigger.split(',').map(t => t.trim().toLowerCase()).filter(Boolean)
+        const matchedTriggerStr = triggers.find(trigger => textLower.includes(trigger)) || '';
+        const matchesTrigger = matchedTriggerStr !== '';
+        
+        if (matchesTrigger) {
+          const now = Date.now()
+          if (!pendingJoins[cooldownKey] && (!joinCooldowns[cooldownKey] || now - joinCooldowns[cooldownKey] > 15 * 60 * 1000)) {
+            const isDiemDanh = matchedTriggerStr.includes('điểm danh') || 
+                               matchedTriggerStr.includes('diemdanh') || 
+                               matchedTriggerStr.includes('dd') || 
+                               matchedTriggerStr === 'dđ' || 
+                               textLower.includes('điểm danh') || 
+                               textLower.includes('diemdanh') || 
+                               textLower.includes('dd');
+            
+            const randomSeconds = Math.random() * (isDiemDanh ? 60 : 30);
+            const delayMs = randomSeconds * 1000;
+            
+            const c = channels[cooldownKey];
+            if (c && c.statusEl) {
+              c.statusEl.textContent = `Auto Bot: Sẽ gửi phản hồi sau ${randomSeconds.toFixed(1)}s...`;
+            }
+
+            pendingJoins[cooldownKey] = setTimeout(() => {
+              if (settings.joinEnable) {
+                window.twitch.sendChat(accId, ch, settings.joinResponse)
+                joinCooldowns[cooldownKey] = Date.now()
+                updateChannelAutoButtonState(cooldownKey)
+                if (c && c.statusEl) {
+                  c.statusEl.textContent = 'Đang xem: #' + ch
+                }
+              }
+              delete pendingJoins[cooldownKey]
+            }, delayMs)
+          }
+        }
+      }
+
+      // 2. Auto Claim Reward
+      if (settings.claimEnable && settings.claimReward) {
+        const isRecipient = acc.label && textLower.includes(acc.label.toLowerCase())
+        if (isRecipient) {
+          const winKeywords = [
+            'won', 'winner', 'win', 'giveaway', 'congratulations', 'congrats', 
+            'trúng', 'trung', 'thắng', 'thang', 'chúc mừng', 'chuc mung', 'phần quà', 'phan qua', 'giải thưởng', 'giai thuong',
+            'parabéns', 'parabens', 'ganhou', 'vencedor', 'ganhador', 'venceu'
+          ]
+          const excludeKeywords = [
+            'checkin', 'check-in', 'check in', 'checking in', 'checking',
+            'điểm danh', 'diem danh', 'điểm danh thành công', 'diem danh thanh cong',
+            'presença', 'presenca'
+          ]
+          const matchesWin = winKeywords.some(keyword => textLower.includes(keyword))
+          const matchesExclude = excludeKeywords.some(keyword => textLower.includes(keyword))
+          if (matchesWin && !matchesExclude) {
+            const now = Date.now()
+            if (!pendingClaims[cooldownKey] && (!claimCooldowns[cooldownKey] || now - claimCooldowns[cooldownKey] > 15 * 60 * 1000)) {
+              const randomSeconds = Math.random() * 29;
+              const delayMs = randomSeconds * 1000;
+              
+              const c = channels[cooldownKey];
+              if (c && c.statusEl) {
+                c.statusEl.textContent = `Auto Bot: Sẽ gửi nhận thưởng sau ${randomSeconds.toFixed(1)}s...`;
+              }
+
+              pendingClaims[cooldownKey] = setTimeout(() => {
+                if (settings.claimEnable) {
+                  // If our own giveaway is active on this channel, auto solve the math and format properly
+                  let claimMsg = settings.claimReward
+                  const activeGwChannel = gwChannelInput ? gwChannelInput.value.trim().toLowerCase() : ''
+                  if (ch.toLowerCase() === activeGwChannel && giveawayState === 'countdown' && giveawayWinner.toLowerCase() === acc.label.toLowerCase()) {
+                    const prefix = gwConfirmPrefixInput ? gwConfirmPrefixInput.value.trim() : '#'
+                    claimMsg = `${prefix}${giveawayMathAnswer} ${settings.claimReward}`
+                  }
+
+                  window.twitch.sendChat(accId, ch, claimMsg)
+                  claimCooldowns[cooldownKey] = Date.now()
+                  updateChannelAutoButtonState(cooldownKey)
+                  if (c && c.statusEl) {
+                    c.statusEl.textContent = 'Đang xem: #' + ch
+                  }
+                }
+                delete pendingClaims[cooldownKey]
+              }, delayMs)
+            }
+          }
+        }
+      }
+    }
+
     window.twitch.onMessage(function(msg) {
       const accId = msg.accountId
       const ch = msg.channel
       const key = accId + ':' + ch
+      const acc = accounts.find(a => a.id === accId)
+
+      // Process Auto Bot logic in the background if the account is authenticated
+      if (acc && acc.hasToken) {
+        runAutoBotLogicForMessage(accId, ch, msg, acc)
+      }
 
       if (!channels[key]) return
       const c = channels[key]
@@ -2522,9 +3588,6 @@
         '<span class="msg-text">: ' + escapeHtml(msg.text) + '</span>'
 
       div.appendChild(mainLine)
-
-      // Add actions on hover
-      const acc = accounts.find(a => a.id === accId)
 
       // Highlight mention
       let isMention = false
@@ -2576,100 +3639,6 @@
         c.unreadEl.style.display = 'inline-block'
         if (isMention) {
           c.tab.classList.add('tab-mention-flash')
-        }
-      }
-
-      // Auto Bot logic (Auto Join / Auto Claim)
-      if (acc && acc.hasToken) {
-        const isOurselves = msg.id.startsWith('local-') || (acc.label && msg.username.toLowerCase() === acc.label.toLowerCase())
-        
-        if (!isOurselves) {
-          const cooldownKey = accId + ':' + ch
-          const settings = getChannelAutoSettings(cooldownKey)
-          const textLower = msg.text.toLowerCase()
-
-          // 1. Auto Join Giveaway
-          if (settings.joinEnable && settings.joinTrigger && settings.joinResponse) {
-            const triggers = settings.joinTrigger.split(',').map(t => t.trim().toLowerCase()).filter(Boolean)
-            const matchedTriggerStr = triggers.find(trigger => textLower.includes(trigger)) || '';
-            const matchesTrigger = matchedTriggerStr !== '';
-            
-            if (matchesTrigger) {
-              const now = Date.now()
-              if (!pendingJoins[cooldownKey] && (!joinCooldowns[cooldownKey] || now - joinCooldowns[cooldownKey] > 15 * 60 * 1000)) {
-                const isDiemDanh = matchedTriggerStr.includes('điểm danh') || 
-                                   matchedTriggerStr.includes('diemdanh') || 
-                                   matchedTriggerStr.includes('dd') || 
-                                   matchedTriggerStr === 'dđ' || 
-                                   textLower.includes('điểm danh') || 
-                                   textLower.includes('diemdanh') || 
-                                   textLower.includes('dd');
-                
-                const randomSeconds = Math.random() * (isDiemDanh ? 60 : 30);
-                const delayMs = randomSeconds * 1000;
-                
-                const c = channels[cooldownKey];
-                if (c && c.statusEl) {
-                  c.statusEl.textContent = `Auto Bot: Sẽ gửi phản hồi sau ${randomSeconds.toFixed(1)}s...`;
-                }
-
-                pendingJoins[cooldownKey] = setTimeout(() => {
-                  if (settings.joinEnable) {
-                    window.twitch.sendChat(accId, ch, settings.joinResponse)
-                    joinCooldowns[cooldownKey] = Date.now()
-                    updateChannelAutoButtonState(cooldownKey)
-                    if (c && c.statusEl) {
-                      c.statusEl.textContent = 'Đang xem: #' + ch
-                    }
-                  }
-                  delete pendingJoins[cooldownKey]
-                }, delayMs)
-              }
-            }
-          }
-
-          // 2. Auto Claim Reward
-          if (settings.claimEnable && settings.claimReward) {
-            const isRecipient = acc.label && textLower.includes(acc.label.toLowerCase())
-            if (isRecipient) {
-              const winKeywords = [
-                'won', 'winner', 'win', 'giveaway', 'congratulations', 'congrats', 
-                'trúng', 'trung', 'thắng', 'thang', 'chúc mừng', 'chuc mung', 'phần quà', 'phan qua', 'giải thưởng', 'giai thuong',
-                'parabéns', 'parabens', 'ganhou', 'vencedor', 'ganhador', 'venceu'
-              ]
-              const excludeKeywords = [
-                'checkin', 'check-in', 'check in', 'checking in', 'checking',
-                'điểm danh', 'diem danh', 'điểm danh thành công', 'diem danh thanh cong',
-                'presença', 'presenca'
-              ]
-              const matchesWin = winKeywords.some(keyword => textLower.includes(keyword))
-              const matchesExclude = excludeKeywords.some(keyword => textLower.includes(keyword))
-              if (matchesWin && !matchesExclude) {
-                const now = Date.now()
-                if (!pendingClaims[cooldownKey] && (!claimCooldowns[cooldownKey] || now - claimCooldowns[cooldownKey] > 15 * 60 * 1000)) {
-                  const randomSeconds = Math.random() * 29;
-                  const delayMs = randomSeconds * 1000;
-                  
-                  const c = channels[cooldownKey];
-                  if (c && c.statusEl) {
-                    c.statusEl.textContent = `Auto Bot: Sẽ gửi nhận thưởng sau ${randomSeconds.toFixed(1)}s...`;
-                  }
-
-                  pendingClaims[cooldownKey] = setTimeout(() => {
-                    if (settings.claimEnable) {
-                      window.twitch.sendChat(accId, ch, settings.claimReward)
-                      claimCooldowns[cooldownKey] = Date.now()
-                      updateChannelAutoButtonState(cooldownKey)
-                      if (c && c.statusEl) {
-                        c.statusEl.textContent = 'Đang xem: #' + ch
-                      }
-                    }
-                    delete pendingClaims[cooldownKey]
-                  }, delayMs)
-                }
-              }
-            }
-          }
         }
       }
     })
@@ -2980,8 +3949,1126 @@
 
     window.addEventListener('resize', updateTabsDropdownVisibility)
 
+    // ── Giveaway Logic ─────────────────────────────────────────────
+    const giveawaySidebarBtn = document.getElementById('giveaway-sidebar-btn')
+    const giveawayContentEl = document.getElementById('giveaway-content')
+    const giveawayActivationOverlay = document.getElementById('giveaway-activation-overlay')
+    const giveawayActivationInput = document.getElementById('giveaway-activation-input')
+    const giveawayActivateBtn = document.getElementById('giveaway-activate-btn')
+    const giveawayActivationStatus = document.getElementById('giveaway-activation-status')
+
+    const gwChannelInput = document.getElementById('gw-channel')
+    const gwKeywordInput = document.getElementById('gw-keyword')
+    const gwModBotSelect = document.getElementById('gw-mod-bot')
+    const gwTimerInput = document.getElementById('gw-timer')
+    const gwConfirmPrefixInput = document.getElementById('gw-confirm-prefix')
+    const gwAllowEveryoneCheckbox = document.getElementById('gw-allow-everyone')
+    const gwAllowModCheckbox = document.getElementById('gw-allow-mod')
+    const gwAllowVipCheckbox = document.getElementById('gw-allow-vip')
+    const gwAllowSubCheckbox = document.getElementById('gw-allow-sub')
+    const gwAllowRegularCheckbox = document.getElementById('gw-allow-regular')
+
+    const gwStartBtn = document.getElementById('gw-start-btn')
+    const gwStopBtn = document.getElementById('gw-stop-btn')
+    const gwRollBtn = document.getElementById('gw-roll-btn')
+    const gwResetBtn = document.getElementById('gw-reset-btn')
+
+    const gwWinnerCard = document.getElementById('gw-winner-card')
+    const gwWinnerMathInstruction = document.getElementById('gw-winner-math-instruction')
+    const gwWinnerCharacterNameEl = document.getElementById('gw-winner-character-name')
+    const gwShowcaseTitle = document.getElementById('gw-showcase-title')
+    const gwWinnerName = document.getElementById('gw-winner-name')
+    const gwCountdownContainer = document.getElementById('gw-countdown-container')
+    const gwCountdownTimer = document.getElementById('gw-countdown-timer')
+    const gwWinnerActionContainer = document.getElementById('gw-winner-action-container')
+    const gwWinnerDoneBtn = document.getElementById('gw-winner-done-btn')
+    const gwWinnerRerollBtn = document.getElementById('gw-winner-reroll-btn')
+
+    const gwWinnerModal = document.getElementById('gw-winner-modal')
+    const gwModalWinnerName = document.getElementById('gw-modal-winner-name')
+    const gwModalCharacterNameEl = document.getElementById('gw-modal-character-name')
+    const gwModalMathBox = document.getElementById('gw-modal-math-box')
+    const gwModalCountdownTimer = document.getElementById('gw-modal-countdown-timer')
+    const gwModalWinnerStatus = document.getElementById('gw-modal-winner-status')
+    const gwModalCloseBtn = document.getElementById('gw-modal-close-btn')
+    const gwModalRollNextBtn = document.getElementById('gw-modal-roll-next-btn')
+
+    const gwParticipantCount = document.getElementById('gw-participant-count')
+    const gwParticipantGrid = document.getElementById('gw-participant-grid')
+    const giveawayLogEl = document.getElementById('giveaway-log')
+
+    const giveawayConnectionBadge = document.getElementById('giveaway-connection-badge')
+    const giveawayConnectionText = document.getElementById('giveaway-connection-text')
+
+    // Sidebar button click handler
+    if (giveawaySidebarBtn) {
+      giveawaySidebarBtn.addEventListener('click', () => {
+        // Toggle active states in sidebar
+        document.querySelectorAll('.account-btn').forEach(btn => {
+          btn.classList.remove('active')
+        })
+        giveawaySidebarBtn.classList.add('active')
+
+        // Hide main content, show giveaway view
+        document.getElementById('main-content').style.display = 'none'
+        giveawayContentEl.style.display = 'flex'
+
+        // Check activation and populate mod bot dropdown
+        initGiveawayActivationCheck()
+        renderGiveawayModBotDropdown()
+        
+        // Load saved settings
+        loadGiveawaySettings()
+      })
+    }
+
+    // Populate Mod Bot dropdown with available authenticated accounts
+    function renderGiveawayModBotDropdown() {
+      if (!gwModBotSelect) return
+      // Save current selection
+      const currentVal = gwModBotSelect.value
+      
+      gwModBotSelect.innerHTML = '<option value="">Không sử dụng (Ẩn danh / Read-only)</option>'
+      accounts.forEach(acc => {
+        if (acc.hasToken && acc.id !== 'default-anon') {
+          const opt = document.createElement('option')
+          opt.value = acc.id
+          opt.textContent = acc.label
+          gwModBotSelect.appendChild(opt)
+        }
+      })
+
+      // Restore selection if still exists
+      gwModBotSelect.value = currentVal
+    }
+
+    // Check Giveaway Key activation
+    async function initGiveawayActivationCheck() {
+      try {
+        const act = await window.twitch.checkGiveawayActivation()
+        isGiveawayActivated = act.isActivated
+        if (isGiveawayActivated) {
+          giveawayActivationOverlay.style.display = 'none'
+        } else {
+          giveawayActivationOverlay.style.display = 'flex'
+          if (giveawayActivationStatus) {
+            giveawayActivationStatus.textContent = `Mã máy của bạn: ${act.machineId}`
+            giveawayActivationStatus.style.color = '#adadb8'
+          }
+        }
+      } catch (err) {
+        console.error('Lỗi khi kiểm tra kích hoạt Giveaway:', err)
+      }
+    }
+
+    // Handle key activation click
+    if (giveawayActivateBtn) {
+      giveawayActivateBtn.addEventListener('click', async () => {
+        const key = giveawayActivationInput.value.trim()
+        if (!key) {
+          giveawayActivationStatus.textContent = 'Vui lòng nhập Key kích hoạt!'
+          giveawayActivationStatus.style.color = '#ff3b30'
+          return
+        }
+
+        giveawayActivationStatus.textContent = 'Đang kiểm tra và kích hoạt...'
+        giveawayActivationStatus.style.color = '#a970ff'
+        giveawayActivateBtn.disabled = true
+
+        try {
+          const result = await window.twitch.activateGiveawayKey(key)
+          if (result.success) {
+            giveawayActivationStatus.textContent = result.message
+            giveawayActivationStatus.style.color = '#00ff2b'
+            setTimeout(() => {
+              isGiveawayActivated = true
+              giveawayActivationOverlay.style.display = 'none'
+            }, 1000)
+          } else {
+            giveawayActivationStatus.textContent = result.message
+            giveawayActivationStatus.style.color = '#ff3b30'
+          }
+        } catch (err) {
+          giveawayActivationStatus.textContent = 'Lỗi kết nối hoặc xử lý kích hoạt!'
+          giveawayActivationStatus.style.color = '#ff3b30'
+        } finally {
+          giveawayActivateBtn.disabled = false
+        }
+      })
+    }
+
+    // Close winner modal handler
+    if (gwModalCloseBtn) {
+      gwModalCloseBtn.addEventListener('click', () => {
+        gwWinnerModal.style.display = 'none'
+      })
+    }
+
+    // Roll Next button — roll a new winner immediately from the modal without completing current
+    if (gwModalRollNextBtn) {
+      gwModalRollNextBtn.addEventListener('click', () => {
+        // Stop current countdown timer
+        if (giveawayTimerInterval) clearInterval(giveawayTimerInterval)
+
+        // Keep current winner in the winners list (crossed out) but log it as skipped
+        addGiveawayLog('warn', `⏭️ Đã bỏ qua @${giveawayWinner} và quay người khác.`)
+
+        // Check eligible participants (exclude all previous winners including current)
+        const eligible = giveawayParticipants.filter(p => !giveawayWinnerNames.includes(p.username))
+        if (eligible.length === 0) {
+          addGiveawayLog('danger', 'Không còn người đủ điều kiện để quay!')
+          gwModalRollNextBtn.disabled = true
+          return
+        }
+
+        // Immediately trigger the roll animation and pick next winner
+        giveawayState = 'rolling'
+        gwShowcaseTitle.textContent = 'ĐANG QUAY...'
+        gwWinnerCard.className = 'winner-showcase rolling'
+        gwCountdownContainer.style.display = 'none'
+        gwWinnerActionContainer.style.display = 'none'
+        if (gwWinnerMathInstruction) gwWinnerMathInstruction.style.display = 'none'
+
+        // Close modal first
+        gwWinnerModal.style.display = 'none'
+
+        // Run roll animation then select winner
+        let rollCount = 0
+        const totalRolls = 18
+        const rollInterval = setInterval(() => {
+          const randomParticipant = eligible[Math.floor(Math.random() * eligible.length)]
+          gwWinnerName.textContent = randomParticipant.username
+          rollCount++
+          if (rollCount >= totalRolls) {
+            clearInterval(rollInterval)
+            // Pick final winner using the same winner pipeline as the main roll button
+            const finalWinner = eligible[Math.floor(Math.random() * eligible.length)]
+            finalizeWinner(finalWinner.username)
+          }
+        }, 80)
+      })
+    }
+
+    function toggleGiveawayRoleCheckboxes() {
+      if (!gwAllowEveryoneCheckbox) return
+      const everyone = gwAllowEveryoneCheckbox.checked
+      
+      if (everyone) {
+        gwAllowModCheckbox.checked = true
+        gwAllowModCheckbox.disabled = true
+        gwAllowVipCheckbox.checked = true
+        gwAllowVipCheckbox.disabled = true
+        gwAllowSubCheckbox.checked = true
+        gwAllowSubCheckbox.disabled = true
+        if (gwAllowRegularCheckbox) {
+          gwAllowRegularCheckbox.checked = true
+          gwAllowRegularCheckbox.disabled = true
+        }
+      } else {
+        gwAllowModCheckbox.disabled = false
+        gwAllowVipCheckbox.disabled = false
+        gwAllowSubCheckbox.disabled = false
+        if (gwAllowRegularCheckbox) gwAllowRegularCheckbox.disabled = false
+      }
+    }
+
+    function setGiveawayInputsDisabled(disabled) {
+      gwChannelInput.disabled = disabled
+      gwKeywordInput.disabled = disabled
+      gwModBotSelect.disabled = disabled
+      gwTimerInput.disabled = disabled
+      gwConfirmPrefixInput.disabled = disabled
+      
+      if (disabled) {
+        if (gwAllowEveryoneCheckbox) gwAllowEveryoneCheckbox.disabled = true
+        if (gwAllowModCheckbox) gwAllowModCheckbox.disabled = true
+        if (gwAllowVipCheckbox) gwAllowVipCheckbox.disabled = true
+        if (gwAllowSubCheckbox) gwAllowSubCheckbox.disabled = true
+        if (gwAllowRegularCheckbox) gwAllowRegularCheckbox.disabled = true
+      } else {
+        if (gwAllowEveryoneCheckbox) {
+          gwAllowEveryoneCheckbox.disabled = false
+          toggleGiveawayRoleCheckboxes()
+        }
+      }
+    }
+
+    if (gwAllowEveryoneCheckbox) {
+      gwAllowEveryoneCheckbox.addEventListener('change', toggleGiveawayRoleCheckboxes)
+    }
+
+    // Save Giveaway Settings
+    function saveGiveawaySettings() {
+      const settings = {
+        channel: gwChannelInput.value.trim(),
+        keyword: gwKeywordInput.value.trim(),
+        modBot: gwModBotSelect.value,
+        timer: gwTimerInput.value,
+        confirmPrefix: gwConfirmPrefixInput.value.trim(),
+        allowEveryone: gwAllowEveryoneCheckbox ? gwAllowEveryoneCheckbox.checked : true,
+        allowMod: gwAllowModCheckbox ? gwAllowModCheckbox.checked : true,
+        allowVip: gwAllowVipCheckbox ? gwAllowVipCheckbox.checked : true,
+        allowSub: gwAllowSubCheckbox ? gwAllowSubCheckbox.checked : true,
+        allowRegular: gwAllowRegularCheckbox ? gwAllowRegularCheckbox.checked : true
+      }
+      localStorage.setItem('giveaway_settings', JSON.stringify(settings))
+    }
+
+    // Load Giveaway Settings
+    function loadGiveawaySettings() {
+      const saved = localStorage.getItem('giveaway_settings')
+      if (saved) {
+        try {
+          const settings = JSON.parse(saved)
+          if (settings.channel !== undefined) gwChannelInput.value = settings.channel
+          if (settings.keyword !== undefined) gwKeywordInput.value = settings.keyword
+          if (settings.modBot !== undefined) gwModBotSelect.value = settings.modBot
+          if (settings.timer !== undefined) gwTimerInput.value = settings.timer
+          if (settings.confirmPrefix !== undefined) gwConfirmPrefixInput.value = settings.confirmPrefix
+          
+          if (gwAllowEveryoneCheckbox && settings.allowEveryone !== undefined) {
+            gwAllowEveryoneCheckbox.checked = settings.allowEveryone
+          }
+          if (gwAllowModCheckbox && settings.allowMod !== undefined) {
+            gwAllowModCheckbox.checked = settings.allowMod
+          }
+          if (gwAllowVipCheckbox && settings.allowVip !== undefined) {
+            gwAllowVipCheckbox.checked = settings.allowVip
+          }
+          if (gwAllowSubCheckbox && settings.allowSub !== undefined) {
+            gwAllowSubCheckbox.checked = settings.allowSub
+          }
+          if (gwAllowRegularCheckbox && settings.allowRegular !== undefined) {
+            gwAllowRegularCheckbox.checked = settings.allowRegular
+          }
+          
+          toggleGiveawayRoleCheckboxes()
+        } catch (e) {
+          console.error('Lỗi load settings giveaway:', e)
+        }
+      }
+    }
+
+    // Logger
+    function addGiveawayLog(type, text) {
+      if (!giveawayLogEl) return
+      const item = document.createElement('div')
+      item.className = `log-item ${type}`
+      
+      const timeSpan = document.createElement('span')
+      timeSpan.className = 'log-item-time'
+      const now = new Date()
+      timeSpan.textContent = `[${now.toTimeString().split(' ')[0]}]`
+      
+      const textSpan = document.createElement('span')
+      timeSpan.className = 'log-item-text'
+      textSpan.textContent = text
+      
+      item.appendChild(timeSpan)
+      item.appendChild(textSpan)
+      
+      giveawayLogEl.appendChild(item)
+      giveawayLogEl.scrollTop = giveawayLogEl.scrollHeight
+    }
+
+    // Render Participant grid
+    function updateGiveawayParticipantsUI() {
+      if (!gwParticipantGrid || !gwParticipantCount) return
+      gwParticipantCount.textContent = `Đã tham gia: ${giveawayParticipants.length}`
+      
+      if (giveawayParticipants.length === 0) {
+        gwParticipantGrid.innerHTML = ''
+        return
+      }
+
+      // Get set of currently rendered usernames in DOM
+      const renderedNames = new Set()
+      const items = gwParticipantGrid.querySelectorAll('.participant-item')
+      items.forEach(item => {
+        const uname = item.getAttribute('data-username')
+        if (uname) {
+          renderedNames.add(uname)
+          
+          // Update claimed status of already rendered items
+          const isClaimed = giveawayWinnerNames.includes(uname)
+          if (isClaimed) {
+            item.className = 'participant-item winner-claimed-item'
+          } else {
+            // Remove winner-claimed-item class if they were rerolled
+            if (item.classList.contains('winner-claimed-item')) {
+              item.className = 'participant-item'
+            }
+          }
+        }
+      })
+
+      // Prepend any participants that are not yet rendered
+      giveawayParticipants.forEach(p => {
+        if (!renderedNames.has(p.username)) {
+          const isClaimed = giveawayWinnerNames.includes(p.username)
+          const item = document.createElement('div')
+          item.className = 'participant-item' + (isClaimed ? ' winner-claimed-item' : ' new-join')
+          item.setAttribute('data-username', p.username)
+          
+          const img = document.createElement('img')
+          img.className = 'participant-avatar'
+          img.src = 'megamu-logo.png'
+          
+          const nameSpan = document.createElement('span')
+          nameSpan.className = 'participant-name'
+          nameSpan.textContent = p.username
+          
+          const timeSpan = document.createElement('span')
+          timeSpan.className = 'participant-time'
+          timeSpan.textContent = p.time
+          
+          item.appendChild(img)
+          item.appendChild(nameSpan)
+          item.appendChild(timeSpan)
+          item.title = `${p.username} (${p.time})`
+          
+          // Prepend to show newest at the top
+          if (gwParticipantGrid.firstChild) {
+            gwParticipantGrid.insertBefore(item, gwParticipantGrid.firstChild)
+          } else {
+            gwParticipantGrid.appendChild(item)
+          }
+        }
+      })
+
+      // Remove any participants that are no longer in giveawayParticipants
+      const currentSet = new Set(giveawayParticipants.map(p => p.username))
+      items.forEach(item => {
+        const username = item.getAttribute('data-username')
+        if (username && !currentSet.has(username)) {
+          item.remove()
+        }
+      })
+    }
+
+    // Start Check-in Event
+    if (gwStartBtn) {
+      gwStartBtn.addEventListener('click', () => {
+        const channel = gwChannelInput.value.trim().toLowerCase()
+        if (!channel) {
+          alert('Vui lòng nhập tên Twitch Channel!')
+          gwChannelInput.focus()
+          return
+        }
+
+        const keyword = gwKeywordInput.value.trim()
+        if (!keyword) {
+          alert('Vui lòng nhập từ khóa điểm danh!')
+          gwKeywordInput.focus()
+          return
+        }
+
+        const modBotAccountId = gwModBotSelect.value
+
+        // Reset and establish connection only if not already connected/disabled
+        if (!gwChannelInput.disabled) {
+          addGiveawayLog('info', `Đang thiết lập kết nối đến channel #${channel}...`)
+          window.twitch.startGiveawayConnection(channel, modBotAccountId)
+          giveawayParticipants = []
+          updateGiveawayParticipantsUI()
+        }
+
+        isCheckinActive = true
+        saveGiveawaySettings()
+
+        setGiveawayInputsDisabled(true)
+
+        gwStartBtn.disabled = true
+        gwStopBtn.disabled = false
+        
+        // If not in middle of rolling/countdown, update the showcase card
+        if (giveawayState === 'idle' || giveawayState === 'checkin') {
+          giveawayState = 'checkin'
+          gwShowcaseTitle.textContent = 'ĐANG ĐIỂM DANH'
+          gwWinnerName.textContent = 'Gõ từ khóa: ' + keyword
+          gwWinnerCard.className = 'winner-showcase rolling'
+          gwRollBtn.disabled = giveawayParticipants.length === 0
+        }
+
+        // Send start announcement if Mod Bot is set
+        if (modBotAccountId) {
+          const startMsg = `🎉 [ENG] Registration is open! Type: ${keyword} to join! / [POR] Registro aberto! Digite: ${keyword} para participar! 🎉`
+          window.twitch.sendGiveawayChat(startMsg)
+          addGiveawayLog('success', `[Bot] Sent check-in start announcement.`)
+        }
+      })
+    }
+
+    // Stop Check-in Event
+    if (gwStopBtn) {
+      gwStopBtn.addEventListener('click', () => {
+        isCheckinActive = false
+        gwStartBtn.disabled = false
+        gwStopBtn.disabled = true
+
+        // If not in middle of rolling/countdown, update the showcase card
+        if (giveawayState === 'checkin' || giveawayState === 'idle') {
+          giveawayState = 'idle'
+          gwShowcaseTitle.textContent = 'ĐÃ ĐÓNG ĐIỂM DANH'
+          gwWinnerName.textContent = `Tổng cộng: ${giveawayParticipants.length} người`
+          gwWinnerCard.className = 'winner-showcase'
+          gwRollBtn.disabled = giveawayParticipants.length === 0
+        }
+
+        addGiveawayLog('warn', `Đã đóng cổng điểm danh. Không nhận thêm người tham gia mới.`)
+
+        // Send stop announcement if Mod Bot is set
+        const modBotAccountId = gwModBotSelect.value
+        if (modBotAccountId) {
+          const stopMsg = `🚫 [ENG] Registration closed! Total participants: ${giveawayParticipants.length}. Ready to roll! / [POR] Registro fechado! Total de participantes: ${giveawayParticipants.length}. Pronto para sortear!`
+          window.twitch.sendGiveawayChat(stopMsg)
+          addGiveawayLog('success', `[Bot] Sent check-in closed announcement.`)
+        }
+      })
+    }
+
+    // Roll Winner Event
+    if (gwRollBtn) {
+      gwRollBtn.addEventListener('click', () => {
+        const eligible = giveawayParticipants.filter(p => !giveawayWinnerNames.includes(p.username))
+        if (eligible.length === 0) {
+          alert('Không còn người chơi hợp lệ nào chưa trúng giải!')
+          return
+        }
+        
+        // Stop any existing countdown
+        if (giveawayTimerInterval) clearInterval(giveawayTimerInterval)
+        gwCountdownContainer.style.display = 'none'
+        gwWinnerActionContainer.style.display = 'none'
+
+        giveawayState = 'rolling'
+        gwRollBtn.disabled = true
+        gwResetBtn.disabled = true
+        gwShowcaseTitle.textContent = 'ĐANG QUAY SỐ'
+        gwWinnerCard.className = 'winner-showcase rolling'
+
+        addGiveawayLog('info', 'Đang thực hiện quay số ngẫu nhiên...')
+
+        // Select winner randomly first (fully shuffled)
+        const winnerIndex = Math.floor(Math.random() * eligible.length)
+        const selectedWinner = eligible[winnerIndex].username
+
+        // Rolling slot-machine animation
+        let rollCounter = 0
+        const totalRolls = 25
+        const rollInterval = setInterval(() => {
+          if (rollCounter < totalRolls - 1) {
+            // Show scrambled names during roll
+            const tempIndex = Math.floor(Math.random() * eligible.length)
+            gwWinnerName.textContent = eligible[tempIndex].username
+          } else {
+            clearInterval(rollInterval)
+            gwWinnerName.textContent = selectedWinner
+            finalizeWinner(selectedWinner)
+          }
+          rollCounter++
+        }, 120)
+      })
+    }
+
+    function generateGiveawayMath() {
+      const num1 = Math.floor(Math.random() * 15) + 6 // 6 to 20
+      const num2 = Math.floor(Math.random() * 10) + 1 // 1 to 10
+      const isPlus = Math.random() > 0.5
+      if (isPlus) {
+        giveawayMathAnswer = num1 + num2
+        giveawayMathProblem = `${num1} + ${num2}`
+      } else {
+        giveawayMathAnswer = num1 - num2
+        giveawayMathProblem = `${num1} - ${num2}`
+      }
+    }
+
+    // Finalize Winner Selection
+    function finalizeWinner(preSelectedWinnerName) {
+      let winnerName = preSelectedWinnerName
+      if (!winnerName) {
+        const eligible = giveawayParticipants.filter(p => !giveawayWinnerNames.includes(p.username))
+        if (eligible.length === 0) return
+        const winnerIndex = Math.floor(Math.random() * eligible.length)
+        winnerName = eligible[winnerIndex].username
+      }
+      
+      const confirmPrefix = gwConfirmPrefixInput.value.trim()
+      const modBotAccountId = gwModBotSelect.value
+      
+      giveawayWinner = winnerName
+      giveawayWinnerNames.push(giveawayWinner)
+      updateGiveawayParticipantsUI()
+
+      giveawayWinnerCharacterName = ''
+      
+      if (gwWinnerCharacterNameEl) {
+        gwWinnerCharacterNameEl.textContent = ''
+        gwWinnerCharacterNameEl.style.display = 'none'
+      }
+      if (gwModalCharacterNameEl) {
+        gwModalCharacterNameEl.textContent = ''
+        gwModalCharacterNameEl.style.display = 'none'
+      }
+
+      gwShowcaseTitle.textContent = 'NGƯỜI TRÚNG GIẢI'
+      gwWinnerName.textContent = giveawayWinner
+
+      // Generate Math Question
+      generateGiveawayMath()
+
+      // Show math instruction on showcase card
+      gwWinnerMathInstruction.textContent = `Verify: ${giveawayMathProblem} = ? (Format: ${confirmPrefix}[answer] [character_name])`
+      gwWinnerMathInstruction.style.display = 'inline-block'
+      
+      giveawayState = 'countdown'
+      addGiveawayLog('success', `Chúc mừng @${giveawayWinner} đã trúng giải! Giải phép tính: ${giveawayMathProblem} = ?`)
+
+      // Setup countdown
+      const limitSeconds = parseInt(gwTimerInput.value) || 60
+      giveawayTimeLeft = limitSeconds
+      
+      gwCountdownTimer.textContent = giveawayTimeLeft
+      gwCountdownTimer.className = 'countdown-timer'
+      gwCountdownContainer.style.display = 'flex'
+      gwWinnerActionContainer.style.display = 'none'
+
+      // Open Winner Announcement Modal
+      if (gwWinnerModal) {
+        gwModalWinnerName.textContent = giveawayWinner
+        gwModalMathBox.textContent = `${giveawayMathProblem} = ?`
+        gwModalWinnerStatus.textContent = 'Waiting for chat verification...'
+        gwModalWinnerStatus.style.color = '#ff9900'
+        gwModalCountdownTimer.textContent = giveawayTimeLeft
+        gwModalCountdownTimer.className = 'countdown-timer'
+        
+        // Dynamically set modal instruction text
+        const gwModalInstructionText = document.getElementById('gw-modal-instruction-text')
+        if (gwModalInstructionText) {
+          gwModalInstructionText.innerHTML = `To claim, solve: <b>${giveawayMathProblem} = ?</b> and type in chat:<br>` +
+            `<b style="color: #ffd700; font-size: 16px;">${confirmPrefix}[answer] [character name]</b><br>` +
+            `Example: <span style="color: #a970ff; font-weight: 700;">${confirmPrefix}15 HeroName</span>`
+        }
+        
+        gwWinnerModal.style.display = 'flex'
+      }
+
+      // Send announcement
+      if (modBotAccountId) {
+        const msg = `🎉 @${giveawayWinner} [ENG] Congratulations on winning! To claim the prize and prove you are not a BOT, solve: ${giveawayMathProblem} = ? and type: ${confirmPrefix}[answer] [character name] (e.g. ${confirmPrefix}15 HeroName) in ${limitSeconds}s! / [POR] Parabéns pela vitória! Para receber o prêmio e provar que não é um BOT, resolva: ${giveawayMathProblem} = ? e digite: ${confirmPrefix}[resposta] [nome do personagem] (ex. ${confirmPrefix}15 HeroName) em ${limitSeconds}s!`
+        window.twitch.sendGiveawayChat(msg)
+        addGiveawayLog('success', `[Bot] Sent giveaway congratulations and math quiz.`)
+      }
+
+      // Start Countdown Timer
+      giveawayTimerInterval = setInterval(() => {
+        giveawayTimeLeft--
+        gwCountdownTimer.textContent = giveawayTimeLeft
+        if (gwModalCountdownTimer) {
+          gwModalCountdownTimer.textContent = giveawayTimeLeft
+        }
+
+        if (giveawayTimeLeft <= 15) {
+          gwCountdownTimer.className = 'countdown-timer danger'
+          if (gwModalCountdownTimer) gwModalCountdownTimer.className = 'countdown-timer danger'
+        } else if (giveawayTimeLeft <= 30) {
+          gwCountdownTimer.className = 'countdown-timer warning'
+          if (gwModalCountdownTimer) gwModalCountdownTimer.className = 'countdown-timer warning'
+        }
+
+        if (giveawayTimeLeft <= 0) {
+          clearInterval(giveawayTimerInterval)
+          handleGiveawayTimeout()
+        }
+      }, 1000)
+    }
+
+    // Winner Claimed Prize successfully
+    function handleGiveawayClaim(username, characterName) {
+      if (giveawayTimerInterval) clearInterval(giveawayTimerInterval)
+      giveawayState = 'claimed'
+      
+      gwShowcaseTitle.textContent = 'XÁC NHẬN THÀNH CÔNG ✅'
+      gwWinnerCard.className = 'winner-showcase claimed'
+      gwCountdownContainer.style.display = 'none'
+      gwWinnerActionContainer.style.display = 'flex'
+
+      if (gwModalWinnerStatus) {
+        gwModalWinnerStatus.textContent = 'Xác nhận thành công! ✅'
+        gwModalWinnerStatus.style.color = '#00ff2b'
+      }
+
+      addGiveawayLog('success', `@${username} đã xác nhận trúng giải hợp lệ! Nhân vật: ${characterName}`)
+
+      // Update character name display
+      updateGiveawayCharacterName(characterName)
+
+      // Send announcement
+      const modBotAccountId = gwModBotSelect.value
+      if (modBotAccountId) {
+        const msg = `✅ @${username} [ENG] Claim verified! Character: ${characterName}. / [POR] Resgate verificado! Personagem: ${characterName}.`
+        window.twitch.sendGiveawayChat(msg)
+        addGiveawayLog('success', `[Bot] Sent claim confirmation announcement.`)
+      }
+    }
+
+    // Update character name element helper
+    function updateGiveawayCharacterName(characterName) {
+      giveawayWinnerCharacterName = characterName || ''
+      if (giveawayWinnerCharacterName) {
+        if (gwWinnerCharacterNameEl) {
+          gwWinnerCharacterNameEl.textContent = `Nhân vật game: ${giveawayWinnerCharacterName}`
+          gwWinnerCharacterNameEl.style.display = 'block'
+        }
+        if (gwModalCharacterNameEl) {
+          gwModalCharacterNameEl.textContent = `Nhân vật game: ${giveawayWinnerCharacterName}`
+          gwModalCharacterNameEl.style.display = 'block'
+        }
+      } else {
+        if (gwWinnerCharacterNameEl) {
+          gwWinnerCharacterNameEl.textContent = 'Nhân vật game: (Đang chờ gõ...)'
+          gwWinnerCharacterNameEl.style.display = 'block'
+        }
+        if (gwModalCharacterNameEl) {
+          gwModalCharacterNameEl.textContent = 'Nhân vật game: (Đang chờ gõ...)'
+          gwModalCharacterNameEl.style.display = 'block'
+        }
+      }
+    }
+
+    // Countdown Expired
+    function handleGiveawayTimeout() {
+      if (giveawayTimerInterval) clearInterval(giveawayTimerInterval)
+      giveawayState = 'expired'
+      
+      gwShowcaseTitle.textContent = 'HẾT THỜI GIAN XÁC NHẬN ❌'
+      gwWinnerCard.className = 'winner-showcase expired'
+      gwCountdownContainer.style.display = 'none'
+      gwWinnerActionContainer.style.display = 'flex'
+
+      if (gwModalWinnerStatus) {
+        gwModalWinnerStatus.textContent = 'Quá thời gian xác nhận! ❌'
+        gwModalWinnerStatus.style.color = '#ff3b30'
+      }
+
+      addGiveawayLog('danger', `@${giveawayWinner} đã quá thời gian xác nhận! Lượt trúng giải bị hủy.`)
+
+      // Send announcement
+      const modBotAccountId = gwModBotSelect.value
+      if (modBotAccountId) {
+        const msg = `❌ [ENG] Time expired! The prize for @${giveawayWinner} has been cancelled. / [POR] Tempo expirado! O prêmio de @${giveawayWinner} foi cancelado.`
+        window.twitch.sendGiveawayChat(msg)
+        addGiveawayLog('success', `[Bot] Sent claim timeout announcement.`)
+      }
+    }
+
+    // Host Done with Winner & Next Click
+    if (gwWinnerDoneBtn) {
+      gwWinnerDoneBtn.addEventListener('click', () => {
+        // We do NOT filter out of giveawayParticipants, since they stay in the grid crossed out
+        updateGiveawayParticipantsUI()
+
+        // Reset Card UI
+        gwWinnerActionContainer.style.display = 'none'
+        if (gwWinnerMathInstruction) gwWinnerMathInstruction.style.display = 'none'
+        if (gwWinnerCharacterNameEl) {
+          gwWinnerCharacterNameEl.textContent = ''
+          gwWinnerCharacterNameEl.style.display = 'none'
+        }
+        if (gwWinnerModal) gwWinnerModal.style.display = 'none'
+        giveawayWinnerCharacterName = ''
+        
+        if (isCheckinActive) {
+          giveawayState = 'checkin'
+          gwShowcaseTitle.textContent = 'ĐANG ĐIỂM DANH'
+          gwWinnerName.textContent = 'Gõ từ khóa: ' + gwKeywordInput.value.trim()
+          gwWinnerCard.className = 'winner-showcase rolling'
+        } else {
+          giveawayState = 'idle'
+          gwShowcaseTitle.textContent = 'KẾT THÚC LƯỢT'
+          gwWinnerName.textContent = `Người thắng: ${giveawayWinner}`
+          gwWinnerCard.className = 'winner-showcase'
+        }
+
+        const eligible = giveawayParticipants.filter(p => !giveawayWinnerNames.includes(p.username))
+        gwRollBtn.disabled = eligible.length === 0
+        gwResetBtn.disabled = false
+
+        addGiveawayLog('info', `Đã lưu lượt thắng của @${giveawayWinner} (gạch tên khỏi danh sách quay tiếp theo).`)
+      })
+    }
+
+    // Host Reroll / Roll back Click
+    if (gwWinnerRerollBtn) {
+      gwWinnerRerollBtn.addEventListener('click', () => {
+        // Remove winner from winners list so they are uncrossed and eligible again
+        giveawayWinnerNames = giveawayWinnerNames.filter(name => name !== giveawayWinner)
+        updateGiveawayParticipantsUI()
+
+        // Reset Card UI
+        gwWinnerActionContainer.style.display = 'none'
+        if (gwWinnerMathInstruction) gwWinnerMathInstruction.style.display = 'none'
+        if (gwWinnerCharacterNameEl) {
+          gwWinnerCharacterNameEl.textContent = ''
+          gwWinnerCharacterNameEl.style.display = 'none'
+        }
+        if (gwWinnerModal) gwWinnerModal.style.display = 'none'
+        giveawayWinnerCharacterName = ''
+
+        if (isCheckinActive) {
+          giveawayState = 'checkin'
+          gwShowcaseTitle.textContent = 'ĐANG ĐIỂM DANH'
+          gwWinnerName.textContent = 'Gõ từ khóa: ' + gwKeywordInput.value.trim()
+          gwWinnerCard.className = 'winner-showcase rolling'
+        } else {
+          giveawayState = 'idle'
+          gwShowcaseTitle.textContent = 'HỦY LƯỢT THẮNG'
+          gwWinnerName.textContent = `Đã hủy: ${giveawayWinner}`
+          gwWinnerCard.className = 'winner-showcase'
+        }
+
+        const eligible = giveawayParticipants.filter(p => !giveawayWinnerNames.includes(p.username))
+        gwRollBtn.disabled = eligible.length === 0
+        gwResetBtn.disabled = false
+
+        addGiveawayLog('warn', `Đã hủy lượt của @${giveawayWinner}. Sẵn sàng quay số lại.`)
+      })
+    }
+
+    // Reset Giveaway
+    if (gwResetBtn) {
+      gwResetBtn.addEventListener('click', () => {
+        if (giveawayTimerInterval) clearInterval(giveawayTimerInterval)
+        window.twitch.stopGiveawayConnection()
+
+        isCheckinActive = false
+        giveawayState = 'idle'
+        giveawayParticipants = []
+        giveawayWinner = ''
+        giveawayWinnerNames = []
+        updateGiveawayParticipantsUI()
+
+        setGiveawayInputsDisabled(false)
+
+        gwStartBtn.disabled = false
+        gwStopBtn.disabled = true
+        gwRollBtn.disabled = true
+        gwResetBtn.disabled = false
+
+        gwShowcaseTitle.textContent = 'ĐANG CHỜ BẮT ĐẦU'
+        gwWinnerName.textContent = '---'
+        gwWinnerCard.className = 'winner-showcase'
+        gwCountdownContainer.style.display = 'none'
+        gwWinnerActionContainer.style.display = 'none'
+        if (gwWinnerMathInstruction) gwWinnerMathInstruction.style.display = 'none'
+        if (gwWinnerCharacterNameEl) {
+          gwWinnerCharacterNameEl.textContent = ''
+          gwWinnerCharacterNameEl.style.display = 'none'
+        }
+        if (gwWinnerModal) gwWinnerModal.style.display = 'none'
+        giveawayWinnerCharacterName = ''
+
+        if (giveawayConnectionBadge) {
+          giveawayConnectionBadge.style.background = '#e91916'
+          giveawayConnectionText.textContent = 'Mất kết nối'
+        }
+
+        addGiveawayLog('info', 'Đã đặt lại toàn bộ hệ thống Giveaway.')
+      })
+    }
+
+    // Listen to Giveaway WS Status events
+    window.twitch.onGiveawayStatus(status => {
+      if (!giveawayConnectionBadge || !giveawayConnectionText) return
+      if (status.connected) {
+        giveawayConnectionBadge.style.background = '#00b31b'
+        giveawayConnectionText.textContent = 'Đã kết nối'
+        addGiveawayLog('success', 'Kết nối WebSocket Twitch thành công!')
+      } else {
+        giveawayConnectionBadge.style.background = '#e91916'
+        giveawayConnectionText.textContent = 'Mất kết nối'
+        addGiveawayLog('danger', status.error ? `Lỗi kết nối: ${status.error}` : 'WebSocket đã đóng kết nối.')
+      }
+    })
+
+    // Listen to incoming chat messages specifically for Giveaway
+    window.twitch.onGiveawayMessage(msg => {
+      const keyword = gwKeywordInput.value.trim().toLowerCase()
+      const confirmPrefix = gwConfirmPrefixInput.value.trim().toLowerCase()
+
+      const text = msg.text || ''
+      const textTrim = text.trim()
+      const textLower = textTrim.toLowerCase()
+      const username = msg.username
+
+      // 1. Participant Check-in phase
+      if (isCheckinActive) {
+        if (textLower === keyword) {
+          // Broadcaster (chủ kênh) không được tham gia Giveaway
+          if (msg.isBroadcaster) return
+
+          // Check role restrictions
+          let isAllowed = false
+          const allowEveryone = gwAllowEveryoneCheckbox ? gwAllowEveryoneCheckbox.checked : true
+          if (allowEveryone) {
+            isAllowed = true
+          } else {
+            const allowMod = gwAllowModCheckbox ? gwAllowModCheckbox.checked : false
+            const allowVip = gwAllowVipCheckbox ? gwAllowVipCheckbox.checked : false
+            const allowSub = gwAllowSubCheckbox ? gwAllowSubCheckbox.checked : false
+            const allowRegular = gwAllowRegularCheckbox ? gwAllowRegularCheckbox.checked : false
+
+            const isRegular = !msg.isMod && !msg.isVip && !msg.isSub
+
+            if (allowMod && msg.isMod) isAllowed = true
+            if (allowVip && msg.isVip) isAllowed = true
+            if (allowSub && msg.isSub) isAllowed = true
+            if (allowRegular && isRegular) isAllowed = true
+          }
+
+          if (isAllowed) {
+            if (!giveawayParticipants.some(p => p.username === username)) {
+              const joinTime = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+              giveawayParticipants.push({ username, time: joinTime })
+              updateGiveawayParticipantsUI()
+              addGiveawayLog('info', `@${username} đã điểm danh thành công.`)
+              
+              // Enable Roll button if not actively rolling/countdown
+              if (giveawayState === 'checkin' || giveawayState === 'idle') {
+                gwRollBtn.disabled = false
+              }
+            }
+          }
+        }
+      }
+
+      // 2. Winner Confirmation & Character Name phase
+      if (username.toLowerCase() === giveawayWinner.toLowerCase()) {
+        if (giveawayState === 'countdown') {
+          const answerStr = String(giveawayMathAnswer)
+          const prefixAnswerStr = confirmPrefix ? (confirmPrefix + giveawayMathAnswer) : answerStr
+          const prefixSpaceAnswerStr = confirmPrefix ? (confirmPrefix + ' ' + giveawayMathAnswer) : answerStr
+          
+          let isMathCorrect = false
+          let characterName = ''
+          
+          if (textLower.startsWith(prefixAnswerStr.toLowerCase())) {
+            isMathCorrect = true
+            characterName = textTrim.slice(prefixAnswerStr.length).trim()
+          } else if (confirmPrefix && textLower.startsWith(prefixSpaceAnswerStr.toLowerCase())) {
+            isMathCorrect = true
+            characterName = textTrim.slice(prefixSpaceAnswerStr.length).trim()
+          }
+          
+          if (isMathCorrect && characterName.length > 0) {
+            if (characterName.startsWith('#')) {
+              characterName = characterName.slice(1).trim()
+            }
+            if (characterName.length > 0) {
+              handleGiveawayClaim(username, characterName)
+            }
+          }
+        } else if (giveawayState === 'claimed') {
+          let characterName = textTrim
+          if (characterName.startsWith('#')) {
+            characterName = characterName.slice(1).trim()
+          }
+          if (characterName) {
+            updateGiveawayCharacterName(characterName)
+            addGiveawayLog('info', `@${username} đã cung cấp tên nhân vật: ${characterName}`)
+          }
+        }
+      }
+    })
+
     // ── Application Initialization ─────────────────────────────────
     async function init() {
+      // Initialize Transparency Mode
+      const isTransparent = localStorage.getItem('is_transparent') === 'true'
+      if (isTransparent) {
+        if (transparencyBtn) transparencyBtn.classList.add('active')
+        window.twitch.setWindowOpacity(0.7)
+      } else {
+        window.twitch.setWindowOpacity(1.0)
+      }
+
+      if (transparencyBtn) {
+        transparencyBtn.addEventListener('click', () => {
+          const active = transparencyBtn.classList.toggle('active')
+          localStorage.setItem('is_transparent', active ? 'true' : 'false')
+          window.twitch.setWindowOpacity(active ? 0.7 : 1.0)
+        })
+      }
+
+      // ── Theme Customizer ────────────────────────────────────────────
+      const THEME_DEFAULTS = {
+        accent:      '#9147ff',
+        accentDark:  '#772ce8',
+        accentLight: '#a970ff',
+        accentRgb:   '145,71,255',
+        bg:          '#0e0e10',
+        sidebar:     '#1f1f23',
+        surface:     '#18181b',
+        surface2:    '#2a2a2e',
+        surface3:    '#3a3a3e',
+        border:      '#2f2f35',
+        textPrimary: '#efeff1',
+        textMuted:   '#adadb8',
+        textFaint:   '#53535f',
+      }
+
+      function applyTheme(t) {
+        const r = document.documentElement.style
+        r.setProperty('--color-accent',       t.accent)
+        r.setProperty('--color-accent-dark',  t.accentDark)
+        r.setProperty('--color-accent-light', t.accentLight)
+        r.setProperty('--color-accent-rgb',   t.accentRgb)
+        r.setProperty('--color-bg',           t.bg)
+        r.setProperty('--color-sidebar',      t.sidebar)
+        r.setProperty('--color-surface',      t.surface)
+        r.setProperty('--color-surface2',     t.surface2 || adjustBrightness(t.sidebar, 10))
+        r.setProperty('--color-surface3',     t.surface3 || adjustBrightness(t.sidebar, 20))
+        r.setProperty('--color-border',       t.border   || adjustBrightness(t.bg, 25))
+        r.setProperty('--color-text-primary', t.textPrimary)
+        r.setProperty('--color-text-muted',   t.textMuted   || '#adadb8')
+        r.setProperty('--color-text-faint',   t.textFaint   || '#53535f')
+        syncThemePanelUI(t)
+      }
+
+      function hexToRgb(hex) {
+        const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+        return r ? `${parseInt(r[1],16)},${parseInt(r[2],16)},${parseInt(r[3],16)}` : '145,71,255'
+      }
+
+      function adjustBrightness(hex, amt) {
+        let [r,g,b] = hex.replace('#','').match(/.{2}/g).map(h=>parseInt(h,16))
+        r = Math.min(255, Math.max(0, r + amt))
+        g = Math.min(255, Math.max(0, g + amt))
+        b = Math.min(255, Math.max(0, b + amt))
+        return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`
+      }
+
+      function saveTheme(t) {
+        localStorage.setItem('app_theme', JSON.stringify(t))
+      }
+
+      function loadTheme() {
+        try {
+          const raw = localStorage.getItem('app_theme')
+          if (raw) return { ...THEME_DEFAULTS, ...JSON.parse(raw) }
+        } catch(e) {}
+        return { ...THEME_DEFAULTS }
+      }
+
+      function syncThemePanelUI(t) {
+        const setSwatchHex = (swatchId, hexId, pickerId, color) => {
+          const sw = document.getElementById(swatchId)
+          const hx = document.getElementById(hexId)
+          const pk = document.getElementById(pickerId)
+          if (sw) sw.style.background = color
+          if (hx) hx.textContent = color
+          if (pk) pk.value = color
+        }
+        setSwatchHex('accent-swatch', 'accent-hex', 'accent-picker', t.accent)
+        setSwatchHex('bg-swatch', 'bg-hex', 'bg-picker', t.bg)
+        setSwatchHex('sidebar-swatch', 'sidebar-hex', 'sidebar-picker', t.sidebar)
+        setSwatchHex('surface-swatch', 'surface-hex', 'surface-picker', t.surface)
+        setSwatchHex('text-primary-swatch', 'text-primary-hex', 'text-primary-picker', t.textPrimary)
+        // Update selected chip
+        document.querySelectorAll('.theme-preset-chip').forEach(chip => {
+          chip.classList.toggle('selected', chip.dataset.accent === t.accent)
+        })
+      }
+
+      // Load & apply saved theme
+      let currentTheme = loadTheme()
+      applyTheme(currentTheme)
+
+      // Theme panel toggle
+      const themeBtn = document.getElementById('theme-btn')
+      const themePanel = document.getElementById('theme-panel')
+      const themePanelClose = document.getElementById('theme-panel-close')
+
+      if (themeBtn && themePanel) {
+        themeBtn.addEventListener('click', () => {
+          const open = themePanel.classList.toggle('open')
+          themeBtn.classList.toggle('active', open)
+        })
+        if (themePanelClose) {
+          themePanelClose.addEventListener('click', () => {
+            themePanel.classList.remove('open')
+            themeBtn.classList.remove('active')
+          })
+        }
+        // Close on outside click
+        document.addEventListener('click', (e) => {
+          if (themePanel.classList.contains('open') &&
+              !themePanel.contains(e.target) &&
+              e.target !== themeBtn) {
+            themePanel.classList.remove('open')
+            themeBtn.classList.remove('active')
+          }
+        })
+      }
+
+      // Preset chips
+      document.querySelectorAll('.theme-preset-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          currentTheme.accent      = chip.dataset.accent
+          currentTheme.accentDark  = chip.dataset.accentDark
+          currentTheme.accentLight = chip.dataset.accentLight
+          currentTheme.accentRgb   = chip.dataset.accentRgb
+          applyTheme(currentTheme)
+          saveTheme(currentTheme)
+        })
+      })
+
+      // Color pickers — clicking swatch opens picker
+      function setupColorPicker(swatchId, pickerId, hexId, prop, extraFn) {
+        const swatch = document.getElementById(swatchId)
+        const picker = document.getElementById(pickerId)
+        const hex    = document.getElementById(hexId)
+        if (!swatch || !picker) return
+        swatch.addEventListener('click', () => picker.click())
+        picker.addEventListener('input', () => {
+          const val = picker.value
+          if (swatch) swatch.style.background = val
+          if (hex) hex.textContent = val
+          currentTheme[prop] = val
+          if (extraFn) extraFn(val)
+          applyTheme(currentTheme)
+          saveTheme(currentTheme)
+        })
+      }
+
+      setupColorPicker('accent-swatch', 'accent-picker', 'accent-hex', 'accent', (val) => {
+        currentTheme.accentRgb   = hexToRgb(val)
+        currentTheme.accentDark  = adjustBrightness(val, -25)
+        currentTheme.accentLight = adjustBrightness(val, 30)
+        // Clear preset chip selection since user picked custom
+        document.querySelectorAll('.theme-preset-chip').forEach(c => c.classList.remove('selected'))
+      })
+      setupColorPicker('bg-swatch',     'bg-picker',     'bg-hex',     'bg')
+      setupColorPicker('sidebar-swatch','sidebar-picker','sidebar-hex','sidebar', (val) => {
+        currentTheme.surface2 = adjustBrightness(val, 10)
+        currentTheme.surface3 = adjustBrightness(val, 20)
+        currentTheme.border   = adjustBrightness(val, 15)
+      })
+      setupColorPicker('surface-swatch','surface-picker','surface-hex','surface')
+      setupColorPicker('text-primary-swatch','text-primary-picker','text-primary-hex','textPrimary')
+
+      // Reset button
+      const themeResetBtn = document.getElementById('theme-reset-btn')
+      if (themeResetBtn) {
+        themeResetBtn.addEventListener('click', () => {
+          currentTheme = { ...THEME_DEFAULTS }
+          applyTheme(currentTheme)
+          saveTheme(currentTheme)
+        })
+      }
+
+
       notifBtn.classList.toggle('active', notifEnabled)
 
       // Fetch and display version
@@ -3004,6 +5091,9 @@
       // Check activation status
       const act = await window.twitch.checkActivation()
       isActivated = act.isActivated
+
+      // Check giveaway activation status
+      initGiveawayActivationCheck()
 
       // Load accounts initially
       accounts = await window.twitch.getAccounts()

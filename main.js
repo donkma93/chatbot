@@ -14,6 +14,9 @@ let ACTIVATION_FILE
 let MACHINE_ID_FILE
 let isActivated = false
 
+let GIVEAWAY_ACTIVATION_FILE
+let isGiveawayActivated = false
+
 // accounts: [ { id, label, token, channels[] } ]
 let accounts = []
 let activeAccountId = null
@@ -33,6 +36,20 @@ const VALID_KEYS = [
   "TV-E2GC-E2JM-B5GY","TV-79B3-MPNY-CKI7","TV-UDVG-UZNT-QQZL","TV-WS0J-6AD4-7332","TV-746M-KBHK-WBA6",
   "TV-26R2-BMUZ-JIRZ","TV-EFJZ-4OWQ-P3IL","TV-IVPH-7FE1-UB5G","TV-MA4F-B4AL-9Q4A","TV-I0WW-6MDN-CHOY",
   "TV-ACYM-ZYXH-81ZP","TV-ABZ3-2NXQ-NAVS","TV-OPJZ-VJTL-UMQG","TV-2DRJ-UIS5-3QH1","TV-9UTM-QUDL-JRTE"
+]
+
+// 50 Valid Giveaway Keys
+const VALID_GIVEAWAY_KEYS = [
+  "GW-AI5Q-N097-0V3J","GW-L8VN-GNL2-0FPE","GW-UGDE-UEVE-XG25","GW-MO92-5SHH-UPPC","GW-7BET-HIGI-R5WP",
+  "GW-KM7X-T86O-YWRE","GW-BLO6-VNX8-BLEL","GW-J3RP-1VD7-DWTY","GW-1M2Z-VHT5-ND3Y","GW-MUK3-4ZPZ-IVEG",
+  "GW-GWAB-RW9D-H9T9","GW-Q4XH-0FFF-TXFG","GW-5B3C-U9PV-DYO0","GW-0CDV-3WGF-LJO8","GW-27DC-0D0G-CBSJ",
+  "GW-N5DN-MCJ2-8X0D","GW-6S5D-YOA5-85GF","GW-HNDB-WDHD-6TWF","GW-9FUX-WAMG-OZ4T","GW-ROOT-MKE1-ERBW",
+  "GW-0CH8-BN4B-AL2E","GW-O2LO-DKP9-44C7","GW-RUI0-J57H-TSOI","GW-INUC-VEXH-VDZH","GW-UCHZ-62LD-U6NU",
+  "GW-PP27-B0LI-TJUB","GW-3FPB-HG6P-HEXS","GW-JILQ-5DPM-JNYV","GW-OO0W-0LJT-V3GF","GW-IT2T-ST65-B7Y6",
+  "GW-AP2N-KEX4-Q4ZO","GW-3OK9-GKYJ-59P9","GW-PNQQ-5ZBY-5S1U","GW-8OZI-2Q75-ULWF","GW-9Q9N-2GKK-HHQ4",
+  "GW-E2GC-E2JM-B5GY","GW-79B3-MPNY-CKI7","GW-UDVG-UZNT-QQZL","GW-WS0J-6AD4-7332","GW-746M-KBHK-WBA6",
+  "GW-26R2-BMUZ-JIRZ","GW-EFJZ-4OWQ-P3IL","GW-IVPH-7FE1-UB5G","GW-MA4F-B4AL-9Q4A","GW-I0WW-6MDN-CHOY",
+  "GW-ACYM-ZYXH-81ZP","GW-ABZ3-2NXQ-NAVS","GW-OPJZ-VJTL-UMQG","GW-2DRJ-UIS5-3QH1","GW-9UTM-QUDL-JRTE"
 ]
 
 // ── License & Activation ────────────────────────────────────────
@@ -171,6 +188,124 @@ function activateKeyOnline(key) {
               resolve({ success: true, message: 'Kích hoạt bản quyền thành công!' })
             } catch (e) {
               resolve({ success: false, message: 'Lưu thông tin kích hoạt cục bộ thất bại!' })
+            }
+          } else {
+            resolve({ success: false, message: 'Key đã được kích hoạt trên thiết bị khác!' })
+          }
+        }
+      })
+    })
+
+    req.on('error', (err) => {
+      resolve({ success: false, message: `Không thể kết nối đến máy chủ kích hoạt. Vui lòng kiểm tra kết nối mạng! (Lỗi: ${err.message})` })
+    })
+    req.end()
+  })
+}
+
+function checkGiveawayActivationLocal() {
+  try {
+    if (fs.existsSync(GIVEAWAY_ACTIVATION_FILE)) {
+      const act = JSON.parse(fs.readFileSync(GIVEAWAY_ACTIVATION_FILE, 'utf8'))
+      const currentMachineId = getMachineId()
+      if (act && act.key && VALID_GIVEAWAY_KEYS.includes(act.key) && act.machineId === currentMachineId) {
+        isGiveawayActivated = true
+        return true
+      }
+    }
+  } catch (e) {
+    console.error('Error checking local giveaway activation:', e)
+  }
+  isGiveawayActivated = false
+  return false
+}
+
+function activateGiveawayKeyOnline(key) {
+  return new Promise((resolve) => {
+    const machineId = getMachineId()
+    const cleanKey = key.trim()
+    
+    if (!VALID_GIVEAWAY_KEYS.includes(cleanKey)) {
+      resolve({ success: false, message: 'Key Giveaway không tồn tại hoặc không hợp lệ!' })
+      return
+    }
+
+    const getOptions = {
+      hostname: 'keyvalue.immanuel.co',
+      path: `/api/KeyVal/GetValue/${APP_KEY}/${cleanKey}`,
+      method: 'GET'
+    }
+
+    const req = https.request(getOptions, (res) => {
+      let data = ''
+      res.on('data', (chunk) => { data += chunk })
+      res.on('end', () => {
+        let registeredMachineId = ''
+        try {
+          if (data && data.trim()) {
+            registeredMachineId = JSON.parse(data)
+          }
+        } catch (e) {
+          registeredMachineId = data.replace(/^"|"$/g, '').trim()
+        }
+
+        registeredMachineId = (registeredMachineId || '').trim()
+
+        if (!registeredMachineId) {
+          const postOptions = {
+            hostname: 'keyvalue.immanuel.co',
+            path: `/api/KeyVal/UpdateValue/${APP_KEY}/${cleanKey}/${machineId}`,
+            method: 'POST',
+            headers: {
+              'Content-Length': '0'
+            }
+          }
+          const postReq = https.request(postOptions, (postRes) => {
+            let postResult = ''
+            postRes.on('data', (chunk) => { postResult += chunk })
+            postRes.on('end', () => {
+              let isSaved = false
+              try {
+                isSaved = JSON.parse(postResult) === true
+              } catch (e) {
+                isSaved = postResult.trim() === 'true'
+              }
+
+              if (isSaved) {
+                const activationData = {
+                  key: cleanKey,
+                  machineId: machineId,
+                  activatedAt: Date.now()
+                }
+                try {
+                  fs.writeFileSync(GIVEAWAY_ACTIVATION_FILE, JSON.stringify(activationData, null, 2), 'utf8')
+                  isGiveawayActivated = true
+                  resolve({ success: true, message: 'Kích hoạt Giveaway Premium thành công!' })
+                } catch (e) {
+                  resolve({ success: false, message: 'Lưu thông tin kích hoạt Giveaway cục bộ thất bại!' })
+                }
+              } else {
+                resolve({ success: false, message: 'Đăng ký key lên máy chủ thất bại!' })
+              }
+            })
+          })
+          postReq.on('error', (err) => {
+            resolve({ success: false, message: `Lỗi kết nối khi kích hoạt: ${err.message}` })
+          })
+          postReq.end()
+        } else {
+          if (registeredMachineId === machineId) {
+            const activationData = {
+              key: cleanKey,
+              machineId: machineId,
+              activatedAt: Date.now()
+            }
+            try {
+              fs.writeFileSync(GIVEAWAY_ACTIVATION_FILE, JSON.stringify(activationData, null, 2), 'utf8')
+              isGiveawayActivated = true
+              resolve({ success: true, message: 'Kích hoạt Giveaway Premium thành công!' })
+            } catch (e) {
+              resolve({ success: false, message: 'Lưu thông tin kích hoạt Giveaway cục bộ thất bại!' })
             }
           } else {
             resolve({ success: false, message: 'Key đã được kích hoạt trên thiết bị khác!' })
@@ -422,6 +557,83 @@ function sendChat(accountId, channel, text, replyParentMsgId) {
   }
 }
 
+// Giveaway WebSocket connection
+let giveawayWs = null
+let giveawayChannel = null
+let giveawayModBotAccountId = null
+
+function connectGiveawayChannel(channel, modBotAccountId) {
+  stopGiveawayChannel()
+
+  var ch = channel.toLowerCase()
+  giveawayChannel = ch
+  giveawayModBotAccountId = modBotAccountId
+
+  var ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443')
+  giveawayWs = ws
+
+  var acc = null
+  if (modBotAccountId) {
+    acc = getAccount(modBotAccountId)
+  }
+
+  var isAnon = !acc || !acc.token || acc.token === 'anonymous'
+  var nick = isAnon ? 'justinfan' + Math.floor(Math.random() * 99999) : acc.label.toLowerCase().replace(/\s+/g, '_')
+  var pass = isAnon ? 'oauth:anonymous_token' : 'oauth:' + acc.token
+
+  ws.on('open', function() {
+    ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands')
+    ws.send('PASS ' + pass)
+    ws.send('NICK ' + nick)
+    ws.send('JOIN #' + ch)
+    if (mainWindow) mainWindow.webContents.send('giveaway-status', { connected: true })
+  })
+
+  ws.on('message', function(data) {
+    var raw = data.toString()
+    var lines = raw.split('\r\n').filter(Boolean)
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i]
+      if (line.startsWith('PING')) { ws.send('PONG :tmi.twitch.tv'); continue }
+
+      var msg = parseTwitchMessage(line)
+      if (msg && mainWindow) {
+        msg.channel = ch
+        mainWindow.webContents.send('giveaway-chat-message', msg)
+      }
+    }
+  })
+
+  ws.on('close', function() {
+    if (giveawayWs === ws) {
+      giveawayWs = null
+      if (mainWindow) mainWindow.webContents.send('giveaway-status', { connected: false })
+    }
+  })
+
+  ws.on('error', function(err) {
+    if (giveawayWs === ws) {
+      giveawayWs = null
+      if (mainWindow) mainWindow.webContents.send('giveaway-status', { connected: false, error: err.message })
+    }
+  })
+}
+
+function stopGiveawayChannel() {
+  if (giveawayWs) {
+    try {
+      giveawayWs.close()
+    } catch(e){}
+    giveawayWs = null
+  }
+}
+
+function sendGiveawayChat(text) {
+  if (giveawayWs && giveawayWs.readyState === WebSocket.OPEN && giveawayChannel) {
+    giveawayWs.send('PRIVMSG #' + giveawayChannel + ' :' + text)
+  }
+}
+
 function decodeTagValue(val) {
   if (!val) return ''
   return val
@@ -479,6 +691,7 @@ function parseTwitchMessage(line) {
     isMod: badges.indexOf('moderator') !== -1 || tags['mod'] === '1',
     isSub: badges.indexOf('subscriber') !== -1,
     isBroadcaster: badges.indexOf('broadcaster') !== -1,
+    isVip: badges.indexOf('vip') !== -1,
     timestamp: Date.now(),
     replyParentMsgId: replyParentMsgId,
     replyParentUser: replyParentUser,
@@ -541,6 +754,49 @@ ipcMain.handle('get-app-version', function() {
 
 ipcMain.handle('activate-key', async function(event, key) {
   return await activateKeyOnline(key)
+})
+
+ipcMain.handle('check-giveaway-activation', function() {
+  return {
+    isActivated: isGiveawayActivated,
+    machineId: getMachineId()
+  }
+})
+
+ipcMain.handle('activate-giveaway-key', async function(event, key) {
+  return await activateGiveawayKeyOnline(key)
+})
+
+ipcMain.on('start-giveaway-connection', function(event, channel, modBotAccountId) {
+  connectGiveawayChannel(channel, modBotAccountId)
+  
+  // Background join for all authenticated accounts to process Auto Bot
+  var ch = channel.toLowerCase().trim()
+  if (ch) {
+    accounts.forEach(function(acc) {
+      if (acc.token && acc.token !== 'anonymous') {
+        connectChannel(acc.id, ch)
+      }
+    })
+  }
+})
+
+ipcMain.on('stop-giveaway-connection', function() {
+  var channelToDisconnect = giveawayChannel
+  stopGiveawayChannel()
+  
+  if (channelToDisconnect) {
+    var ch = channelToDisconnect.toLowerCase().trim()
+    accounts.forEach(function(acc) {
+      if (acc.channels.indexOf(ch) === -1) {
+        disconnectChannel(acc.id, ch)
+      }
+    })
+  }
+})
+
+ipcMain.on('send-giveaway-chat', function(event, text) {
+  sendGiveawayChat(text)
 })
 
 ipcMain.handle('get-accounts', function() {
@@ -648,6 +904,7 @@ ipcMain.on('send-chat', function(event, accountId, channel, text, replyParentMsg
         isMod: isBroadcaster,
         isSub: false,
         isBroadcaster: isBroadcaster,
+        isVip: false,
         timestamp: Date.now(),
         replyParentMsgId: replyParentMsgId || '',
         replyParentUser: replyParentUser || '',
@@ -659,6 +916,16 @@ ipcMain.on('send-chat', function(event, accountId, channel, text, replyParentMsg
 
 ipcMain.on('toggle-notifications', function(event, enabled) {
   notificationsEnabled = enabled
+})
+
+ipcMain.on('set-window-opacity', function(event, opacity) {
+  if (mainWindow) {
+    try {
+      mainWindow.setOpacity(opacity)
+    } catch (e) {
+      console.error('Failed to set window opacity:', e)
+    }
+  }
 })
 
 ipcMain.on('reconnect-all', function() {
@@ -675,10 +942,12 @@ ipcMain.on('open-external', function(event, url) {
 app.whenReady().then(function() {
   ACCOUNTS_FILE = path.join(app.getPath('userData'), 'accounts.json')
   ACTIVATION_FILE = path.join(app.getPath('userData'), 'activation.json')
+  GIVEAWAY_ACTIVATION_FILE = path.join(app.getPath('userData'), 'giveaway_activation.json')
   MACHINE_ID_FILE = path.join(app.getPath('userData'), 'machine.id')
   
   loadAccounts()
   checkActivationLocal()
+  checkGiveawayActivationLocal()
   createWindow()
 
   // Auto Update check (Method 1: electron-updater)
