@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node_modules\\electron\\dist\\electron.exe .",
     "install-deps": "npm install",
-    "dist": "electron-builder --win"
+    "dist": "electron-builder --win",
+    "dist:publish": "electron-builder --win --publish always"
   },
   "dependencies": {
     "electron-updater": "^6.3.9",
@@ -31,6 +32,12 @@
         "nsis",
         "portable"
       ]
+    },
+    "nsis": {
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}.${ext}"
     },
     "directories": {
       "output": "dist"
