@@ -712,6 +712,7 @@ function intToHex(n) {
   return [r, g, b].map(function(x) { return x.toString(16).padStart(2, '0') }).join('')
 }
 
+
 // ── Window ────────────────────────────────────────────────────
 function createWindow() {
   mainWindow = new BrowserWindow({

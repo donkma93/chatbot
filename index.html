@@ -431,6 +431,9 @@
       gap: 10px;
       width: 100%;
     }
+    .chat-input-container + .chat-input-container {
+      margin-top: 8px;
+    }
     .chat-input-field {
       flex: 1;
       background: var(--color-bg);
@@ -457,6 +460,30 @@
       transition: background 0.2s;
     }
     .chat-send-btn:hover { background: var(--color-accent-dark); }
+    .translate-chat-container {
+      align-items: stretch;
+    }
+    .translate-target-select {
+      min-width: 88px;
+      background: var(--color-bg);
+      border: 1px solid var(--color-surface3);
+      border-radius: 6px;
+      color: var(--color-text-primary);
+      padding: 10px 10px;
+      font-size: 12px;
+      outline: none;
+      cursor: pointer;
+    }
+    .translate-target-select:focus {
+      border-color: var(--color-accent);
+    }
+    .translate-chat-field {
+      border-style: dashed;
+    }
+    .translate-send-btn {
+      min-width: 94px;
+      padding: 0 14px;
+    }
 
     /* Auto Bot Row */
     .auto-bot-row {
@@ -2315,6 +2342,50 @@
     </div>
   </div>
 
+  <!-- MEGAMU Event Notifier Modal -->
+  <div id="event-notify-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Thông báo Event MEGAMU 📅</h2>
+        <span class="event-notify-close-btn modal-close-btn">&times;</span>
+      </div>
+      <div class="modal-body">
+        <h3>1. Bật thông báo bot cho kênh này</h3>
+        <div class="form-group checkbox-group">
+          <input type="checkbox" id="event-notify-enable" />
+          <label for="event-notify-enable">Bật nhắn chat trước 5 phút</label>
+        </div>
+
+        <div class="form-group">
+          <label>Nguồn lịch:</label>
+          <div style="font-size: 12px; color: #a970ff; font-weight: 500; background: rgba(145, 71, 255, 0.05); border: 1px dashed rgba(145, 71, 255, 0.2); padding: 8px 12px; border-radius: 6px; line-height: 1.4;">
+            App dùng <b>lịch cố định nội bộ</b> theo bảng giờ bạn đã chốt, gốc <b>GMT-3</b>, rồi tự đổi sang <b>GMT+7</b> trước khi báo trên chat.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Thời điểm thông báo:</label>
+          <div style="font-size: 12px; color: #a970ff; font-weight: 500; background: rgba(145, 71, 255, 0.05); border: 1px dashed rgba(145, 71, 255, 0.2); padding: 8px 12px; border-radius: 6px; line-height: 1.4;">
+            Bot sẽ nhắn trên chat <b>5 phút trước giờ bắt đầu</b> của từng event sắp diễn ra.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="event-notify-template">Mẫu tin nhắn:</label>
+          <input type="text" id="event-notify-template" placeholder="Ví dụ: ⏰ 5 phút nữa sẽ diễn ra {event} lúc {time_gmt7} (GMT+7)" />
+          <span class="help-text">Dùng <code>{event}</code> và <code>{time_gmt7}</code> trong nội dung.</span>
+        </div>
+
+        <hr class="modal-divider" style="margin: 15px 0;" />
+
+        <h3>2. Event sắp diễn ra (GMT+7)</h3>
+        <div id="event-notify-upcoming-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+
+        <button type="button" id="save-event-notify-btn" style="background: #9147ff; color: white; border: none; border-radius: 6px; padding: 11px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; width: 100%; margin-top: 10px;">Lưu cấu hình Event</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Guide Modal -->
   <div id="guide-modal" class="modal-overlay">
     <div class="modal-card" style="max-width: 600px;">
@@ -2430,6 +2501,12 @@
     const autoClaimEnableCheckbox = document.getElementById('auto-claim-enable')
     const autoClaimRewardInput = document.getElementById('auto-claim-reward')
     const saveAutoSettingsBtn = document.getElementById('save-auto-settings-btn')
+    const eventNotifyModal = document.getElementById('event-notify-modal')
+    const eventNotifyCloseBtn = document.querySelector('.event-notify-close-btn')
+    const eventNotifyEnableCheckbox = document.getElementById('event-notify-enable')
+    const eventNotifyTemplateInput = document.getElementById('event-notify-template')
+    const eventNotifyUpcomingList = document.getElementById('event-notify-upcoming-list')
+    const saveEventNotifyBtn = document.getElementById('save-event-notify-btn')
 
     // Modal
     const accountModal = document.getElementById('account-modal')
@@ -2464,6 +2541,24 @@
     let isCheckinActive = false
 
     let autoSettingsByChannel = {}
+    let eventNotifierSettingsByChannel = {}
+    let megamuEventSchedulerInterval = null
+    let currentEventNotifyEditingChannelKey = null
+    const megamuEventReminderHistory = {}
+    const MEGAMU_FIXED_EVENTS_GMT_MINUS_3 = [
+      ['Blood Castle', ['03:00', '07:00', '11:00', '15:00', '19:00', '22:50']],
+      ['Chaos Castle', ['01:00', '05:00', '09:00', '13:00', '17:00', '20:50']],
+      ['Devil Square', ['01:30', '03:30', '05:30', '07:30', '09:30', '11:30', '13:30', '15:30', '17:30', '19:30', '21:30', '23:30']],
+      ['Moss Merchant', ['02:15', '08:15', '14:15', '20:15']],
+      ['Skeleton King', ['00:05', '04:05', '08:05', '12:05', '16:05', '20:05']],
+      ['Red Dragon', ['00:15', '04:15', '08:15', '12:15', '16:15', '20:15']],
+      ['Dragão Dourado', ['00:25', '04:25', '08:25', '12:25', '16:25', '20:25']],
+      ['White Wizard', ['00:50', '04:50', '08:50', '12:50', '16:50', '20:50']],
+      ['Moon Rabbit', ['02:15', '06:15', '10:15', '14:15', '18:15', '22:15']],
+      ['Invasion of Demons', ['01:25', '05:25', '09:25', '13:25', '17:25', '21:25']],
+      ['MEGADROP', ['13:15', '20:00']],
+      ['Battle Royale', ['03:55', '07:55', '11:55', '15:55', '19:55', '23:55']]
+    ]
 
     function getChannelAutoSettings(key) {
       const parts = key.split(':')
@@ -2706,6 +2801,266 @@
         c.autoStatusText.textContent = 'Auto Bot: Tắt'
         c.autoStatusText.style.color = '#adadb8'
       }
+    }
+
+    function getChannelEventNotifierSettings(key) {
+      if (!eventNotifierSettingsByChannel[key]) {
+        eventNotifierSettingsByChannel[key] = {
+          enabled: false,
+          template: '⏰ [MEGAMU] Còn 5 phút nữa sẽ diễn ra {event} lúc {time_gmt7} (GMT+7).'
+        }
+      }
+      return eventNotifierSettingsByChannel[key]
+    }
+
+    function openEventNotifyModal(key) {
+      currentEventNotifyEditingChannelKey = key
+      const settings = getChannelEventNotifierSettings(key)
+
+      eventNotifyEnableCheckbox.checked = settings.enabled
+      eventNotifyTemplateInput.value = settings.template || ''
+
+      const modalHeader = eventNotifyModal.querySelector('.modal-header h2')
+      if (modalHeader) {
+        const chName = key.split(':')[1]
+        modalHeader.textContent = `Thông báo Event MEGAMU - #${chName} 📅`
+      }
+
+      renderMegamuUpcomingEvents()
+      eventNotifyModal.classList.add('open')
+    }
+
+    function updateChannelEventNotifierButtonState(key) {
+      const c = channels[key]
+      if (!c || !c.eventSettingsBtn || !c.eventStatusIndicator || !c.eventStatusText) return
+
+      const settings = getChannelEventNotifierSettings(key)
+      c.eventSettingsBtn.classList.toggle('active', settings.enabled)
+
+      if (settings.enabled) {
+        c.eventStatusIndicator.className = 'auto-bot-status-indicator active'
+        c.eventStatusText.textContent = 'MEGAMU Event: Đang bật (GMT+7, báo trước 5p)'
+        c.eventStatusText.style.color = '#a970ff'
+      } else {
+        c.eventStatusIndicator.className = 'auto-bot-status-indicator'
+        c.eventStatusText.textContent = 'MEGAMU Event: Tắt'
+        c.eventStatusText.style.color = '#adadb8'
+      }
+    }
+
+    function formatTimeRemaining(targetMs) {
+      const diff = Math.max(0, targetMs - Date.now())
+      const totalMinutes = Math.floor(diff / 60000)
+      const hours = Math.floor(totalMinutes / 60)
+      const minutes = totalMinutes % 60
+
+      if (hours > 0) {
+        return `${hours}h ${String(minutes).padStart(2, '0')}m nữa`
+      }
+      return `${minutes}m nữa`
+    }
+
+    function shiftMegamuTimeToGmt7(dayNumber, timeText) {
+      const parts = String(timeText).split(':')
+      const hour = parseInt(parts[0], 10)
+      const minute = parseInt(parts[1], 10)
+      const totalMinutes = hour * 60 + minute + (10 * 60)
+      const dayShift = Math.floor(totalMinutes / (24 * 60))
+      const normalizedMinutes = ((totalMinutes % (24 * 60)) + (24 * 60)) % (24 * 60)
+
+      return {
+        day: dayNumber ? (((dayNumber - 1 + dayShift) % 7) + 1) : null,
+        hour: Math.floor(normalizedMinutes / 60),
+        minute: normalizedMinutes % 60
+      }
+    }
+
+    function normalizeMegamuEvents(rawEvents) {
+      const normalized = []
+
+      rawEvents.forEach((entry) => {
+        if (!Array.isArray(entry) || !entry[0]) return
+
+        if (entry.length === 2 && Array.isArray(entry[1])) {
+          entry[1].forEach((timeText) => {
+            const shifted = shiftMegamuTimeToGmt7(null, timeText)
+            normalized.push({
+              name: entry[0],
+              type: 'daily',
+              hour: shifted.hour,
+              minute: shifted.minute
+            })
+          })
+          return
+        }
+
+        if (entry.length === 3 && Array.isArray(entry[1]) && Array.isArray(entry[2])) {
+          const count = Math.min(entry[1].length, entry[2].length)
+          for (let i = 0; i < count; i++) {
+            const shifted = shiftMegamuTimeToGmt7(entry[1][i], entry[2][i])
+            normalized.push({
+              name: entry[0],
+              type: 'weekly',
+              day: shifted.day,
+              hour: shifted.hour,
+              minute: shifted.minute
+            })
+          }
+        }
+      })
+
+      return normalized
+    }
+
+    function getOffsetDateParts(nowMs, offsetHours) {
+      const shifted = new Date(nowMs + offsetHours * 60 * 60 * 1000)
+      return {
+        year: shifted.getUTCFullYear(),
+        month: shifted.getUTCMonth(),
+        day: shifted.getUTCDate(),
+        weekday: shifted.getUTCDay() + 1
+      }
+    }
+
+    function getNextMegamuOccurrenceMs(eventDef, nowMs) {
+      const offsetHours = 7
+      const offsetMs = offsetHours * 60 * 60 * 1000
+      const parts = getOffsetDateParts(nowMs, offsetHours)
+
+      if (eventDef.type === 'daily') {
+        let candidateMs = Date.UTC(parts.year, parts.month, parts.day, eventDef.hour, eventDef.minute, 0, 0) - offsetMs
+        if (candidateMs <= nowMs) candidateMs += 24 * 60 * 60 * 1000
+        return candidateMs
+      }
+
+      let daysAhead = ((eventDef.day || 1) - parts.weekday + 7) % 7
+      let candidateMs = Date.UTC(parts.year, parts.month, parts.day + daysAhead, eventDef.hour, eventDef.minute, 0, 0) - offsetMs
+      if (candidateMs <= nowMs) candidateMs += 7 * 24 * 60 * 60 * 1000
+      return candidateMs
+    }
+
+    function formatGmt7Time(absoluteMs) {
+      const shifted = new Date(absoluteMs + 7 * 60 * 60 * 1000)
+      const hour = String(shifted.getUTCHours()).padStart(2, '0')
+      const minute = String(shifted.getUTCMinutes()).padStart(2, '0')
+      return `${hour}:${minute}`
+    }
+
+    function renderMegamuUpcomingEvents() {
+      if (!eventNotifyUpcomingList) return
+
+      const events = normalizeMegamuEvents(MEGAMU_FIXED_EVENTS_GMT_MINUS_3)
+      const nowMs = Date.now()
+      const upcoming = events
+        .map((eventDef) => ({
+          name: eventDef.name,
+          occurrenceMs: getNextMegamuOccurrenceMs(eventDef, nowMs)
+        }))
+        .sort((a, b) => a.occurrenceMs - b.occurrenceMs)
+        .slice(0, 8)
+
+      eventNotifyUpcomingList.innerHTML = ''
+
+      upcoming.forEach((item) => {
+        const row = document.createElement('div')
+        row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:12px; background: var(--color-sidebar); border: 1px solid var(--color-border); border-radius: 8px; padding: 10px 12px;'
+
+        const left = document.createElement('div')
+        left.style.cssText = 'display:flex; flex-direction:column; gap:2px;'
+
+        const title = document.createElement('div')
+        title.textContent = item.name
+        title.style.cssText = 'font-size:13px; font-weight:700; color: var(--color-text-primary);'
+
+        const sub = document.createElement('div')
+        sub.textContent = `Bắt đầu lúc ${formatGmt7Time(item.occurrenceMs)} (GMT+7)`
+        sub.style.cssText = 'font-size:11px; color: var(--color-text-muted);'
+
+        const right = document.createElement('div')
+        right.textContent = formatTimeRemaining(item.occurrenceMs)
+        right.style.cssText = 'font-size:12px; font-weight:700; color: #a970ff; white-space:nowrap;'
+
+        left.appendChild(title)
+        left.appendChild(sub)
+        row.appendChild(left)
+        row.appendChild(right)
+        eventNotifyUpcomingList.appendChild(row)
+      })
+    }
+
+    async function checkMegamuEventReminders() {
+      const enabledKeys = Object.keys(channels).filter((key) => getChannelEventNotifierSettings(key).enabled)
+      if (!enabledKeys.length) return
+
+      const events = normalizeMegamuEvents(MEGAMU_FIXED_EVENTS_GMT_MINUS_3)
+
+      const nowMs = Date.now()
+      const leadMs = 5 * 60 * 1000
+
+      enabledKeys.forEach((key) => {
+        const settings = getChannelEventNotifierSettings(key)
+        const channelInfo = channels[key]
+        if (!settings.enabled || !channelInfo) return
+
+        events.forEach((eventDef) => {
+          const occurrenceMs = getNextMegamuOccurrenceMs(eventDef, nowMs)
+          const diffMs = occurrenceMs - nowMs
+          if (diffMs <= 0 || diffMs > leadMs) return
+
+          const reminderKey = `${key}|${eventDef.name}|${occurrenceMs}`
+          if (megamuEventReminderHistory[reminderKey]) return
+
+          const messageTemplate = (settings.template || '').trim() || '⏰ [MEGAMU] Còn 5 phút nữa sẽ diễn ra {event} lúc {time_gmt7} (GMT+7).'
+          const message = messageTemplate
+            .replace(/{event}/g, eventDef.name)
+            .replace(/{time_gmt7}/g, formatGmt7Time(occurrenceMs))
+
+          window.twitch.sendChat(channelInfo.accountId, channelInfo.channel, message, '', '', '')
+          megamuEventReminderHistory[reminderKey] = true
+        })
+      })
+    }
+
+    function ensureMegamuEventSchedulerRunning() {
+      if (megamuEventSchedulerInterval) return
+
+      checkMegamuEventReminders()
+      megamuEventSchedulerInterval = setInterval(() => {
+        checkMegamuEventReminders()
+        if (eventNotifyModal && eventNotifyModal.classList.contains('open')) {
+          renderMegamuUpcomingEvents()
+        }
+      }, 15000)
+    }
+
+    if (eventNotifyCloseBtn) {
+      eventNotifyCloseBtn.addEventListener('click', function() {
+        eventNotifyModal.classList.remove('open')
+      })
+    }
+
+    if (eventNotifyModal) {
+      eventNotifyModal.addEventListener('click', function(e) {
+        if (e.target === eventNotifyModal) {
+          eventNotifyModal.classList.remove('open')
+        }
+      })
+    }
+
+    if (saveEventNotifyBtn) {
+      saveEventNotifyBtn.addEventListener('click', function() {
+        if (!currentEventNotifyEditingChannelKey) return
+
+        const settings = getChannelEventNotifierSettings(currentEventNotifyEditingChannelKey)
+        settings.enabled = eventNotifyEnableCheckbox.checked
+        settings.template = eventNotifyTemplateInput.value.trim()
+
+        localStorage.setItem('event_notifier_settings_by_channel', JSON.stringify(eventNotifierSettingsByChannel))
+        updateChannelEventNotifierButtonState(currentEventNotifyEditingChannelKey)
+        eventNotifyModal.classList.remove('open')
+        ensureMegamuEventSchedulerRunning()
+        alert('Đã lưu cấu hình thông báo Event cho kênh này!')
+      })
     }
 
     // ── External URL ──────────────────────────────────────────────
@@ -3217,9 +3572,14 @@
       let replyPreviewBar = null
       let replyPreviewText = null
       let inputField = null
+      let translateInputField = null
+      let translateTargetSelect = null
       let btnAuto = null
       let autoBotStatusIndicator = null
       let autoBotStatusText = null
+      let btnEventNotify = null
+      let eventStatusIndicator = null
+      let eventStatusText = null
 
       if (acc && acc.hasToken) {
         replyPreviewBar = document.createElement('div')
@@ -3281,6 +3641,83 @@
         container.appendChild(sendBtn)
         inputWrap.appendChild(container)
 
+        const translateContainer = document.createElement('div')
+        translateContainer.className = 'chat-input-container translate-chat-container'
+
+        translateTargetSelect = document.createElement('select')
+        translateTargetSelect.className = 'translate-target-select'
+        ;[
+          ['vi', 'VI'],
+          ['en', 'EN'],
+          ['pt', 'PT'],
+          ['es', 'ES'],
+          ['th', 'TH'],
+          ['id', 'ID'],
+          ['ja', 'JA'],
+          ['ko', 'KO']
+        ].forEach(([value, label]) => {
+          const option = document.createElement('option')
+          option.value = value
+          option.textContent = label
+          translateTargetSelect.appendChild(option)
+        })
+        translateTargetSelect.value = 'en'
+
+        translateInputField = document.createElement('input')
+        translateInputField.type = 'text'
+        translateInputField.className = 'chat-input-field translate-chat-field'
+        translateInputField.placeholder = 'Nhập nội dung để tự dịch rồi gửi...'
+        translateInputField.maxLength = 500
+
+        const translateSendBtn = document.createElement('button')
+        translateSendBtn.className = 'chat-send-btn translate-send-btn'
+        translateSendBtn.textContent = 'Dịch gửi'
+
+        const performTranslateSend = async () => {
+          const sourceText = translateInputField.value.trim()
+          if (!sourceText) return
+
+          const targetLang = translateTargetSelect.value || 'en'
+          translateSendBtn.disabled = true
+          translateSendBtn.textContent = 'Đang dịch...'
+
+          try {
+            const translatedText = await translateText(sourceText, targetLang)
+            if (!translatedText) {
+              throw new Error('EMPTY_TRANSLATION')
+            }
+
+            let parentId = ''
+            let parentUser = ''
+            let parentBody = ''
+
+            if (channels[key] && channels[key].replyingTo) {
+              parentId = channels[key].replyingTo.id
+              parentUser = channels[key].replyingTo.username
+              parentBody = channels[key].replyingTo.text
+            }
+
+            window.twitch.sendChat(accountId, ch, translatedText, parentId, parentUser, parentBody)
+            if (channels[key]) cancelReply(channels[key])
+            translateInputField.value = ''
+          } catch (error) {
+            alert('Không thể dịch nội dung. Vui lòng thử lại.')
+          } finally {
+            translateSendBtn.disabled = false
+            translateSendBtn.textContent = 'Dịch gửi'
+          }
+        }
+
+        translateInputField.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') performTranslateSend()
+        })
+        translateSendBtn.addEventListener('click', performTranslateSend)
+
+        translateContainer.appendChild(translateTargetSelect)
+        translateContainer.appendChild(translateInputField)
+        translateContainer.appendChild(translateSendBtn)
+        inputWrap.appendChild(translateContainer)
+
         // Auto Bot Row
         const autoBotRow = document.createElement('div')
         autoBotRow.className = 'auto-bot-row'
@@ -3309,6 +3746,34 @@
         autoBotRow.appendChild(autoBotInfo)
         autoBotRow.appendChild(btnAuto)
         inputWrap.appendChild(autoBotRow)
+
+        const eventBotRow = document.createElement('div')
+        eventBotRow.className = 'auto-bot-row'
+
+        const eventBotInfo = document.createElement('div')
+        eventBotInfo.className = 'auto-bot-info'
+
+        eventStatusIndicator = document.createElement('div')
+        eventStatusIndicator.className = 'auto-bot-status-indicator'
+
+        eventStatusText = document.createElement('span')
+        eventStatusText.textContent = 'MEGAMU Event: Tắt'
+
+        eventBotInfo.appendChild(eventStatusIndicator)
+        eventBotInfo.appendChild(eventStatusText)
+
+        btnEventNotify = document.createElement('button')
+        btnEventNotify.type = 'button'
+        btnEventNotify.className = 'auto-settings-btn'
+        btnEventNotify.innerHTML = '📅 Event'
+        btnEventNotify.title = 'Cài đặt thông báo Event MEGAMU cho kênh này'
+        btnEventNotify.addEventListener('click', function() {
+          openEventNotifyModal(key)
+        })
+
+        eventBotRow.appendChild(eventBotInfo)
+        eventBotRow.appendChild(btnEventNotify)
+        inputWrap.appendChild(eventBotRow)
       } else {
         const notice = document.createElement('div')
         notice.className = 'anon-notice'
@@ -3356,14 +3821,20 @@
         replyPreviewBar: acc && acc.hasToken ? replyPreviewBar : null,
         replyPreviewText: acc && acc.hasToken ? replyPreviewText : null,
         inputField: acc && acc.hasToken ? inputField : null,
+        translateInputField: acc && acc.hasToken ? translateInputField : null,
+        translateTargetSelect: acc && acc.hasToken ? translateTargetSelect : null,
         replyingTo: null,
         autoSettingsBtn: acc && acc.hasToken ? btnAuto : null,
         autoStatusIndicator: acc && acc.hasToken ? autoBotStatusIndicator : null,
-        autoStatusText: acc && acc.hasToken ? autoBotStatusText : null
+        autoStatusText: acc && acc.hasToken ? autoBotStatusText : null,
+        eventSettingsBtn: acc && acc.hasToken ? btnEventNotify : null,
+        eventStatusIndicator: acc && acc.hasToken ? eventStatusIndicator : null,
+        eventStatusText: acc && acc.hasToken ? eventStatusText : null
       }
 
       if (acc && acc.hasToken) {
         updateChannelAutoButtonState(key)
+        updateChannelEventNotifierButtonState(key)
       }
 
       // Add Channel to Account on Backend if not from boot
@@ -3812,22 +4283,26 @@
       }
     })
 
+    async function translateText(text, targetLang) {
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`
+      const res = await fetch(url)
+      if (!res.ok) throw new Error('API Error')
+
+      const data = await res.json()
+      if (data && data[0]) {
+        return data[0].map(item => item[0]).join('').trim()
+      }
+
+      return ''
+    }
+
     async function performTranslation() {
       const targetLang = transLangSelect.value
       transResultText.innerHTML = '<div class="trans-loading">Đang dịch...</div>'
       
       try {
-        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(selectedText)}`
-        const res = await fetch(url)
-        if (!res.ok) throw new Error('API Error')
-        
-        const data = await res.json()
-        if (data && data[0]) {
-          const translated = data[0].map(item => item[0]).join('')
-          transResultText.textContent = translated
-        } else {
-          transResultText.textContent = 'Không thể phân tích dữ liệu dịch.'
-        }
+        const translated = await translateText(selectedText, targetLang)
+        transResultText.textContent = translated || 'Không thể phân tích dữ liệu dịch.'
       } catch (err) {
         transResultText.textContent = 'Lỗi kết nối dịch thuật. Vui lòng thử lại.'
       }
@@ -4105,8 +4580,22 @@
     }
 
     // Roll Next button — roll a new winner immediately from the modal without completing current
+    function updateGiveawayRollNextButton() {
+      if (!gwModalRollNextBtn) return
+
+      const eligible = giveawayParticipants.filter(p => !giveawayWinnerNames.includes(p.username))
+      gwModalRollNextBtn.disabled = eligible.length === 0
+      gwModalRollNextBtn.style.opacity = eligible.length === 0 ? '0.6' : '1'
+      gwModalRollNextBtn.style.cursor = eligible.length === 0 ? 'not-allowed' : 'pointer'
+    }
+
     if (gwModalRollNextBtn) {
       gwModalRollNextBtn.addEventListener('click', () => {
+        updateGiveawayRollNextButton()
+        if (gwModalRollNextBtn.disabled) {
+          return
+        }
+
         // Stop current countdown timer
         if (giveawayTimerInterval) clearInterval(giveawayTimerInterval)
 
@@ -4117,7 +4606,7 @@
         const eligible = giveawayParticipants.filter(p => !giveawayWinnerNames.includes(p.username))
         if (eligible.length === 0) {
           addGiveawayLog('danger', 'Không còn người đủ điều kiện để quay!')
-          gwModalRollNextBtn.disabled = true
+          updateGiveawayRollNextButton()
           return
         }
 
@@ -4542,6 +5031,7 @@
         gwModalWinnerStatus.style.color = '#ff9900'
         gwModalCountdownTimer.textContent = giveawayTimeLeft
         gwModalCountdownTimer.className = 'countdown-timer'
+        updateGiveawayRollNextButton()
         
         // Dynamically set modal instruction text
         const gwModalInstructionText = document.getElementById('gw-modal-instruction-text')
@@ -4598,6 +5088,7 @@
         gwModalWinnerStatus.textContent = 'Xác nhận thành công! ✅'
         gwModalWinnerStatus.style.color = '#00ff2b'
       }
+      updateGiveawayRollNextButton()
 
       addGiveawayLog('success', `@${username} đã xác nhận trúng giải hợp lệ! Nhân vật: ${characterName}`)
 
@@ -4651,6 +5142,7 @@
         gwModalWinnerStatus.textContent = 'Quá thời gian xác nhận! ❌'
         gwModalWinnerStatus.style.color = '#ff3b30'
       }
+      updateGiveawayRollNextButton()
 
       addGiveawayLog('danger', `@${giveawayWinner} đã quá thời gian xác nhận! Lượt trúng giải bị hủy.`)
 
@@ -5087,6 +5579,12 @@
           autoSettingsByChannel = JSON.parse(savedAuto)
         } catch(e) {}
       }
+      const savedEventNotifier = localStorage.getItem('event_notifier_settings_by_channel')
+      if (savedEventNotifier) {
+        try {
+          eventNotifierSettingsByChannel = JSON.parse(savedEventNotifier)
+        } catch(e) {}
+      }
       
       // Check activation status
       const act = await window.twitch.checkActivation()
@@ -5126,6 +5624,7 @@
       setInterval(() => {
         for (const key in channels) {
           updateChannelAutoButtonState(key)
+          updateChannelEventNotifierButtonState(key)
         }
       }, 10000)
 
@@ -5134,6 +5633,7 @@
 
       // Start connection on backend for all channels
       window.twitch.reconnectAll()
+      ensureMegamuEventSchedulerRunning()
     }
 
     window.addEventListener('DOMContentLoaded', init)
