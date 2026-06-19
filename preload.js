@@ -34,6 +34,7 @@ contextBridge.exposeInMainWorld('twitch', {
   startGiveawayConnection: (channel, modBotAccountId) => ipcRenderer.send('start-giveaway-connection', channel, modBotAccountId),
   stopGiveawayConnection: () => ipcRenderer.send('stop-giveaway-connection'),
   sendGiveawayChat: (text) => ipcRenderer.send('send-giveaway-chat', text),
+  megamuGetAwards: (dv, key) => ipcRenderer.invoke('megamu-get-awards', dv, key),
   onGiveawayMessage: (cb) => ipcRenderer.on('giveaway-chat-message', (_, msg) => cb(msg)),
   onGiveawayStatus: (cb) => ipcRenderer.on('giveaway-status', (_, s) => cb(s))
 })

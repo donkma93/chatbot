@@ -1642,6 +1642,64 @@
     .giveaway-btn.btn-danger:hover:not(:disabled) { background: #c21210; }
     .giveaway-btn.btn-secondary { background: #3a3a3e; color: #efeff1; }
     .giveaway-btn.btn-secondary:hover:not(:disabled) { background: #4a4a4e; }
+    .giveaway-award-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    .giveaway-award-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 12px;
+      min-height: 110px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .giveaway-award-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(145, 71, 255, 0.55);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.24);
+    }
+    .giveaway-award-card.selected {
+      border-color: #9147ff;
+      background: linear-gradient(180deg, rgba(145,71,255,0.22), rgba(145,71,255,0.08));
+      box-shadow: 0 0 0 1px rgba(145,71,255,0.35), 0 10px 28px rgba(145,71,255,0.18);
+    }
+    .giveaway-award-card-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #efeff1;
+      line-height: 1.35;
+    }
+    .giveaway-award-card-meta {
+      font-size: 11px;
+      color: #adadb8;
+      line-height: 1.4;
+    }
+    .giveaway-award-card-badge {
+      align-self: flex-start;
+      font-size: 10px;
+      font-weight: 700;
+      color: #ffd86b;
+      background: rgba(255,216,107,0.12);
+      border: 1px solid rgba(255,216,107,0.25);
+      border-radius: 999px;
+      padding: 3px 8px;
+      letter-spacing: 0.3px;
+    }
+    .giveaway-award-empty {
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px dashed rgba(255,255,255,0.12);
+      color: #adadb8;
+      font-size: 12px;
+      text-align: center;
+      background: rgba(255,255,255,0.02);
+    }
     
     .participant-grid {
       display: grid;
@@ -2124,6 +2182,32 @@
           </div>
 
           <div class="giveaway-field">
+            <label for="gw-megamu-dv">MEGAMU DV:</label>
+            <input type="text" id="gw-megamu-dv" placeholder="Nhập DV login" />
+          </div>
+
+          <div class="giveaway-field">
+            <label for="gw-megamu-key">MEGAMU API key:</label>
+            <input type="password" id="gw-megamu-key" placeholder="Nhập API key" />
+          </div>
+
+          <div class="giveaway-field">
+            <label>Quà tặng MEGAMU:</label>
+            <button id="gw-award-refresh-btn" type="button" class="giveaway-btn btn-secondary">Tải danh sách quà</button>
+            <div id="gw-award-status" style="font-size: 12px; color: #adadb8; margin-top: 6px;">Nhập `DV` và `key`, sau đó bấm `Tải giải` để lấy danh sách.</div>
+          </div>
+
+          <div class="giveaway-field">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+              <label style="margin: 0;">Danh sách quà tặng:</label>
+              <span id="gw-award-selected-status" style="font-size: 12px; font-weight: 700; color: #ffcf5a;">Chưa chọn quà</span>
+            </div>
+            <div id="gw-award-grid" class="giveaway-award-grid">
+              <div class="giveaway-award-empty">Bấm `Tải danh sách quà` để lấy thưởng từ MEGAMU.</div>
+            </div>
+          </div>
+
+          <div class="giveaway-field">
             <label>Đối tượng được điểm danh:</label>
             <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;">
               <label style="display: inline-flex; align-items: center; font-size: 13px; font-weight: normal; cursor: pointer; color: #adadb8; gap: 4px; user-select: none;">
@@ -2164,6 +2248,7 @@
             <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; flex: 1; min-width: 0;">
               <div class="winner-title" id="gw-showcase-title">ĐANG CHỜ BẮT ĐẦU</div>
               <div class="winner-name" id="gw-winner-name">---</div>
+              <div id="gw-selected-award-name" style="font-size: 13px; font-weight: 700; color: #ffcf5a; display: none; margin-top: 2px;"></div>
               <div id="gw-winner-math-instruction" style="font-size: 13px; font-weight: 700; color: #ffd700; display: none; margin-top: 4px; background: rgba(145,71,255,0.15); border: 1px solid rgba(145,71,255,0.25); border-radius: 6px; padding: 4px 10px; letter-spacing: 0.5px; white-space: nowrap;"></div>
               <div id="gw-winner-character-name" style="font-size: 13px; font-weight: 700; color: #00ff2b; display: none; margin-top: 2px;"></div>
             </div>
@@ -2539,6 +2624,9 @@
     let giveawayMathAnswer = null
     let giveawayMathProblem = ''
     let isCheckinActive = false
+    let giveawayMegamuAwards = []
+    let selectedGiveawayAwardId = ''
+    let giveawayWinnerAward = null
 
     let autoSettingsByChannel = {}
     let eventNotifierSettingsByChannel = {}
@@ -4437,6 +4525,12 @@
     const gwModBotSelect = document.getElementById('gw-mod-bot')
     const gwTimerInput = document.getElementById('gw-timer')
     const gwConfirmPrefixInput = document.getElementById('gw-confirm-prefix')
+    const gwMegamuDvInput = document.getElementById('gw-megamu-dv')
+    const gwMegamuKeyInput = document.getElementById('gw-megamu-key')
+    const gwAwardRefreshBtn = document.getElementById('gw-award-refresh-btn')
+    const gwAwardStatus = document.getElementById('gw-award-status')
+    const gwAwardGrid = document.getElementById('gw-award-grid')
+    const gwAwardSelectedStatus = document.getElementById('gw-award-selected-status')
     const gwAllowEveryoneCheckbox = document.getElementById('gw-allow-everyone')
     const gwAllowModCheckbox = document.getElementById('gw-allow-mod')
     const gwAllowVipCheckbox = document.getElementById('gw-allow-vip')
@@ -4451,6 +4545,7 @@
     const gwWinnerCard = document.getElementById('gw-winner-card')
     const gwWinnerMathInstruction = document.getElementById('gw-winner-math-instruction')
     const gwWinnerCharacterNameEl = document.getElementById('gw-winner-character-name')
+    const gwSelectedAwardNameEl = document.getElementById('gw-selected-award-name')
     const gwShowcaseTitle = document.getElementById('gw-showcase-title')
     const gwWinnerName = document.getElementById('gw-winner-name')
     const gwCountdownContainer = document.getElementById('gw-countdown-container')
@@ -4494,6 +4589,10 @@
         
         // Load saved settings
         loadGiveawaySettings()
+        renderMegamuAwardCards()
+        if (gwMegamuDvInput && gwMegamuDvInput.value.trim() && gwMegamuKeyInput && gwMegamuKeyInput.value.trim() && giveawayMegamuAwards.length === 0) {
+          refreshMegamuAwards()
+        }
       })
     }
 
@@ -4515,6 +4614,130 @@
 
       // Restore selection if still exists
       gwModBotSelect.value = currentVal
+    }
+
+    function setMegamuAwardStatus(text, color) {
+      if (!gwAwardStatus) return
+      gwAwardStatus.textContent = text
+      gwAwardStatus.style.color = color || '#adadb8'
+    }
+
+    function getSelectedMegamuAward() {
+      return giveawayMegamuAwards.find(award => String(award.id || '') === String(selectedGiveawayAwardId || '')) || null
+    }
+
+    function updateSelectedAwardUI() {
+      const selectedAward = getSelectedMegamuAward()
+
+      if (gwAwardSelectedStatus) {
+        gwAwardSelectedStatus.textContent = selectedAward
+          ? `Đã chọn: ${selectedAward.name || ('Award #' + selectedAward.id)}`
+          : 'Chưa chọn quà'
+        gwAwardSelectedStatus.style.color = selectedAward ? '#ffcf5a' : '#adadb8'
+      }
+
+      if (gwSelectedAwardNameEl) {
+        if (selectedAward) {
+          gwSelectedAwardNameEl.textContent = `Quà đang chọn: ${selectedAward.name || ('Award #' + selectedAward.id)}`
+          gwSelectedAwardNameEl.style.display = 'block'
+        } else {
+          gwSelectedAwardNameEl.textContent = ''
+          gwSelectedAwardNameEl.style.display = 'none'
+        }
+      }
+
+      if (gwAwardGrid) {
+        gwAwardGrid.querySelectorAll('.giveaway-award-card').forEach(card => {
+          const isSelected = card.getAttribute('data-award-id') === String(selectedGiveawayAwardId || '')
+          card.classList.toggle('selected', isSelected)
+        })
+      }
+    }
+
+    function selectMegamuAward(awardId) {
+      selectedGiveawayAwardId = String(awardId || '')
+      updateSelectedAwardUI()
+      saveGiveawaySettings()
+    }
+
+    function renderMegamuAwardCards() {
+      if (!gwAwardGrid) return
+      gwAwardGrid.innerHTML = ''
+
+      if (!giveawayMegamuAwards.length) {
+        const empty = document.createElement('div')
+        empty.className = 'giveaway-award-empty'
+        empty.textContent = 'Chưa có quà nào. Hãy tải danh sách từ MEGAMU.'
+        gwAwardGrid.appendChild(empty)
+        updateSelectedAwardUI()
+        return
+      }
+
+      giveawayMegamuAwards.forEach(award => {
+        const card = document.createElement('button')
+        card.type = 'button'
+        card.className = 'giveaway-award-card'
+        card.setAttribute('data-award-id', String(award.id || ''))
+
+        const badge = document.createElement('div')
+        badge.className = 'giveaway-award-card-badge'
+        badge.textContent = `ID ${award.id || '-'}`
+
+        const name = document.createElement('div')
+        name.className = 'giveaway-award-card-name'
+        name.textContent = award.name || `Award #${award.id || ''}`
+
+        const meta = document.createElement('div')
+        meta.className = 'giveaway-award-card-meta'
+        meta.textContent = award.date ? `Ngày tạo: ${award.date}` : 'Quà tặng từ MEGAMU'
+
+        card.appendChild(badge)
+        card.appendChild(name)
+        card.appendChild(meta)
+        card.addEventListener('click', () => selectMegamuAward(award.id))
+        gwAwardGrid.appendChild(card)
+      })
+
+      if (!getSelectedMegamuAward() && giveawayMegamuAwards[0]) {
+        selectedGiveawayAwardId = String(giveawayMegamuAwards[0].id || '')
+      }
+
+      updateSelectedAwardUI()
+    }
+
+    async function refreshMegamuAwards() {
+      const dv = gwMegamuDvInput ? gwMegamuDvInput.value.trim() : ''
+      const key = gwMegamuKeyInput ? gwMegamuKeyInput.value.trim() : ''
+
+      if (!dv || !key) {
+        setMegamuAwardStatus('Vui lòng nhập DV và API key trước khi tải giải thưởng.', '#ff9900')
+        return
+      }
+
+      if (gwAwardRefreshBtn) gwAwardRefreshBtn.disabled = true
+      setMegamuAwardStatus('Đang tải danh sách giải thưởng từ MEGAMU...', '#a970ff')
+
+      try {
+        const result = await window.twitch.megamuGetAwards(dv, key)
+        if (result.result === 1) {
+          giveawayMegamuAwards = Array.isArray(result.awards) ? result.awards : []
+          renderMegamuAwardCards()
+          setMegamuAwardStatus(`Đã tải ${giveawayMegamuAwards.length} giải thưởng từ MEGAMU.`, '#00ff2b')
+          addGiveawayLog('success', `[MEGAMU] Đã tải ${giveawayMegamuAwards.length} giải thưởng bằng action getawards.`)
+        } else {
+          giveawayMegamuAwards = []
+          renderMegamuAwardCards()
+          setMegamuAwardStatus(`Tải giải thất bại. Mã kết quả: ${result.result}`, '#ff3b30')
+          addGiveawayLog('danger', `[MEGAMU] Lấy danh sách giải thất bại. Result=${result.result}`)
+        }
+      } catch (err) {
+        giveawayMegamuAwards = []
+        renderMegamuAwardCards()
+        setMegamuAwardStatus(`Lỗi kết nối MEGAMU: ${err.message}`, '#ff3b30')
+        addGiveawayLog('danger', `[MEGAMU] Lỗi tải giải: ${err.message}`)
+      } finally {
+        if (gwAwardRefreshBtn) gwAwardRefreshBtn.disabled = false
+      }
     }
 
     // Check Giveaway Key activation
@@ -4686,6 +4909,23 @@
       gwAllowEveryoneCheckbox.addEventListener('change', toggleGiveawayRoleCheckboxes)
     }
 
+    if (gwAwardRefreshBtn) {
+      gwAwardRefreshBtn.addEventListener('click', async () => {
+        saveGiveawaySettings()
+        await refreshMegamuAwards()
+      })
+    }
+
+    ;[
+      gwMegamuDvInput,
+      gwMegamuKeyInput
+    ].forEach(el => {
+      if (!el) return
+      el.addEventListener('change', () => {
+        saveGiveawaySettings()
+      })
+    })
+
     // Save Giveaway Settings
     function saveGiveawaySettings() {
       const settings = {
@@ -4694,6 +4934,9 @@
         modBot: gwModBotSelect.value,
         timer: gwTimerInput.value,
         confirmPrefix: gwConfirmPrefixInput.value.trim(),
+        megamuDv: gwMegamuDvInput ? gwMegamuDvInput.value.trim() : '',
+        megamuKey: gwMegamuKeyInput ? gwMegamuKeyInput.value.trim() : '',
+        selectedAwardId: selectedGiveawayAwardId,
         allowEveryone: gwAllowEveryoneCheckbox ? gwAllowEveryoneCheckbox.checked : true,
         allowMod: gwAllowModCheckbox ? gwAllowModCheckbox.checked : true,
         allowVip: gwAllowVipCheckbox ? gwAllowVipCheckbox.checked : true,
@@ -4714,6 +4957,9 @@
           if (settings.modBot !== undefined) gwModBotSelect.value = settings.modBot
           if (settings.timer !== undefined) gwTimerInput.value = settings.timer
           if (settings.confirmPrefix !== undefined) gwConfirmPrefixInput.value = settings.confirmPrefix
+          if (gwMegamuDvInput && settings.megamuDv !== undefined) gwMegamuDvInput.value = settings.megamuDv
+          if (gwMegamuKeyInput && settings.megamuKey !== undefined) gwMegamuKeyInput.value = settings.megamuKey
+          if (settings.selectedAwardId !== undefined) selectedGiveawayAwardId = String(settings.selectedAwardId || '')
           
           if (gwAllowEveryoneCheckbox && settings.allowEveryone !== undefined) {
             gwAllowEveryoneCheckbox.checked = settings.allowEveryone
@@ -4732,6 +4978,7 @@
           }
           
           toggleGiveawayRoleCheckboxes()
+          updateSelectedAwardUI()
         } catch (e) {
           console.error('Lỗi load settings giveaway:', e)
         }
@@ -4918,7 +5165,17 @@
 
     // Roll Winner Event
     if (gwRollBtn) {
-      gwRollBtn.addEventListener('click', () => {
+      gwRollBtn.addEventListener('click', async () => {
+        if (gwMegamuDvInput && gwMegamuDvInput.value.trim() && gwMegamuKeyInput && gwMegamuKeyInput.value.trim()) {
+          await refreshMegamuAwards()
+        }
+
+        const selectedAward = getSelectedMegamuAward()
+        if (!selectedAward) {
+          alert('Vui lòng chọn một quà tặng ở ngoài màn hình trước khi roll.')
+          return
+        }
+
         const eligible = giveawayParticipants.filter(p => !giveawayWinnerNames.includes(p.username))
         if (eligible.length === 0) {
           alert('Không còn người chơi hợp lệ nào chưa trúng giải!')
@@ -4934,9 +5191,10 @@
         gwRollBtn.disabled = true
         gwResetBtn.disabled = true
         gwShowcaseTitle.textContent = 'ĐANG QUAY SỐ'
+        gwWinnerName.textContent = `${selectedAward.name || ('Award #' + selectedAward.id)}`
         gwWinnerCard.className = 'winner-showcase rolling'
 
-        addGiveawayLog('info', 'Đang thực hiện quay số ngẫu nhiên...')
+        addGiveawayLog('info', `Đang roll quà "${selectedAward.name || selectedAward.id}"...`)
 
         // Select winner randomly first (fully shuffled)
         const winnerIndex = Math.floor(Math.random() * eligible.length)
@@ -4985,8 +5243,10 @@
       
       const confirmPrefix = gwConfirmPrefixInput.value.trim()
       const modBotAccountId = gwModBotSelect.value
+      const selectedAward = getSelectedMegamuAward()
       
       giveawayWinner = winnerName
+      giveawayWinnerAward = selectedAward ? { ...selectedAward } : null
       giveawayWinnerNames.push(giveawayWinner)
       updateGiveawayParticipantsUI()
 
@@ -5003,6 +5263,15 @@
 
       gwShowcaseTitle.textContent = 'NGƯỜI TRÚNG GIẢI'
       gwWinnerName.textContent = giveawayWinner
+      if (gwSelectedAwardNameEl) {
+        if (giveawayWinnerAward) {
+          gwSelectedAwardNameEl.textContent = `Quà trúng: ${giveawayWinnerAward.name || ('Award #' + giveawayWinnerAward.id)}`
+          gwSelectedAwardNameEl.style.display = 'block'
+        } else {
+          gwSelectedAwardNameEl.textContent = ''
+          gwSelectedAwardNameEl.style.display = 'none'
+        }
+      }
 
       // Generate Math Question
       generateGiveawayMath()
@@ -5012,7 +5281,7 @@
       gwWinnerMathInstruction.style.display = 'inline-block'
       
       giveawayState = 'countdown'
-      addGiveawayLog('success', `Chúc mừng @${giveawayWinner} đã trúng giải! Giải phép tính: ${giveawayMathProblem} = ?`)
+      addGiveawayLog('success', `Chúc mừng @${giveawayWinner} đã trúng ${giveawayWinnerAward ? `"${giveawayWinnerAward.name}"` : 'giải thưởng'}! Giải phép tính: ${giveawayMathProblem} = ?`)
 
       // Setup countdown
       const limitSeconds = parseInt(gwTimerInput.value) || 60
@@ -5046,7 +5315,8 @@
 
       // Send announcement
       if (modBotAccountId) {
-        const msg = `🎉 @${giveawayWinner} [ENG] Congratulations on winning! To claim the prize and prove you are not a BOT, solve: ${giveawayMathProblem} = ? and type: ${confirmPrefix}[answer] [character name] (e.g. ${confirmPrefix}15 HeroName) in ${limitSeconds}s! / [POR] Parabéns pela vitória! Para receber o prêmio e provar que não é um BOT, resolva: ${giveawayMathProblem} = ? e digite: ${confirmPrefix}[resposta] [nome do personagem] (ex. ${confirmPrefix}15 HeroName) em ${limitSeconds}s!`
+        const awardText = giveawayWinnerAward ? ` ${giveawayWinnerAward.name}` : ''
+        const msg = `🎉 @${giveawayWinner} [ENG] Congratulations! You won${awardText}. To claim and prove you are not a BOT, solve: ${giveawayMathProblem} = ? and type: ${confirmPrefix}[answer] [character name] (e.g. ${confirmPrefix}15 HeroName) in ${limitSeconds}s! / [POR] Parabéns! Você ganhou${awardText}. Para confirmar, resolva: ${giveawayMathProblem} = ? e digite: ${confirmPrefix}[resposta] [nome do personagem] em ${limitSeconds}s!`
         window.twitch.sendGiveawayChat(msg)
         addGiveawayLog('success', `[Bot] Sent giveaway congratulations and math quiz.`)
       }
@@ -5098,7 +5368,8 @@
       // Send announcement
       const modBotAccountId = gwModBotSelect.value
       if (modBotAccountId) {
-        const msg = `✅ @${username} [ENG] Claim verified! Character: ${characterName}. / [POR] Resgate verificado! Personagem: ${characterName}.`
+        const awardText = giveawayWinnerAward ? ` Prize: ${giveawayWinnerAward.name}.` : ''
+        const msg = `✅ @${username} [ENG] Claim verified! Character: ${characterName}.${awardText} / [POR] Resgate verificado! Personagem: ${characterName}.${giveawayWinnerAward ? ` Prêmio: ${giveawayWinnerAward.name}.` : ''}`
         window.twitch.sendGiveawayChat(msg)
         addGiveawayLog('success', `[Bot] Sent claim confirmation announcement.`)
       }
@@ -5170,6 +5441,7 @@
         }
         if (gwWinnerModal) gwWinnerModal.style.display = 'none'
         giveawayWinnerCharacterName = ''
+        giveawayWinnerAward = null
         
         if (isCheckinActive) {
           giveawayState = 'checkin'
@@ -5186,6 +5458,7 @@
         const eligible = giveawayParticipants.filter(p => !giveawayWinnerNames.includes(p.username))
         gwRollBtn.disabled = eligible.length === 0
         gwResetBtn.disabled = false
+        updateSelectedAwardUI()
 
         addGiveawayLog('info', `Đã lưu lượt thắng của @${giveawayWinner} (gạch tên khỏi danh sách quay tiếp theo).`)
       })
@@ -5207,6 +5480,7 @@
         }
         if (gwWinnerModal) gwWinnerModal.style.display = 'none'
         giveawayWinnerCharacterName = ''
+        giveawayWinnerAward = null
 
         if (isCheckinActive) {
           giveawayState = 'checkin'
@@ -5223,6 +5497,7 @@
         const eligible = giveawayParticipants.filter(p => !giveawayWinnerNames.includes(p.username))
         gwRollBtn.disabled = eligible.length === 0
         gwResetBtn.disabled = false
+        updateSelectedAwardUI()
 
         addGiveawayLog('warn', `Đã hủy lượt của @${giveawayWinner}. Sẵn sàng quay số lại.`)
       })
@@ -5239,6 +5514,7 @@
         giveawayParticipants = []
         giveawayWinner = ''
         giveawayWinnerNames = []
+        giveawayWinnerAward = null
         updateGiveawayParticipantsUI()
 
         setGiveawayInputsDisabled(false)
@@ -5260,6 +5536,7 @@
         }
         if (gwWinnerModal) gwWinnerModal.style.display = 'none'
         giveawayWinnerCharacterName = ''
+        updateSelectedAwardUI()
 
         if (giveawayConnectionBadge) {
           giveawayConnectionBadge.style.background = '#e91916'
