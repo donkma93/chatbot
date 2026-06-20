@@ -3066,6 +3066,22 @@
       return `${eventDef.name} RANK ${rank}`
     }
 
+    function getUpcomingMegamuOccurrences(eventDef, nowMs, recurringLimit) {
+      const firstOccurrenceMs = getNextMegamuOccurrenceMs(eventDef, nowMs)
+      const count = eventDef.type === 'recurring-rank' ? recurringLimit : 1
+      const intervalMs = eventDef.type === 'recurring-rank'
+        ? eventDef.intervalMinutes * 60 * 1000
+        : 0
+
+      return Array.from({ length: count }, (_, index) => {
+        const occurrenceMs = firstOccurrenceMs + index * intervalMs
+        return {
+          name: getMegamuEventOccurrenceName(eventDef, occurrenceMs),
+          occurrenceMs
+        }
+      })
+    }
+
     function formatGmt7Time(absoluteMs) {
       const shifted = new Date(absoluteMs + 7 * 60 * 60 * 1000)
       const hour = String(shifted.getUTCHours()).padStart(2, '0')
@@ -3079,15 +3095,9 @@
       const events = getMegamuEvents()
       const nowMs = Date.now()
       const upcoming = events
-        .map((eventDef) => {
-          const occurrenceMs = getNextMegamuOccurrenceMs(eventDef, nowMs)
-          return {
-            name: getMegamuEventOccurrenceName(eventDef, occurrenceMs),
-            occurrenceMs
-          }
-        })
+        .flatMap((eventDef) => getUpcomingMegamuOccurrences(eventDef, nowMs, 12))
         .sort((a, b) => a.occurrenceMs - b.occurrenceMs)
-        .slice(0, 8)
+        .slice(0, 12)
 
       eventNotifyUpcomingList.innerHTML = ''
 
