@@ -2444,7 +2444,7 @@
         <div class="form-group">
           <label>Nguồn lịch:</label>
           <div style="font-size: 12px; color: #a970ff; font-weight: 500; background: rgba(145, 71, 255, 0.05); border: 1px dashed rgba(145, 71, 255, 0.2); padding: 8px 12px; border-radius: 6px; line-height: 1.4;">
-            App dùng <b>lịch cố định nội bộ</b> theo bảng giờ bạn đã chốt, gốc <b>GMT-3</b>, rồi tự đổi sang <b>GMT+7</b> trước khi báo trên chat.
+            App dùng <b>lịch cố định nội bộ</b>: các event thường được đổi từ <b>GMT-3</b> sang <b>GMT+7</b>; ILLUSION và ICE TEAM lặp rank liên tục theo giờ <b>GMT+7</b>.
           </div>
         </div>
 
@@ -2646,6 +2646,21 @@
       ['Invasion of Demons', ['01:25', '05:25', '09:25', '13:25', '17:25', '21:25']],
       ['MEGADROP', ['13:15', '20:00']],
       ['Battle Royale', ['03:55', '07:55', '11:55', '15:55', '19:55', '23:55']]
+    ]
+    const MEGAMU_RECURRING_RANK_EVENTS_GMT7 = [
+      // Reference time: 11:30 GMT+7 on June 20, 2026.
+      {
+        name: 'ILLUSION',
+        intervalMinutes: 20,
+        referenceRank: 2,
+        referenceMs: Date.UTC(2026, 5, 20, 4, 30, 0, 0)
+      },
+      {
+        name: 'ICE TEAM',
+        intervalMinutes: 40,
+        referenceRank: 1,
+        referenceMs: Date.UTC(2026, 5, 20, 4, 30, 0, 0)
+      }
     ]
 
     function getChannelAutoSettings(key) {
@@ -3000,6 +3015,15 @@
       return normalized
     }
 
+    function getMegamuEvents() {
+      return normalizeMegamuEvents(MEGAMU_FIXED_EVENTS_GMT_MINUS_3).concat(
+        MEGAMU_RECURRING_RANK_EVENTS_GMT7.map((eventDef) => ({
+          ...eventDef,
+          type: 'recurring-rank'
+        }))
+      )
+    }
+
     function getOffsetDateParts(nowMs, offsetHours) {
       const shifted = new Date(nowMs + offsetHours * 60 * 60 * 1000)
       return {
@@ -3011,6 +3035,12 @@
     }
 
     function getNextMegamuOccurrenceMs(eventDef, nowMs) {
+      if (eventDef.type === 'recurring-rank') {
+        const intervalMs = eventDef.intervalMinutes * 60 * 1000
+        const completedIntervals = Math.floor((nowMs - eventDef.referenceMs) / intervalMs)
+        return eventDef.referenceMs + (completedIntervals + 1) * intervalMs
+      }
+
       const offsetHours = 7
       const offsetMs = offsetHours * 60 * 60 * 1000
       const parts = getOffsetDateParts(nowMs, offsetHours)
@@ -3027,6 +3057,15 @@
       return candidateMs
     }
 
+    function getMegamuEventOccurrenceName(eventDef, occurrenceMs) {
+      if (eventDef.type !== 'recurring-rank') return eventDef.name
+
+      const intervalMs = eventDef.intervalMinutes * 60 * 1000
+      const intervalOffset = Math.round((occurrenceMs - eventDef.referenceMs) / intervalMs)
+      const rank = (((eventDef.referenceRank - 1 + intervalOffset) % 5) + 5) % 5 + 1
+      return `${eventDef.name} RANK ${rank}`
+    }
+
     function formatGmt7Time(absoluteMs) {
       const shifted = new Date(absoluteMs + 7 * 60 * 60 * 1000)
       const hour = String(shifted.getUTCHours()).padStart(2, '0')
@@ -3037,13 +3076,16 @@
     function renderMegamuUpcomingEvents() {
       if (!eventNotifyUpcomingList) return
 
-      const events = normalizeMegamuEvents(MEGAMU_FIXED_EVENTS_GMT_MINUS_3)
+      const events = getMegamuEvents()
       const nowMs = Date.now()
       const upcoming = events
-        .map((eventDef) => ({
-          name: eventDef.name,
-          occurrenceMs: getNextMegamuOccurrenceMs(eventDef, nowMs)
-        }))
+        .map((eventDef) => {
+          const occurrenceMs = getNextMegamuOccurrenceMs(eventDef, nowMs)
+          return {
+            name: getMegamuEventOccurrenceName(eventDef, occurrenceMs),
+            occurrenceMs
+          }
+        })
         .sort((a, b) => a.occurrenceMs - b.occurrenceMs)
         .slice(0, 8)
 
@@ -3080,7 +3122,7 @@
       const enabledKeys = Object.keys(channels).filter((key) => getChannelEventNotifierSettings(key).enabled)
       if (!enabledKeys.length) return
 
-      const events = normalizeMegamuEvents(MEGAMU_FIXED_EVENTS_GMT_MINUS_3)
+      const events = getMegamuEvents()
 
       const nowMs = Date.now()
       const leadMs = 5 * 60 * 1000
@@ -3095,12 +3137,13 @@
           const diffMs = occurrenceMs - nowMs
           if (diffMs <= 0 || diffMs > leadMs) return
 
-          const reminderKey = `${key}|${eventDef.name}|${occurrenceMs}`
+          const eventName = getMegamuEventOccurrenceName(eventDef, occurrenceMs)
+          const reminderKey = `${key}|${eventName}|${occurrenceMs}`
           if (megamuEventReminderHistory[reminderKey]) return
 
           const messageTemplate = (settings.template || '').trim() || '⏰ [MEGAMU] Còn 5 phút nữa sẽ diễn ra {event} lúc {time_gmt7} (GMT+7).'
           const message = messageTemplate
-            .replace(/{event}/g, eventDef.name)
+            .replace(/{event}/g, eventName)
             .replace(/{time_gmt7}/g, formatGmt7Time(occurrenceMs))
 
           window.twitch.sendChat(channelInfo.accountId, channelInfo.channel, message, '', '', '')
