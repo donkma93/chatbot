@@ -611,6 +611,42 @@
     }
     .modal-overlay.open { display: flex; }
 
+    .app-toast-container {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 12000;
+      pointer-events: none;
+    }
+    .app-toast {
+      min-width: 260px;
+      max-width: 360px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(169, 112, 255, 0.4);
+      background: rgba(24, 24, 27, 0.96);
+      color: #efeff1;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      font-size: 13px;
+      line-height: 1.45;
+      opacity: 0;
+      transform: translateY(-8px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .app-toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .app-toast.success {
+      border-color: rgba(46, 204, 113, 0.45);
+    }
+    .app-toast.error {
+      border-color: rgba(231, 76, 60, 0.45);
+    }
+
     @keyframes modalFadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
@@ -2632,6 +2668,7 @@
     let eventNotifierSettingsByChannel = {}
     let megamuEventSchedulerInterval = null
     let currentEventNotifyEditingChannelKey = null
+    let toastContainer = null
     const megamuEventReminderHistory = {}
     const MEGAMU_FIXED_EVENTS_GMT_MINUS_3 = [
       ['Blood Castle', ['03:00', '07:00', '11:00', '15:00', '19:00', '22:50']],
@@ -2709,12 +2746,81 @@
       return autoSettingsByChannel[key]
     }
 
+    function normalizeIdentity(value) {
+      return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/^@+/, '')
+    }
+
+    function normalizeSearchText(value) {
+      return normalizeIdentity(value).replace(/[_\s]+/g, '')
+    }
+
+    function getAccountIdentityCandidates(acc) {
+      if (!acc) return []
+      const raw = [acc.label, acc.login]
+      return [...new Set(raw.map((value) => String(value || '').trim()).filter(Boolean))]
+    }
+
+    function messageReferencesAccount(text, acc) {
+      const rawText = String(text || '')
+      const lowerText = rawText.toLowerCase()
+      const compactText = normalizeSearchText(rawText)
+      return getAccountIdentityCandidates(acc).some((candidate) => {
+        const normalized = normalizeIdentity(candidate)
+        const compact = normalizeSearchText(candidate)
+        return (normalized && lowerText.includes(normalized)) || (compact && compactText.includes(compact))
+      })
+    }
+
+    function messageIsFromAccount(msg, acc) {
+      const msgLogin = normalizeIdentity(msg && msg.login)
+      const msgUsername = normalizeIdentity(msg && msg.username)
+      return getAccountIdentityCandidates(acc).some((candidate) => {
+        const normalized = normalizeIdentity(candidate)
+        return normalized && (normalized === msgLogin || normalized === msgUsername)
+      })
+    }
+
+    function ensureToastContainer() {
+      if (toastContainer) return toastContainer
+      toastContainer = document.createElement('div')
+      toastContainer.className = 'app-toast-container'
+      document.body.appendChild(toastContainer)
+      return toastContainer
+    }
+
+    function showToast(message, type = 'success', duration = 2600) {
+      const container = ensureToastContainer()
+      const toast = document.createElement('div')
+      toast.className = `app-toast ${type}`
+      toast.textContent = message
+      container.appendChild(toast)
+
+      requestAnimationFrame(() => {
+        toast.classList.add('show')
+      })
+
+      window.setTimeout(() => {
+        toast.classList.remove('show')
+        window.setTimeout(() => {
+          toast.remove()
+          if (container.childElementCount === 0) {
+            container.remove()
+            toastContainer = null
+          }
+        }, 220)
+      }, duration)
+    }
+
     let currentEditingChannelKey = null
 
     const pendingJoins = {}
     const joinCooldowns = {}
     const pendingClaims = {}
     const claimCooldowns = {}
+    const channelConnectionStates = {}
 
     // channels: (accountId + ':' + channelName) -> { accountId, channel, tab, panel, chat, scrollBtn, statusEl, dotEl, unreadEl, unread, autoScroll, msgCount }
     const channels = {}
@@ -2860,7 +2966,7 @@
         
         updateChannelAutoButtonState(currentEditingChannelKey)
         autoSettingsModal.classList.remove('open')
-        alert('Đã lưu cấu hình Auto Bot và reset thời gian chờ cho kênh này!')
+        showToast('Đã lưu cấu hình Auto Bot và reset thời gian chờ cho kênh này!')
       }
     })
 
@@ -3200,7 +3306,7 @@
         updateChannelEventNotifierButtonState(currentEventNotifyEditingChannelKey)
         eventNotifyModal.classList.remove('open')
         ensureMegamuEventSchedulerRunning()
-        alert('Đã lưu cấu hình thông báo Event cho kênh này!')
+        showToast('Đã lưu cấu hình thông báo Event cho kênh này!')
       })
     }
 
@@ -3489,9 +3595,9 @@
         Object.keys(channels).forEach(key => {
           if (key.startsWith(acc.id + ':')) {
             hasChannels = true
-            const c = channels[key]
-            if (c.dotEl.classList.contains('live')) hasLive = true
-            if (c.dotEl.classList.contains('error')) hasError = true
+            const state = channelConnectionStates[key] || 'offline'
+            if (state === 'live') hasLive = true
+            if (state === 'error' || state === 'reconnecting') hasError = true
           }
         })
 
@@ -3946,6 +4052,7 @@
       })
 
       // Store in memory
+      channelConnectionStates[key] = channelConnectionStates[key] || 'offline'
       channels[key] = {
         accountId: accountId,
         channel: ch,
@@ -4002,6 +4109,7 @@
       channels[key].tab.remove()
       channels[key].panel.remove()
       delete channels[key]
+      delete channelConnectionStates[key]
 
       renderSidebar()
 
@@ -4058,7 +4166,7 @@
     // ── Twitch IPC Events ──────────────────────────────────────────
     // Helper function to process Auto Bot for background and active channels
     function runAutoBotLogicForMessage(accId, ch, msg, acc) {
-      const isOurselves = msg.id.startsWith('local-') || (acc.label && msg.username.toLowerCase() === acc.label.toLowerCase())
+      const isOurselves = msg.id.startsWith('local-') || messageIsFromAccount(msg, acc)
       if (isOurselves) return
 
       const cooldownKey = accId + ':' + ch
@@ -4107,7 +4215,7 @@
 
       // 2. Auto Claim Reward
       if (settings.claimEnable && settings.claimReward) {
-        const isRecipient = acc.label && textLower.includes(acc.label.toLowerCase())
+        const isRecipient = messageReferencesAccount(msg.text, acc)
         if (isRecipient) {
           const winKeywords = [
             'won', 'winner', 'win', 'giveaway', 'congratulations', 'congrats', 
@@ -4204,9 +4312,7 @@
       // Highlight mention
       let isMention = false
       if (acc && acc.label && acc.label !== 'Ẩn danh') {
-        const escName = acc.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-        const userPattern = new RegExp(`@?\\b${escName}\\b`, 'i')
-        isMention = userPattern.test(msg.text)
+        isMention = messageReferencesAccount(msg.text, acc)
       }
       if (isMention) {
         div.classList.add('msg-mention')
@@ -4263,9 +4369,18 @@
       if (!channels[key]) return
       
       if (s.connected) {
+        channelConnectionStates[key] = 'live'
         channels[key].dotEl.className = 'tab-dot live'
         channels[key].statusEl.textContent = 'Đang xem: #' + ch
+      } else if (s.reconnecting) {
+        channelConnectionStates[key] = 'reconnecting'
+        channels[key].dotEl.className = 'tab-dot'
+        const retrySeconds = s.retryInMs ? Math.max(1, Math.ceil(s.retryInMs / 1000)) : null
+        channels[key].statusEl.textContent = retrySeconds
+          ? `Mất kết nối, đang tự nối lại sau ${retrySeconds}s...`
+          : 'Mất kết nối, đang tự nối lại...'
       } else {
+        channelConnectionStates[key] = 'offline'
         channels[key].dotEl.className = 'tab-dot'
         channels[key].statusEl.textContent = 'Đã ngắt kết nối'
       }
@@ -4280,8 +4395,11 @@
 
       if (!channels[key]) return
 
+      channelConnectionStates[key] = e.reconnecting ? 'reconnecting' : 'error'
       channels[key].dotEl.className = 'tab-dot error'
-      channels[key].statusEl.textContent = 'Lỗi: ' + e.error
+      channels[key].statusEl.textContent = e.reconnecting
+        ? ('Lỗi: ' + e.error + ' - đang thử kết nối lại...')
+        : ('Lỗi: ' + e.error)
 
       renderSidebar()
     })

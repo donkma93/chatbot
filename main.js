@@ -23,6 +23,10 @@ let activeAccountId = null
 
 // connectionKey = accountId + ':' + channel -> WebSocket
 const connections = {}
+const reconnectTimers = {}
+const reconnectAttempts = {}
+const manualDisconnects = {}
+const authFailedConnections = {}
 
 // 50 Valid Activation Keys
 const VALID_KEYS = [
@@ -344,6 +348,53 @@ function genId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
 }
 
+function normalizeIdentity(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/^@+/, '')
+}
+
+function fallbackLoginFromLabel(label) {
+  return normalizeIdentity(label).replace(/\s+/g, '_')
+}
+
+function getAccountLogin(acc) {
+  if (!acc) return ''
+  return normalizeIdentity(acc.login || fallbackLoginFromLabel(acc.label))
+}
+
+async function hydrateMissingAccountLogins() {
+  var changed = false
+
+  for (var i = 0; i < accounts.length; i++) {
+    var acc = accounts[i]
+    if (!acc) continue
+
+    if (acc.token && acc.token !== 'anonymous' && acc.clientId && !acc.login) {
+      try {
+        var profile = await fetchUserProfile(acc.token, acc.clientId)
+        if (profile) {
+          acc.login = normalizeIdentity(profile.login)
+          if (profile.displayName) acc.label = profile.displayName
+          if (profile.profileImageUrl) acc.profileImageUrl = profile.profileImageUrl
+          changed = true
+          continue
+        }
+      } catch (e) {
+        console.error('Helix API Error while hydrating login:', e.message)
+      }
+    }
+
+    if (!acc.login) {
+      acc.login = getAccountLogin(acc)
+      changed = true
+    }
+  }
+
+  if (changed) saveAccounts()
+}
+
 // ── Helix Profile Fetcher ──────────────────────────────────────
 function fetchUserProfile(token, clientId) {
   return new Promise((resolve, reject) => {
@@ -468,27 +519,35 @@ async function getMegamuAwards(dv, key) {
   return response
 }
 
-function addAccount(label, token, clientId, profileImageUrl) {
+function addAccount(label, token, clientId, profileImageUrl, login) {
   var acc = {
     id: genId(),
     label: label.trim(),
     token: token.trim(),
     clientId: (clientId || '').trim(),
+    login: normalizeIdentity(login || ''),
     profileImageUrl: profileImageUrl || '',
     channels: []
+  }
+  if (!acc.login && acc.token && acc.token !== 'anonymous') {
+    acc.login = fallbackLoginFromLabel(acc.label)
   }
   accounts.push(acc)
   saveAccounts()
   return acc
 }
 
-function updateAccount(id, label, token, clientId, profileImageUrl) {
+function updateAccount(id, label, token, clientId, profileImageUrl, login) {
   var acc = accounts.find(function (a) { return a.id === id })
   if (!acc) return null
   acc.label = label.trim()
   if (token) acc.token = token.trim()
   if (clientId !== undefined) acc.clientId = clientId.trim()
+  if (login !== undefined) acc.login = normalizeIdentity(login)
   if (profileImageUrl !== undefined) acc.profileImageUrl = profileImageUrl
+  if (!acc.login && acc.token && acc.token !== 'anonymous') {
+    acc.login = fallbackLoginFromLabel(acc.label)
+  }
   saveAccounts()
   return acc
 }
@@ -497,6 +556,10 @@ function deleteAccount(id) {
   // Disconnect all channels of this account
   Object.keys(connections).forEach(function (key) {
     if (key.startsWith(id + ':')) {
+      clearReconnectTimer(key)
+      delete reconnectAttempts[key]
+      delete manualDisconnects[key]
+      delete authFailedConnections[key]
       connections[key].close()
       delete connections[key]
     }
@@ -538,12 +601,60 @@ function connKey(accountId, channel) {
   return accountId + ':' + channel
 }
 
+function clearReconnectTimer(key) {
+  if (reconnectTimers[key]) {
+    clearTimeout(reconnectTimers[key])
+    delete reconnectTimers[key]
+  }
+}
+
+function shouldKeepChannelConnected(accountId, channel) {
+  var acc = getAccount(accountId)
+  if (!acc) return false
+  var ch = channel.toLowerCase().trim()
+  var isSavedChannel = Array.isArray(acc.channels) && acc.channels.indexOf(ch) !== -1
+  var isBackgroundGiveawayChannel = !!(giveawayChannel && giveawayChannel === ch && acc.token && acc.token !== 'anonymous')
+  return isSavedChannel || isBackgroundGiveawayChannel
+}
+
+function scheduleReconnect(accountId, channel, reason) {
+  var ch = channel.toLowerCase().trim()
+  var key = connKey(accountId, ch)
+  if (manualDisconnects[key] || authFailedConnections[key] || reconnectTimers[key]) return
+  if (!shouldKeepChannelConnected(accountId, ch)) return
+
+  var attempt = (reconnectAttempts[key] || 0) + 1
+  reconnectAttempts[key] = attempt
+  var delayMs = Math.min(30000, 5000 * attempt)
+
+  if (mainWindow) {
+    mainWindow.webContents.send('channel-status', {
+      accountId: accountId,
+      channel: ch,
+      connected: false,
+      reconnecting: true,
+      retryInMs: delayMs,
+      reason: reason || 'reconnect'
+    })
+  }
+
+  reconnectTimers[key] = setTimeout(function () {
+    delete reconnectTimers[key]
+    if (manualDisconnects[key] || authFailedConnections[key]) return
+    if (!shouldKeepChannelConnected(accountId, ch)) return
+    connectChannel(accountId, ch)
+  }, delayMs)
+}
+
 function connectChannel(accountId, channel) {
   var acc = getAccount(accountId)
   if (!acc) return
   var ch = channel.toLowerCase()
   var key = connKey(accountId, ch)
   if (connections[key]) return
+  delete manualDisconnects[key]
+  delete authFailedConnections[key]
+  clearReconnectTimer(key)
 
   var ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443')
   connections[key] = ws
@@ -551,10 +662,11 @@ function connectChannel(accountId, channel) {
   // Twitch IRC: anonymous uses justinfan + any password
   // Authenticated uses oauth:TOKEN
   var isAnon = !acc.token || acc.token === 'anonymous'
-  var nick = isAnon ? 'justinfan' + Math.floor(Math.random() * 99999) : acc.label.toLowerCase().replace(/\s+/g, '_')
+  var nick = isAnon ? 'justinfan' + Math.floor(Math.random() * 99999) : getAccountLogin(acc)
   var pass = isAnon ? 'oauth:anonymous_token' : 'oauth:' + acc.token
 
   ws.on('open', function () {
+    reconnectAttempts[key] = 0
     ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands')
     ws.send('PASS ' + pass)
     ws.send('NICK ' + nick)
@@ -573,9 +685,12 @@ function connectChannel(accountId, channel) {
 
       // Auth failure
       if (line.indexOf('Login authentication failed') !== -1) {
+        authFailedConnections[key] = true
+        clearReconnectTimer(key)
         if (mainWindow) mainWindow.webContents.send('channel-error', {
           accountId: accountId, channel: ch, error: 'Token không hợp lệ'
         })
+        try { ws.close() } catch (e) { }
         continue
       }
 
@@ -601,21 +716,32 @@ function connectChannel(accountId, channel) {
 
   ws.on('close', function () {
     delete connections[key]
-    if (mainWindow) mainWindow.webContents.send('channel-status', {
-      accountId: accountId, channel: ch, connected: false
-    })
+    if (manualDisconnects[key] || authFailedConnections[key]) {
+      if (mainWindow) mainWindow.webContents.send('channel-status', {
+        accountId: accountId, channel: ch, connected: false
+      })
+      return
+    }
+    scheduleReconnect(accountId, ch, 'close')
   })
 
   ws.on('error', function (err) {
     delete connections[key]
     if (mainWindow) mainWindow.webContents.send('channel-error', {
-      accountId: accountId, channel: ch, error: err.message
+      accountId: accountId, channel: ch, error: err.message, reconnecting: !manualDisconnects[key] && !authFailedConnections[key]
     })
+    if (!manualDisconnects[key] && !authFailedConnections[key]) {
+      scheduleReconnect(accountId, ch, 'error')
+    }
   })
 }
 
 function disconnectChannel(accountId, channel) {
   var key = connKey(accountId, channel.toLowerCase())
+  manualDisconnects[key] = true
+  delete authFailedConnections[key]
+  clearReconnectTimer(key)
+  delete reconnectAttempts[key]
   if (connections[key]) { connections[key].close(); delete connections[key] }
 }
 
@@ -653,7 +779,7 @@ function connectGiveawayChannel(channel, modBotAccountId) {
   }
 
   var isAnon = !acc || !acc.token || acc.token === 'anonymous'
-  var nick = isAnon ? 'justinfan' + Math.floor(Math.random() * 99999) : acc.label.toLowerCase().replace(/\s+/g, '_')
+  var nick = isAnon ? 'justinfan' + Math.floor(Math.random() * 99999) : getAccountLogin(acc)
   var pass = isAnon ? 'oauth:anonymous_token' : 'oauth:' + acc.token
 
   ws.on('open', function () {
@@ -734,16 +860,19 @@ function parseTwitchMessage(line) {
   }
 
   var username = ''
+  var login = ''
   var text = ''
   var match = rest.match(/^:(\S+)!\S+ PRIVMSG #(\S+) :([\s\S]+)$/)
 
   if (match) {
+    login = tags['login'] || match[1] || ''
     username = tags['display-name'] || match[1]
     text = match[3]
   } else {
     // Parse USERNOTICE (e.g. Chat Announcements /announce used by Nightbot)
     var userNoticeMatch = rest.match(/^:tmi\.twitch\.tv USERNOTICE #(\S+) :([\s\S]+)$/)
     if (userNoticeMatch) {
+      login = tags['login'] || ''
       username = tags['display-name'] || tags['login'] || 'Twitch'
       text = userNoticeMatch[2]
     } else {
@@ -761,6 +890,7 @@ function parseTwitchMessage(line) {
   return {
     id: tags['id'] || '',
     username: username,
+    login: normalizeIdentity(login),
     color: color,
     text: text,
     isMod: badges.indexOf('moderator') !== -1 || tags['mod'] === '1',
@@ -884,6 +1014,7 @@ ipcMain.handle('get-accounts', function () {
     return {
       id: a.id,
       label: a.label,
+      login: a.login || '',
       channels: a.channels,
       hasToken: !!a.token && a.token !== 'anonymous',
       clientId: a.clientId || '',
@@ -897,21 +1028,24 @@ ipcMain.handle('add-account', async function (event, label, token, clientId) {
     throw new Error('Chưa kích hoạt bản quyền! Không thể thêm tài khoản Twitch thật.')
   }
   var profileImageUrl = ''
+  var login = ''
   if (token && token !== 'anonymous' && clientId) {
     try {
       var profile = await fetchUserProfile(token, clientId)
       if (profile) {
         profileImageUrl = profile.profileImageUrl
+        login = profile.login || ''
         label = profile.displayName
       }
     } catch (e) {
       console.error('Helix API Error:', e.message)
     }
   }
-  var acc = addAccount(label, token, clientId, profileImageUrl)
+  var acc = addAccount(label, token, clientId, profileImageUrl, login)
   return {
     id: acc.id,
     label: acc.label,
+    login: acc.login || '',
     channels: acc.channels,
     hasToken: !!acc.token && acc.token !== 'anonymous',
     clientId: acc.clientId || '',
@@ -924,22 +1058,25 @@ ipcMain.handle('update-account', async function (event, id, label, token, client
     throw new Error('Chưa kích hoạt bản quyền! Không thể sửa tài khoản Twitch thật.')
   }
   var profileImageUrl = undefined
+  var login = undefined
   if (token && token !== 'anonymous' && clientId) {
     try {
       var profile = await fetchUserProfile(token, clientId)
       if (profile) {
         profileImageUrl = profile.profileImageUrl
+        login = profile.login || ''
         label = profile.displayName
       }
     } catch (e) {
       console.error('Helix API Error:', e.message)
     }
   }
-  var acc = updateAccount(id, label, token, clientId, profileImageUrl)
+  var acc = updateAccount(id, label, token, clientId, profileImageUrl, login)
   if (!acc) return null
   return {
     id: acc.id,
     label: acc.label,
+    login: acc.login || '',
     channels: acc.channels,
     hasToken: !!acc.token && acc.token !== 'anonymous',
     clientId: acc.clientId || '',
@@ -973,12 +1110,13 @@ ipcMain.on('send-chat', function (event, accountId, channel, text, replyParentMs
     if (acc && mainWindow) {
       var username = acc.label
       var color = '#' + intToHex(simpleHash(username))
-      var isBroadcaster = username.toLowerCase() === channel.toLowerCase()
+      var isBroadcaster = getAccountLogin(acc) === normalizeIdentity(channel)
       mainWindow.webContents.send('chat-message', {
         id: 'local-' + Date.now(),
         accountId: accountId,
         channel: channel.toLowerCase(),
         username: username,
+        login: getAccountLogin(acc),
         color: color,
         text: trimmed,
         isMod: isBroadcaster,
@@ -1019,13 +1157,14 @@ ipcMain.on('open-external', function (event, url) {
 })
 
 // ── Boot ──────────────────────────────────────────────────────
-app.whenReady().then(function () {
+app.whenReady().then(async function () {
   ACCOUNTS_FILE = path.join(app.getPath('userData'), 'accounts.json')
   ACTIVATION_FILE = path.join(app.getPath('userData'), 'activation.json')
   GIVEAWAY_ACTIVATION_FILE = path.join(app.getPath('userData'), 'giveaway_activation.json')
   MACHINE_ID_FILE = path.join(app.getPath('userData'), 'machine.id')
 
   loadAccounts()
+  await hydrateMissingAccountLogins()
   checkActivationLocal()
   checkGiveawayActivationLocal()
   createWindow()
