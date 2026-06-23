@@ -2433,9 +2433,9 @@
         <div class="form-group">
           <label>Độ trễ phản hồi:</label>
           <div style="font-size: 12px; color: #a970ff; font-weight: 500; background: rgba(145, 71, 255, 0.05); border: 1px dashed rgba(145, 71, 255, 0.2); padding: 8px 12px; border-radius: 6px; line-height: 1.4;">
-            🤖 Hệ thống tự động tính toán thời gian ngẫu nhiên:<br>
-            • <b>0s đến 30s</b> đối với Giveaway thông thường.<br>
-            • <b>0s đến 60s</b> đối với lệnh điểm danh (chứa từ khóa <i>điểm danh, diemdanh, dd</i>).
+            Hệ thống tự động tính toán thời gian phản hồi ổn định hơn:<br>
+            • <b>3s đến 12s</b> đối với Giveaway thông thường.<br>
+            • <b>5s đến 18s</b> đối với lệnh điểm danh (chứa từ khóa <i>điểm danh, diemdanh, dd</i>).
           </div>
         </div>
 
@@ -2454,7 +2454,7 @@
         <div class="form-group">
           <label>Độ trễ gửi nhận thưởng:</label>
           <div style="font-size: 12px; color: #a970ff; font-weight: 500; background: rgba(145, 71, 255, 0.05); border: 1px dashed rgba(145, 71, 255, 0.2); padding: 8px 12px; border-radius: 6px; line-height: 1.4;">
-            🤖 Hệ thống tự động gửi ngẫu nhiên trong khoảng từ <b>0s đến 29s</b> khi trúng giải.
+            Hệ thống tự động gửi ngẫu nhiên trong khoảng <b>4s đến 12s</b> khi trúng giải.
           </div>
         </div>
 
@@ -2820,6 +2820,152 @@
     const joinCooldowns = {}
     const pendingClaims = {}
     const claimCooldowns = {}
+    const AUTO_JOIN_DELAY_NORMAL_MS = { min: 3000, max: 12000 }
+    const AUTO_JOIN_DELAY_ATTENDANCE_MS = { min: 5000, max: 18000 }
+    const AUTO_CLAIM_DELAY_MS = { min: 4000, max: 12000 }
+    const GIVEAWAY_ROLL_ANIMATION = { intervalMs: 120, totalRolls: 25 }
+    let giveawayAudioContext = null
+    let giveawayRollSoundTimer = null
+
+    function getGiveawayAudioContext() {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext
+      if (!AudioContextClass) return null
+
+      if (!giveawayAudioContext) {
+        giveawayAudioContext = new AudioContextClass()
+      }
+
+      if (giveawayAudioContext.state === 'suspended') {
+        giveawayAudioContext.resume().catch(() => {})
+      }
+
+      return giveawayAudioContext
+    }
+
+    function playGiveawayTone(options) {
+      const ctx = getGiveawayAudioContext()
+      if (!ctx) return
+
+      const opts = options || {}
+      const startAt = Math.max(ctx.currentTime, opts.startAt || ctx.currentTime)
+      const duration = Math.max(0.02, Number(opts.duration) || 0.12)
+      const frequency = Math.max(80, Number(opts.frequency) || 440)
+      const volume = Math.max(0.001, Number(opts.volume) || 0.03)
+      const type = opts.type || 'sine'
+
+      const oscillator = ctx.createOscillator()
+      const gainNode = ctx.createGain()
+
+      oscillator.type = type
+      oscillator.frequency.setValueAtTime(frequency, startAt)
+      gainNode.gain.setValueAtTime(0.0001, startAt)
+      gainNode.gain.exponentialRampToValueAtTime(volume, startAt + 0.01)
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, startAt + duration)
+
+      oscillator.connect(gainNode)
+      gainNode.connect(ctx.destination)
+
+      oscillator.start(startAt)
+      oscillator.stop(startAt + duration + 0.02)
+    }
+
+    function stopGiveawayRollSound() {
+      if (giveawayRollSoundTimer) {
+        clearTimeout(giveawayRollSoundTimer)
+        giveawayRollSoundTimer = null
+      }
+    }
+
+    function playGiveawayRollSound() {
+      stopGiveawayRollSound()
+
+      const tick = () => {
+        playGiveawayTone({ frequency: 520, duration: 0.05, volume: 0.018, type: 'square' })
+        playGiveawayTone({ frequency: 780, duration: 0.04, volume: 0.01, type: 'triangle', startAt: (getGiveawayAudioContext() || { currentTime: 0 }).currentTime + 0.015 })
+        giveawayRollSoundTimer = setTimeout(tick, GIVEAWAY_ROLL_ANIMATION.intervalMs)
+      }
+
+      tick()
+    }
+
+    function playGiveawayWinnerSound() {
+      stopGiveawayRollSound()
+      const ctx = getGiveawayAudioContext()
+      if (!ctx) return
+
+      const startAt = ctx.currentTime
+      const notes = [
+        { frequency: 523.25, duration: 0.14, volume: 0.03, type: 'triangle', offset: 0 },
+        { frequency: 659.25, duration: 0.16, volume: 0.032, type: 'triangle', offset: 0.1 },
+        { frequency: 783.99, duration: 0.2, volume: 0.034, type: 'triangle', offset: 0.22 },
+        { frequency: 1046.5, duration: 0.34, volume: 0.04, type: 'sine', offset: 0.34 }
+      ]
+
+      notes.forEach(note => {
+        playGiveawayTone({
+          frequency: note.frequency,
+          duration: note.duration,
+          volume: note.volume,
+          type: note.type,
+          startAt: startAt + note.offset
+        })
+      })
+    }
+
+    function removeAccents(text) {
+      return String(text || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/Đ/g, 'D')
+    }
+
+    function normalizeAutoText(text) {
+      return removeAccents(text).toLowerCase()
+    }
+
+    function escapeRegex(text) {
+      return String(text || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    }
+
+    function messageContainsWholeTerm(text, term) {
+      const normalizedText = normalizeAutoText(text)
+      const normalizedTerm = normalizeAutoText(term).trim()
+      if (!normalizedTerm) return false
+
+      if (/^[a-z0-9]+$/.test(normalizedTerm)) {
+        const pattern = new RegExp(`(^|[^a-z0-9])${escapeRegex(normalizedTerm)}([^a-z0-9]|$)`)
+        return pattern.test(normalizedText)
+      }
+
+      return normalizedText.includes(normalizedTerm)
+    }
+
+    function findMatchedJoinTrigger(text, triggers) {
+      return triggers.find(trigger => {
+        const normalizedTrigger = normalizeAutoText(trigger).trim()
+        if (!normalizedTrigger) return false
+
+        if (/^[a-z0-9]{1,4}$/.test(normalizedTrigger)) {
+          return messageContainsWholeTerm(text, normalizedTrigger)
+        }
+
+        return normalizeAutoText(text).includes(normalizedTrigger)
+      }) || ''
+    }
+
+    function isAttendanceJoinTrigger(messageText, matchedTrigger) {
+      const attendanceTerms = ['điểm danh', 'diem danh', 'diemdanh', 'check in', 'check-in', 'checkin', 'presenca', 'presença']
+      if (messageContainsWholeTerm(messageText, 'dd')) return true
+      if (messageContainsWholeTerm(matchedTrigger, 'dd')) return true
+      return attendanceTerms.some(term => messageContainsWholeTerm(messageText, term) || messageContainsWholeTerm(matchedTrigger, term))
+    }
+
+    function getRandomDelayMs(range) {
+      const min = Math.max(0, Number(range && range.min) || 0)
+      const max = Math.max(min, Number(range && range.max) || min)
+      return Math.round(min + Math.random() * (max - min))
+    }
     const channelConnectionStates = {}
 
     // channels: (accountId + ':' + channelName) -> { accountId, channel, tab, panel, chat, scrollBtn, statusEl, dotEl, unreadEl, unread, autoScroll, msgCount }
@@ -4175,23 +4321,16 @@
 
       // 1. Auto Join Giveaway
       if (settings.joinEnable && settings.joinTrigger && settings.joinResponse) {
-        const triggers = settings.joinTrigger.split(',').map(t => t.trim().toLowerCase()).filter(Boolean)
-        const matchedTriggerStr = triggers.find(trigger => textLower.includes(trigger)) || '';
+        const triggers = settings.joinTrigger.split(',').map(t => t.trim()).filter(Boolean)
+        const matchedTriggerStr = findMatchedJoinTrigger(msg.text, triggers)
         const matchesTrigger = matchedTriggerStr !== '';
         
         if (matchesTrigger) {
           const now = Date.now()
           if (!pendingJoins[cooldownKey] && (!joinCooldowns[cooldownKey] || now - joinCooldowns[cooldownKey] > 15 * 60 * 1000)) {
-            const isDiemDanh = matchedTriggerStr.includes('điểm danh') || 
-                               matchedTriggerStr.includes('diemdanh') || 
-                               matchedTriggerStr.includes('dd') || 
-                               matchedTriggerStr === 'dđ' || 
-                               textLower.includes('điểm danh') || 
-                               textLower.includes('diemdanh') || 
-                               textLower.includes('dd');
-            
-            const randomSeconds = Math.random() * (isDiemDanh ? 60 : 30);
-            const delayMs = randomSeconds * 1000;
+            const isDiemDanh = isAttendanceJoinTrigger(msg.text, matchedTriggerStr)
+            const delayMs = getRandomDelayMs(isDiemDanh ? AUTO_JOIN_DELAY_ATTENDANCE_MS : AUTO_JOIN_DELAY_NORMAL_MS)
+            const randomSeconds = delayMs / 1000
             
             const c = channels[cooldownKey];
             if (c && c.statusEl) {
@@ -4232,8 +4371,8 @@
           if (matchesWin && !matchesExclude) {
             const now = Date.now()
             if (!pendingClaims[cooldownKey] && (!claimCooldowns[cooldownKey] || now - claimCooldowns[cooldownKey] > 15 * 60 * 1000)) {
-              const randomSeconds = Math.random() * 29;
-              const delayMs = randomSeconds * 1000;
+              const delayMs = getRandomDelayMs(AUTO_CLAIM_DELAY_MS)
+              const randomSeconds = delayMs / 1000
               
               const c = channels[cooldownKey];
               if (c && c.statusEl) {
@@ -4825,10 +4964,73 @@
       }
     }
 
-    function selectMegamuAward(awardId) {
+    function announceNextGiveawayAward(selectedAward) {
+      if (!selectedAward) return
+
+      const modBotAccountId = gwModBotSelect ? gwModBotSelect.value : ''
+      if (!modBotAccountId) return
+
+      const awardName = selectedAward.name || `Award #${selectedAward.id || ''}`
+      const msg = `🎁 [ENG] Next prize: ${awardName}. Get ready for the next roll! / [POR] Próximo prêmio: ${awardName}. Prepare-se para o próximo sorteio!`
+      window.twitch.sendGiveawayChat(msg)
+      addGiveawayLog('info', `[Bot] Đã thông báo giải thưởng tiếp theo: "${awardName}".`)
+    }
+
+    function selectMegamuAward(awardId, options) {
+      const opts = options || {}
       selectedGiveawayAwardId = String(awardId || '')
       updateSelectedAwardUI()
       saveGiveawaySettings()
+
+      if (opts.announceNextPrize) {
+        announceNextGiveawayAward(getSelectedMegamuAward())
+      }
+    }
+
+    function getNewestMegamuAwardId() {
+      if (!giveawayMegamuAwards.length) return ''
+
+      const sortedAwards = [...giveawayMegamuAwards].sort((a, b) => {
+        const timeA = a && a.date ? Date.parse(a.date) : NaN
+        const timeB = b && b.date ? Date.parse(b.date) : NaN
+
+        if (!Number.isNaN(timeA) && !Number.isNaN(timeB) && timeA !== timeB) {
+          return timeB - timeA
+        }
+
+        const idA = Number(a && a.id)
+        const idB = Number(b && b.id)
+        if (!Number.isNaN(idA) && !Number.isNaN(idB) && idA !== idB) {
+          return idB - idA
+        }
+
+        return 0
+      })
+
+      return String((sortedAwards[0] && sortedAwards[0].id) || '')
+    }
+
+    function runGiveawayRollAnimation(eligibleParticipants, onComplete) {
+      const eligible = Array.isArray(eligibleParticipants) ? eligibleParticipants.filter(Boolean) : []
+      if (eligible.length === 0) return
+
+      playGiveawayRollSound()
+
+      let rollCount = 0
+      const rollInterval = setInterval(() => {
+        const randomParticipant = eligible[Math.floor(Math.random() * eligible.length)]
+        gwWinnerName.textContent = randomParticipant.username
+        rollCount++
+
+        if (rollCount >= GIVEAWAY_ROLL_ANIMATION.totalRolls) {
+          clearInterval(rollInterval)
+          stopGiveawayRollSound()
+          const finalWinner = eligible[Math.floor(Math.random() * eligible.length)]
+          if (typeof onComplete === 'function') {
+            onComplete(finalWinner)
+          }
+        }
+      }, GIVEAWAY_ROLL_ANIMATION.intervalMs)
     }
 
     function renderMegamuAwardCards() {
@@ -4865,24 +5067,25 @@
         card.appendChild(badge)
         card.appendChild(name)
         card.appendChild(meta)
-        card.addEventListener('click', () => selectMegamuAward(award.id))
+        card.addEventListener('click', () => selectMegamuAward(award.id, { announceNextPrize: true }))
         gwAwardGrid.appendChild(card)
       })
 
-      if (!getSelectedMegamuAward() && giveawayMegamuAwards[0]) {
-        selectedGiveawayAwardId = String(giveawayMegamuAwards[0].id || '')
+      if (!getSelectedMegamuAward()) {
+        selectedGiveawayAwardId = getNewestMegamuAwardId()
       }
 
       updateSelectedAwardUI()
     }
 
-    async function refreshMegamuAwards() {
+    async function refreshMegamuAwards(options) {
+      const opts = options || {}
       const dv = gwMegamuDvInput ? gwMegamuDvInput.value.trim() : ''
       const key = gwMegamuKeyInput ? gwMegamuKeyInput.value.trim() : ''
 
       if (!dv || !key) {
         setMegamuAwardStatus('Vui lòng nhập DV và API key trước khi tải giải thưởng.', '#ff9900')
-        return
+        return false
       }
 
       if (gwAwardRefreshBtn) gwAwardRefreshBtn.disabled = true
@@ -4892,20 +5095,33 @@
         const result = await window.twitch.megamuGetAwards(dv, key)
         if (result.result === 1) {
           giveawayMegamuAwards = Array.isArray(result.awards) ? result.awards : []
+          if (opts.resetSelection) {
+            selectedGiveawayAwardId = ''
+          }
           renderMegamuAwardCards()
+          if (opts.selectNewest) {
+            selectedGiveawayAwardId = getNewestMegamuAwardId()
+            updateSelectedAwardUI()
+            saveGiveawaySettings()
+          }
           setMegamuAwardStatus(`Đã tải ${giveawayMegamuAwards.length} giải thưởng từ MEGAMU.`, '#00ff2b')
           addGiveawayLog('success', `[MEGAMU] Đã tải ${giveawayMegamuAwards.length} giải thưởng bằng action getawards.`)
+          return giveawayMegamuAwards.length > 0
         } else {
           giveawayMegamuAwards = []
+          selectedGiveawayAwardId = ''
           renderMegamuAwardCards()
           setMegamuAwardStatus(`Tải giải thất bại. Mã kết quả: ${result.result}`, '#ff3b30')
           addGiveawayLog('danger', `[MEGAMU] Lấy danh sách giải thất bại. Result=${result.result}`)
+          return false
         }
       } catch (err) {
         giveawayMegamuAwards = []
+        selectedGiveawayAwardId = ''
         renderMegamuAwardCards()
         setMegamuAwardStatus(`Lỗi kết nối MEGAMU: ${err.message}`, '#ff3b30')
         addGiveawayLog('danger', `[MEGAMU] Lỗi tải giải: ${err.message}`)
+        return false
       } finally {
         if (gwAwardRefreshBtn) gwAwardRefreshBtn.disabled = false
       }
@@ -4984,10 +5200,20 @@
     }
 
     if (gwModalRollNextBtn) {
-      gwModalRollNextBtn.addEventListener('click', () => {
+      gwModalRollNextBtn.addEventListener('click', async () => {
         updateGiveawayRollNextButton()
         if (gwModalRollNextBtn.disabled) {
           return
+        }
+
+        if (gwMegamuDvInput && gwMegamuDvInput.value.trim() && gwMegamuKeyInput && gwMegamuKeyInput.value.trim()) {
+          const refreshOk = await refreshMegamuAwards({ resetSelection: true, selectNewest: true })
+
+          if (!refreshOk || !getSelectedMegamuAward()) {
+            addGiveawayLog('danger', 'Không lấy được quà mới nhất cho lượt quay tiếp theo.')
+            alert('Không lấy được quà mới nhất. Vui lòng kiểm tra lại dữ liệu quà tặng.')
+            return
+          }
         }
 
         // Stop current countdown timer
@@ -5016,19 +5242,13 @@
         gwWinnerModal.style.display = 'none'
 
         // Run roll animation then select winner
-        let rollCount = 0
-        const totalRolls = 18
-        const rollInterval = setInterval(() => {
-          const randomParticipant = eligible[Math.floor(Math.random() * eligible.length)]
-          gwWinnerName.textContent = randomParticipant.username
-          rollCount++
-          if (rollCount >= totalRolls) {
-            clearInterval(rollInterval)
-            // Pick final winner using the same winner pipeline as the main roll button
-            const finalWinner = eligible[Math.floor(Math.random() * eligible.length)]
-            finalizeWinner(finalWinner.username)
+        const latestAward = getSelectedMegamuAward()
+        runGiveawayRollAnimation(eligible, (finalWinner) => {
+          if (latestAward) {
+            addGiveawayLog('info', `Đã reset quà và lấy quà mới nhất: "${latestAward.name || latestAward.id}".`)
           }
-        }, 80)
+          finalizeWinner(finalWinner.username)
+        })
       })
     }
 
@@ -5372,20 +5592,10 @@
         const selectedWinner = eligible[winnerIndex].username
 
         // Rolling slot-machine animation
-        let rollCounter = 0
-        const totalRolls = 25
-        const rollInterval = setInterval(() => {
-          if (rollCounter < totalRolls - 1) {
-            // Show scrambled names during roll
-            const tempIndex = Math.floor(Math.random() * eligible.length)
-            gwWinnerName.textContent = eligible[tempIndex].username
-          } else {
-            clearInterval(rollInterval)
-            gwWinnerName.textContent = selectedWinner
-            finalizeWinner(selectedWinner)
-          }
-          rollCounter++
-        }, 120)
+        runGiveawayRollAnimation(eligible, () => {
+          gwWinnerName.textContent = selectedWinner
+          finalizeWinner(selectedWinner)
+        })
       })
     }
 
@@ -5420,6 +5630,7 @@
       giveawayWinnerAward = selectedAward ? { ...selectedAward } : null
       giveawayWinnerNames.push(giveawayWinner)
       updateGiveawayParticipantsUI()
+      playGiveawayWinnerSound()
 
       giveawayWinnerCharacterName = ''
       
@@ -5436,7 +5647,7 @@
       gwWinnerName.textContent = giveawayWinner
       if (gwSelectedAwardNameEl) {
         if (giveawayWinnerAward) {
-          gwSelectedAwardNameEl.textContent = `Quà trúng: ${giveawayWinnerAward.name || ('Award #' + giveawayWinnerAward.id)}`
+          gwSelectedAwardNameEl.textContent = `Giải đã chốt: ${giveawayWinnerAward.name || ('Award #' + giveawayWinnerAward.id)}`
           gwSelectedAwardNameEl.style.display = 'block'
         } else {
           gwSelectedAwardNameEl.textContent = ''
@@ -5452,7 +5663,7 @@
       gwWinnerMathInstruction.style.display = 'inline-block'
       
       giveawayState = 'countdown'
-      addGiveawayLog('success', `Chúc mừng @${giveawayWinner} đã trúng ${giveawayWinnerAward ? `"${giveawayWinnerAward.name}"` : 'giải thưởng'}! Giải phép tính: ${giveawayMathProblem} = ?`)
+      addGiveawayLog('success', `Chúc mừng @${giveawayWinner}! Giải phép tính: ${giveawayMathProblem} = ?`)
 
       // Setup countdown
       const limitSeconds = parseInt(gwTimerInput.value) || 60
@@ -5486,8 +5697,7 @@
 
       // Send announcement
       if (modBotAccountId) {
-        const awardText = giveawayWinnerAward ? ` ${giveawayWinnerAward.name}` : ''
-        const msg = `🎉 @${giveawayWinner} [ENG] Congratulations! You won${awardText}. To claim and prove you are not a BOT, solve: ${giveawayMathProblem} = ? and type: ${confirmPrefix}[answer] [character name] (e.g. ${confirmPrefix}15 HeroName) in ${limitSeconds}s! / [POR] Parabéns! Você ganhou${awardText}. Para confirmar, resolva: ${giveawayMathProblem} = ? e digite: ${confirmPrefix}[resposta] [nome do personagem] em ${limitSeconds}s!`
+        const msg = `🎉 @${giveawayWinner} [ENG] Congratulations! To claim and prove you are not a BOT, solve: ${giveawayMathProblem} = ? and type: ${confirmPrefix}[answer] [character name] (e.g. ${confirmPrefix}15 HeroName) in ${limitSeconds}s! / [POR] Parabéns! Para confirmar e provar que você não é um BOT, resolva: ${giveawayMathProblem} = ? e digite: ${confirmPrefix}[resposta] [nome do personagem] em ${limitSeconds}s!`
         window.twitch.sendGiveawayChat(msg)
         addGiveawayLog('success', `[Bot] Sent giveaway congratulations and math quiz.`)
       }
@@ -5517,6 +5727,7 @@
 
     // Winner Claimed Prize successfully
     function handleGiveawayClaim(username, characterName) {
+      stopGiveawayRollSound()
       if (giveawayTimerInterval) clearInterval(giveawayTimerInterval)
       giveawayState = 'claimed'
       
@@ -5572,6 +5783,7 @@
 
     // Countdown Expired
     function handleGiveawayTimeout() {
+      stopGiveawayRollSound()
       if (giveawayTimerInterval) clearInterval(giveawayTimerInterval)
       giveawayState = 'expired'
       
@@ -5677,6 +5889,7 @@
     // Reset Giveaway
     if (gwResetBtn) {
       gwResetBtn.addEventListener('click', () => {
+        stopGiveawayRollSound()
         if (giveawayTimerInterval) clearInterval(giveawayTimerInterval)
         window.twitch.stopGiveawayConnection()
 
