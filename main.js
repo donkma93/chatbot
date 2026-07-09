@@ -96,6 +96,10 @@ const VALID_GIVEAWAY_KEYS = [
 const APP_KEY = 'gvsxcl1q'
 const LICENSE_DURATION_DAYS = 90
 const LICENSE_DURATION_MS = LICENSE_DURATION_DAYS * 24 * 60 * 60 * 1000
+const OWNER_OVERRIDE_KEY_HASH = 'ad09e52c1378eaca9dd3c53496c06d855f190bc2f2d73a0aa3b400599b6d61a9'
+const OWNER_OVERRIDE_STORAGE_KEY = 'OWNER-OVERRIDE-DONPV'
+const OWNER_OVERRIDE_DURATION_DAYS = 36500
+const OWNER_OVERRIDE_DURATION_MS = OWNER_OVERRIDE_DURATION_DAYS * 24 * 60 * 60 * 1000
 
 function logSystem(level, area, message, meta) {
   if (!systemLogger) return null
@@ -114,6 +118,32 @@ function getStorageSecret() {
 function buildExpiryTimestamp(activatedAt) {
   const base = Number(activatedAt || Date.now())
   return base + LICENSE_DURATION_MS
+}
+
+function isOwnerOverrideKey(value) {
+  const text = String(value || '').trim()
+  if (!text) return false
+  const hash = crypto.createHash('sha256').update(text).digest('hex')
+  return hash === OWNER_OVERRIDE_KEY_HASH
+}
+
+function buildOwnerOverrideExpiryTimestamp(activatedAt) {
+  const base = Number(activatedAt || Date.now())
+  return base + OWNER_OVERRIDE_DURATION_MS
+}
+
+function isOwnerOverrideActivationRecord(record) {
+  return !!(record && record.key === OWNER_OVERRIDE_STORAGE_KEY && record.expiresAt > Date.now())
+}
+
+function buildOwnerOverrideActivationRecord(machineId, activatedAt) {
+  const startedAt = Number(activatedAt || Date.now())
+  return {
+    key: OWNER_OVERRIDE_STORAGE_KEY,
+    machineId: machineId,
+    activatedAt: startedAt,
+    expiresAt: buildOwnerOverrideExpiryTimestamp(startedAt)
+  }
 }
 
 function normalizeLocalActivationRecord(record) {
@@ -329,6 +359,10 @@ function ensureIssuerInitialized(adminKey) {
 }
 
 function verifyAdminAccess(adminKey) {
+  if (isOwnerOverrideKey(adminKey)) {
+    return true
+  }
+
   const config = loadAdminConfig()
   if (!config) {
     throw new Error('ADMIN_KEY_NOT_INITIALIZED')
@@ -340,6 +374,10 @@ function verifyAdminAccess(adminKey) {
 }
 
 function ensureAdminConfigured(adminKey) {
+  if (isOwnerOverrideKey(adminKey)) {
+    return { alreadyConfigured: true, ownerOverride: true }
+  }
+
   const existing = loadAdminConfig()
   if (existing) {
     if (!verifyAdminKey(adminKey, existing)) {
@@ -436,6 +474,17 @@ function getLocalActivationSnapshot(filePath, product, validKeys) {
   }
 
   const now = Date.now()
+  if (isOwnerOverrideActivationRecord(act)) {
+    return {
+      isActivated: true,
+      machineId: machineId,
+      key: OWNER_OVERRIDE_STORAGE_KEY,
+      expiresAt: act.expiresAt,
+      remainingDays: Math.max(0, Math.ceil((act.expiresAt - now) / (24 * 60 * 60 * 1000))),
+      source: 'owner'
+    }
+  }
+
   const allowedKeys = Array.isArray(validKeys) ? validKeys : []
   if (allowedKeys.includes(act.key)) {
     return {
@@ -572,6 +621,30 @@ function activateManagedLicenseLocally(key, product) {
     expiresAt: updated.expiresAt,
     remainingDays: remainingDays,
     source: 'managed'
+  }
+}
+
+function activateOwnerOverrideLocally() {
+  const machineId = getMachineId()
+  const now = Date.now()
+  const activationData = buildOwnerOverrideActivationRecord(machineId, now)
+
+  writeLocalActivationFile(ACTIVATION_FILE, activationData)
+  writeLocalActivationFile(GIVEAWAY_ACTIVATION_FILE, activationData)
+  isActivated = true
+  isGiveawayActivated = true
+
+  logSystem('info', 'license', 'Owner override activated locally.', {
+    expiresAt: activationData.expiresAt
+  })
+
+  return {
+    success: true,
+    message: 'Đã mở khóa toàn bộ chức năng bằng owner override.',
+    expiresAt: activationData.expiresAt,
+    remainingDays: Math.max(0, Math.ceil((activationData.expiresAt - now) / (24 * 60 * 60 * 1000))),
+    source: 'owner',
+    unlocksGiveaway: true
   }
 }
 
@@ -1797,6 +1870,10 @@ ipcMain.handle('get-app-version', function () {
 })
 
 ipcMain.handle('activate-key', async function (event, key) {
+  if (isOwnerOverrideKey(key)) {
+    return activateOwnerOverrideLocally()
+  }
+
   const managedResult = activateManagedLicenseLocally(key, 'standard')
   if (managedResult) return managedResult
   return await activateKeyOnlineV2(key)
@@ -1809,6 +1886,10 @@ ipcMain.handle('check-giveaway-activation', function () {
 })
 
 ipcMain.handle('activate-giveaway-key', async function (event, key) {
+  if (isOwnerOverrideKey(key)) {
+    return activateOwnerOverrideLocally()
+  }
+
   const managedResult = activateManagedLicenseLocally(key, 'giveaway')
   if (managedResult) return managedResult
   return await activateGiveawayKeyOnlineV2(key)
