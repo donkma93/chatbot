@@ -5,17 +5,53 @@ const WebSocket = require('ws')
 const https = require('https')
 const crypto = require('crypto')
 const os = require('os')
+const { encryptString, decryptString } = require('./lib/secure-store')
+const { createLogger } = require('./lib/system-logger')
+const {
+  ACCOUNT_SCHEMA_VERSION,
+  APP_SETTINGS_DEFAULTS,
+  mergeAppSettings,
+  applyTelemetryPatch,
+  buildSessionSnapshot,
+  needsAccountStorageRewrite
+} = require('./lib/app-state')
+const {
+  createAdminConfig,
+  verifyAdminKey,
+  generateIssuerKeyPair,
+  buildLicenseRecord,
+  normalizeLicenseRecord,
+  getLicenseStatus,
+  signLicenseRecord,
+  verifySignedLicense,
+  buildIssuerProfile
+} = require('./lib/license-manager')
+const {
+  parseTwitchRoomState,
+  parseTwitchNotice,
+  isFollowersOnlyNotice,
+  parseTwitchMessage,
+  simpleHash,
+  intToHex
+} = require('./lib/twitch-irc')
 
 let mainWindow = null
 let notificationsEnabled = false
 
 let ACCOUNTS_FILE
 let ACTIVATION_FILE
+let LICENSE_STORE_FILE
+let ADMIN_CONFIG_FILE
+let ISSUER_PROFILE_FILE
+let ISSUER_PRIVATE_FILE
 let MACHINE_ID_FILE
+let APP_SETTINGS_FILE
+let SYSTEM_LOG_FILE
 let isActivated = false
 
 let GIVEAWAY_ACTIVATION_FILE
 let isGiveawayActivated = false
+let systemLogger = null
 
 // accounts: [ { id, label, token, channels[] } ]
 let accounts = []
@@ -58,6 +94,654 @@ const VALID_GIVEAWAY_KEYS = [
 
 // ── License & Activation ────────────────────────────────────────
 const APP_KEY = 'gvsxcl1q'
+const LICENSE_DURATION_DAYS = 90
+const LICENSE_DURATION_MS = LICENSE_DURATION_DAYS * 24 * 60 * 60 * 1000
+
+function logSystem(level, area, message, meta) {
+  if (!systemLogger) return null
+
+  const entry = systemLogger.log(level, area, message, meta)
+  if (mainWindow && mainWindow.webContents) {
+    mainWindow.webContents.send('system-log-entry', entry)
+  }
+  return entry
+}
+
+function getStorageSecret() {
+  return getMachineId() + ':' + APP_KEY
+}
+
+function buildExpiryTimestamp(activatedAt) {
+  const base = Number(activatedAt || Date.now())
+  return base + LICENSE_DURATION_MS
+}
+
+function normalizeLocalActivationRecord(record) {
+  const item = record && typeof record === 'object' ? record : {}
+  const activatedAt = Number(item.activatedAt || Date.now())
+  return {
+    key: String(item.key || '').trim(),
+    machineId: String(item.machineId || '').trim(),
+    activatedAt: activatedAt,
+    expiresAt: Number(item.expiresAt || buildExpiryTimestamp(activatedAt))
+  }
+}
+
+function parseRemoteActivationValue(rawValue) {
+  const text = String(rawValue || '').trim()
+  if (!text) return null
+
+  if (text.startsWith('v2_')) {
+    const decoded = Buffer.from(text.slice(3), 'base64url').toString('utf8')
+    const parsed = JSON.parse(decoded)
+    const activatedAt = Number(parsed.activatedAt || Date.now())
+    return {
+      machineId: String(parsed.machineId || '').trim(),
+      activatedAt: activatedAt,
+      expiresAt: Number(parsed.expiresAt || buildExpiryTimestamp(activatedAt)),
+      legacy: false
+    }
+  }
+
+  return {
+    machineId: text,
+    activatedAt: 0,
+    expiresAt: 0,
+    legacy: true
+  }
+}
+
+function serializeRemoteActivationValue(record) {
+  const normalized = normalizeLocalActivationRecord(record)
+  const payload = Buffer.from(JSON.stringify(normalized), 'utf8').toString('base64url')
+  return 'v2_' + payload
+}
+
+function readLocalActivationFile(filePath) {
+  try {
+    if (fs.existsSync(filePath)) {
+      return normalizeLocalActivationRecord(JSON.parse(fs.readFileSync(filePath, 'utf8')))
+    }
+  } catch (error) {
+    console.error('Error reading activation file:', error)
+  }
+  return null
+}
+
+function writeLocalActivationFile(filePath, record) {
+  const normalized = normalizeLocalActivationRecord(record)
+  fs.writeFileSync(filePath, JSON.stringify(normalized, null, 2), 'utf8')
+  return normalized
+}
+
+function fetchRemoteActivationValue(key, callback) {
+  const cleanKey = String(key || '').trim()
+  const req = https.request({
+    hostname: 'keyvalue.immanuel.co',
+    path: `/api/KeyVal/GetValue/${APP_KEY}/${encodeURIComponent(cleanKey)}`,
+    method: 'GET'
+  }, function (res) {
+    let data = ''
+    res.on('data', function (chunk) { data += chunk })
+    res.on('end', function () {
+      let parsed = ''
+      try {
+        if (data && data.trim()) {
+          parsed = JSON.parse(data)
+        }
+      } catch (e) {
+        parsed = data.replace(/^"|"$/g, '').trim()
+      }
+      callback(null, parseRemoteActivationValue(parsed))
+    })
+  })
+
+  req.on('error', function (err) {
+    callback(err)
+  })
+  req.end()
+}
+
+function saveRemoteActivationValue(key, record, callback) {
+  const payload = serializeRemoteActivationValue(record)
+  const req = https.request({
+    hostname: 'keyvalue.immanuel.co',
+    path: `/api/KeyVal/UpdateValue/${APP_KEY}/${encodeURIComponent(String(key || '').trim())}/${encodeURIComponent(payload)}`,
+    method: 'POST',
+    headers: {
+      'Content-Length': '0'
+    }
+  }, function (res) {
+    let data = ''
+    res.on('data', function (chunk) { data += chunk })
+    res.on('end', function () {
+      let ok = false
+      try {
+        ok = JSON.parse(data) === true
+      } catch (e) {
+        ok = String(data || '').trim() === 'true'
+      }
+      callback(null, ok)
+    })
+  })
+
+  req.on('error', function (err) {
+    callback(err)
+  })
+  req.end()
+}
+
+function normalizeLicenseStore(raw) {
+  const input = raw && typeof raw === 'object' ? raw : {}
+  const licenses = Array.isArray(input.licenses)
+    ? input.licenses.map(function (item) { return normalizeLicenseRecord(item) }).filter(function (item) { return !!item.key })
+    : []
+
+  return {
+    version: 1,
+    updatedAt: Number(input.updatedAt || 0),
+    licenses: licenses
+  }
+}
+
+function loadLicenseStore() {
+  try {
+    if (LICENSE_STORE_FILE && fs.existsSync(LICENSE_STORE_FILE)) {
+      return normalizeLicenseStore(JSON.parse(fs.readFileSync(LICENSE_STORE_FILE, 'utf8')))
+    }
+  } catch (error) {
+    console.error('Error loading license store:', error)
+  }
+
+  return normalizeLicenseStore()
+}
+
+function saveLicenseStore(store) {
+  const payload = normalizeLicenseStore({
+    ...(store || {}),
+    updatedAt: Date.now()
+  })
+  fs.writeFileSync(LICENSE_STORE_FILE, JSON.stringify(payload, null, 2), 'utf8')
+  return payload
+}
+
+function loadAdminConfig() {
+  try {
+    if (ADMIN_CONFIG_FILE && fs.existsSync(ADMIN_CONFIG_FILE)) {
+      return JSON.parse(fs.readFileSync(ADMIN_CONFIG_FILE, 'utf8'))
+    }
+  } catch (error) {
+    console.error('Error loading admin config:', error)
+  }
+
+  return null
+}
+
+function saveAdminConfig(config) {
+  fs.writeFileSync(ADMIN_CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8')
+  return config
+}
+
+function loadIssuerProfile() {
+  try {
+    if (ISSUER_PROFILE_FILE && fs.existsSync(ISSUER_PROFILE_FILE)) {
+      return JSON.parse(fs.readFileSync(ISSUER_PROFILE_FILE, 'utf8'))
+    }
+  } catch (error) {
+    console.error('Error loading issuer profile:', error)
+  }
+  return null
+}
+
+function saveIssuerProfile(profile) {
+  fs.writeFileSync(ISSUER_PROFILE_FILE, JSON.stringify(profile, null, 2), 'utf8')
+  return profile
+}
+
+function loadIssuerPrivateKey() {
+  try {
+    if (ISSUER_PRIVATE_FILE && fs.existsSync(ISSUER_PRIVATE_FILE)) {
+      return decryptString(fs.readFileSync(ISSUER_PRIVATE_FILE, 'utf8'), getStorageSecret())
+    }
+  } catch (error) {
+    console.error('Error loading issuer private key:', error)
+  }
+  return ''
+}
+
+function saveIssuerPrivateKey(privateKeyPem) {
+  fs.writeFileSync(ISSUER_PRIVATE_FILE, encryptString(privateKeyPem, getStorageSecret()), 'utf8')
+}
+
+function ensureIssuerInitialized(adminKey) {
+  verifyAdminAccess(adminKey)
+  let profile = loadIssuerProfile()
+  let privateKeyPem = loadIssuerPrivateKey()
+  if (profile && privateKeyPem) {
+    return { profile: profile, privateKeyPem: privateKeyPem, created: false }
+  }
+
+  const pair = generateIssuerKeyPair()
+  profile = buildIssuerProfile(pair.publicKeyPem)
+  saveIssuerProfile(profile)
+  saveIssuerPrivateKey(pair.privateKeyPem)
+  return { profile: profile, privateKeyPem: pair.privateKeyPem, created: true }
+}
+
+function verifyAdminAccess(adminKey) {
+  const config = loadAdminConfig()
+  if (!config) {
+    throw new Error('ADMIN_KEY_NOT_INITIALIZED')
+  }
+  if (!verifyAdminKey(adminKey, config)) {
+    throw new Error('ADMIN_KEY_INVALID')
+  }
+  return true
+}
+
+function ensureAdminConfigured(adminKey) {
+  const existing = loadAdminConfig()
+  if (existing) {
+    if (!verifyAdminKey(adminKey, existing)) {
+      throw new Error('ADMIN_KEY_INVALID')
+    }
+    return { alreadyConfigured: true }
+  }
+
+  saveAdminConfig(createAdminConfig(adminKey, Date.now()))
+  return { alreadyConfigured: false }
+}
+
+function getLicenseByKey(licenseKey, store) {
+  const key = String(licenseKey || '').trim().toUpperCase()
+  return (store && Array.isArray(store.licenses) ? store.licenses : []).find(function (item) {
+    return item.key === key
+  }) || null
+}
+
+function upsertLicenseRecord(record) {
+  const store = loadLicenseStore()
+  const normalized = normalizeLicenseRecord(record)
+  const next = store.licenses.filter(function (item) { return item.key !== normalized.key })
+  next.push(normalized)
+  return saveLicenseStore({
+    ...store,
+    licenses: next
+  })
+}
+
+function createManagedLicense(adminKey, options) {
+  verifyAdminAccess(adminKey)
+  const record = buildLicenseRecord({
+    product: options && options.product,
+    daysValid: options && options.daysValid,
+    note: options && options.note,
+    now: Date.now()
+  })
+  upsertLicenseRecord(record)
+  return record
+}
+
+function updateManagedLicense(adminKey, licenseKey, patch) {
+  verifyAdminAccess(adminKey)
+  const store = loadLicenseStore()
+  const current = getLicenseByKey(licenseKey, store)
+  if (!current) {
+    throw new Error('LICENSE_NOT_FOUND')
+  }
+
+  const next = normalizeLicenseRecord({
+    ...current,
+    ...patch,
+    updatedAt: Date.now()
+  })
+  upsertLicenseRecord(next)
+  return next
+}
+
+function getLicenseActivationSnapshot(license, machineId) {
+  const now = Date.now()
+  const status = getLicenseStatus(license, now)
+  return {
+    status: status,
+    isActive: status === 'active',
+    expiresAt: license && license.expiresAt ? license.expiresAt : 0,
+    machineId: machineId,
+    activatedMachineId: license && license.activatedMachineId ? license.activatedMachineId : '',
+    remainingDays: license && license.expiresAt
+      ? Math.max(0, Math.ceil((license.expiresAt - now) / (24 * 60 * 60 * 1000)))
+      : 0
+  }
+}
+
+function getManagedLicenseRecord(licenseKey, product) {
+  const license = getLicenseByKey(licenseKey, loadLicenseStore())
+  if (!license) return null
+  if (product && license.product !== product) return null
+  return normalizeLicenseRecord(license)
+}
+
+function getLocalActivationSnapshot(filePath, product, validKeys) {
+  const machineId = getMachineId()
+  const act = readLocalActivationFile(filePath)
+  if (!act || act.machineId !== machineId) {
+    return {
+      isActivated: false,
+      machineId: machineId,
+      key: '',
+      expiresAt: 0,
+      remainingDays: 0,
+      source: ''
+    }
+  }
+
+  const now = Date.now()
+  const allowedKeys = Array.isArray(validKeys) ? validKeys : []
+  if (allowedKeys.includes(act.key)) {
+    return {
+      isActivated: act.expiresAt > now,
+      machineId: machineId,
+      key: act.key,
+      expiresAt: act.expiresAt,
+      remainingDays: Math.max(0, Math.ceil((act.expiresAt - now) / (24 * 60 * 60 * 1000))),
+      source: 'legacy'
+    }
+  }
+
+  const managed = getManagedLicenseRecord(act.key, product)
+  if (!managed) {
+    return {
+      isActivated: false,
+      machineId: machineId,
+      key: act.key,
+      expiresAt: act.expiresAt,
+      remainingDays: Math.max(0, Math.ceil((act.expiresAt - now) / (24 * 60 * 60 * 1000))),
+      source: ''
+    }
+  }
+
+  const snapshot = getLicenseActivationSnapshot(managed, machineId)
+  return {
+    ...snapshot,
+    machineId: machineId,
+    key: managed.key,
+    source: 'managed'
+  }
+}
+
+function formatManagedLicenseForRenderer(record) {
+  const license = normalizeLicenseRecord(record)
+  return {
+    ...license,
+    ...getLicenseActivationSnapshot(license, getMachineId())
+  }
+}
+
+function listManagedLicensesForRenderer() {
+  const store = loadLicenseStore()
+  return (store.licenses || [])
+    .slice()
+    .sort(function (a, b) { return Number(b.updatedAt || 0) - Number(a.updatedAt || 0) })
+    .map(function (item) { return formatManagedLicenseForRenderer(item) })
+}
+
+function syncLocalActivationFileWithManagedLicense(record) {
+  const license = normalizeLicenseRecord(record)
+  const machineId = getMachineId()
+  const filePath = license.product === 'giveaway' ? GIVEAWAY_ACTIVATION_FILE : ACTIVATION_FILE
+  const local = readLocalActivationFile(filePath)
+  if (!local || local.key !== license.key || local.machineId !== machineId) {
+    return
+  }
+
+  if (license.status === 'active' && license.expiresAt > Date.now() && license.activatedMachineId === machineId) {
+    writeLocalActivationFile(filePath, {
+      key: license.key,
+      machineId: machineId,
+      activatedAt: license.activatedAt || local.activatedAt || Date.now(),
+      expiresAt: license.expiresAt
+    })
+    return
+  }
+
+  try {
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath)
+    }
+  } catch (error) {
+    console.error('Error removing managed activation file:', error)
+  }
+
+  if (license.product === 'giveaway') {
+    isGiveawayActivated = false
+  } else {
+    isActivated = false
+  }
+}
+
+function activateManagedLicenseLocally(key, product) {
+  const cleanKey = String(key || '').trim().toUpperCase()
+  const license = getManagedLicenseRecord(cleanKey, product)
+  if (!license) return null
+
+  const machineId = getMachineId()
+  const status = getLicenseStatus(license, Date.now())
+  if (status === 'revoked') {
+    return { success: false, message: 'Key đã bị thu hồi bởi quản trị viên.' }
+  }
+  if (status === 'expired') {
+    return { success: false, message: 'Key đã hết hạn. Hãy dùng key mới hoặc gia hạn.' }
+  }
+  if (license.activatedMachineId && license.activatedMachineId !== machineId) {
+    return { success: false, message: 'Key đã được kích hoạt trên thiết bị khác!' }
+  }
+
+  const updated = normalizeLicenseRecord({
+    ...license,
+    status: 'active',
+    activatedMachineId: machineId,
+    activatedAt: license.activatedAt || Date.now(),
+    updatedAt: Date.now()
+  })
+  upsertLicenseRecord(updated)
+
+  const filePath = product === 'giveaway' ? GIVEAWAY_ACTIVATION_FILE : ACTIVATION_FILE
+  writeLocalActivationFile(filePath, {
+    key: updated.key,
+    machineId: machineId,
+    activatedAt: updated.activatedAt,
+    expiresAt: updated.expiresAt
+  })
+
+  const remainingDays = Math.max(0, Math.ceil((updated.expiresAt - Date.now()) / (24 * 60 * 60 * 1000)))
+  if (product === 'giveaway') {
+    isGiveawayActivated = true
+    return {
+      success: true,
+      message: 'Kích hoạt Giveaway Premium thành công!',
+      expiresAt: updated.expiresAt,
+      remainingDays: remainingDays,
+      source: 'managed'
+    }
+  }
+
+  isActivated = true
+  return {
+    success: true,
+    message: 'Kích hoạt bản quyền thành công!',
+    expiresAt: updated.expiresAt,
+    remainingDays: remainingDays,
+    source: 'managed'
+  }
+}
+
+function resetLocalLicenseState(options) {
+  const opts = options && typeof options === 'object' ? options : {}
+  const files = [ACTIVATION_FILE, GIVEAWAY_ACTIVATION_FILE]
+  if (opts.includeAdminData) {
+    files.push(LICENSE_STORE_FILE, ADMIN_CONFIG_FILE, ISSUER_PROFILE_FILE, ISSUER_PRIVATE_FILE)
+  }
+
+  const deleted = []
+  files.forEach(function (filePath) {
+    try {
+      if (filePath && fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath)
+        deleted.push(filePath)
+      }
+    } catch (error) {
+      console.error('Error resetting local license state:', error)
+    }
+  })
+
+  isActivated = false
+  isGiveawayActivated = false
+
+  return {
+    success: true,
+    deleted: deleted
+  }
+}
+
+function sanitizeAccountForStorage(acc) {
+  const source = acc || {}
+  const stored = {
+    id: source.id,
+    label: source.label,
+    token: source.token === 'anonymous' ? 'anonymous' : '',
+    tokenEncrypted: '',
+    clientId: source.clientId || '',
+    login: source.login || '',
+    profileImageUrl: source.profileImageUrl || '',
+    channels: Array.isArray(source.channels) ? source.channels : []
+  }
+
+  if (source.token && source.token !== 'anonymous') {
+    stored.tokenEncrypted = encryptString(source.token, getStorageSecret())
+  }
+
+  return stored
+}
+
+function hydrateAccountFromStorage(raw) {
+  const item = raw || {}
+  const hydrated = {
+    id: item.id,
+    label: item.label || '',
+    token: 'anonymous',
+    clientId: item.clientId || '',
+    login: item.login || '',
+    profileImageUrl: item.profileImageUrl || '',
+    channels: Array.isArray(item.channels) ? item.channels : []
+  }
+
+  if (item.token === 'anonymous') {
+    hydrated.token = 'anonymous'
+    return hydrated
+  }
+
+  if (item.tokenEncrypted) {
+    hydrated.token = decryptString(item.tokenEncrypted, getStorageSecret())
+    return hydrated
+  }
+
+  if (item.token) {
+    hydrated.token = item.token
+    return hydrated
+  }
+
+  hydrated.token = 'anonymous'
+  return hydrated
+}
+
+function loadAppSettings() {
+  try {
+    if (APP_SETTINGS_FILE && fs.existsSync(APP_SETTINGS_FILE)) {
+      const raw = JSON.parse(fs.readFileSync(APP_SETTINGS_FILE, 'utf8'))
+      return mergeAppSettings(raw)
+    }
+  } catch (error) {
+    console.error('Error loading app settings:', error)
+  }
+
+  return mergeAppSettings()
+}
+
+function saveAppSettings(settings) {
+  const payload = mergeAppSettings(settings)
+  fs.writeFileSync(APP_SETTINGS_FILE, JSON.stringify(payload, null, 2), 'utf8')
+  return payload
+}
+
+function updateTelemetry(patch) {
+  const current = loadAppSettings()
+  return saveAppSettings(applyTelemetryPatch(current, patch))
+}
+
+function saveSessionSnapshot() {
+  const current = loadAppSettings()
+  return saveAppSettings({
+    ...current,
+    lastSessionSnapshot: buildSessionSnapshot(accounts, connections)
+  })
+}
+
+function exportAppState() {
+  return {
+    exportedAt: new Date().toISOString(),
+    accounts: accounts.map(function (acc) {
+      return {
+        id: acc.id,
+        label: acc.label,
+        token: acc.token || 'anonymous',
+        clientId: acc.clientId || '',
+        login: acc.login || '',
+        profileImageUrl: acc.profileImageUrl || '',
+        channels: Array.isArray(acc.channels) ? acc.channels : []
+      }
+    }),
+    appSettings: loadAppSettings()
+  }
+}
+
+function importAppState(payload) {
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('INVALID_IMPORT_PAYLOAD')
+  }
+
+  const importedAccounts = Array.isArray(payload.accounts) ? payload.accounts : []
+  const normalizedAccounts = importedAccounts.map(function (acc, index) {
+    const label = String((acc && acc.label) || '').trim() || ('Imported ' + (index + 1))
+    const token = String((acc && acc.token) || 'anonymous').trim() || 'anonymous'
+    return {
+      id: String((acc && acc.id) || genId()),
+      label: label,
+      token: token,
+      clientId: String((acc && acc.clientId) || '').trim(),
+      login: normalizeIdentity((acc && acc.login) || ''),
+      profileImageUrl: String((acc && acc.profileImageUrl) || '').trim(),
+      channels: Array.isArray(acc && acc.channels)
+        ? acc.channels.map(function (ch) { return normalizeIdentity(ch) }).filter(Boolean)
+        : []
+    }
+  })
+
+  accounts = normalizedAccounts.length > 0
+    ? normalizedAccounts
+    : [{ id: 'default-anon', label: 'Ẩn danh', token: 'anonymous', channels: [] }]
+
+  saveAccounts()
+
+  if (payload.appSettings && typeof payload.appSettings === 'object') {
+    saveAppSettings(payload.appSettings)
+  }
+
+  logSystem('info', 'settings', 'Imported application backup.', {
+    accountCount: accounts.length
+  })
+
+  return true
+}
 
 function getMachineId() {
   try {
@@ -85,14 +769,15 @@ function getMachineId() {
 
 function checkActivationLocal() {
   try {
-    if (fs.existsSync(ACTIVATION_FILE)) {
-      const act = JSON.parse(fs.readFileSync(ACTIVATION_FILE, 'utf8'))
-      const currentMachineId = getMachineId()
-      if (act && act.key && VALID_KEYS.includes(act.key) && act.machineId === currentMachineId) {
-        isActivated = true
-        return true
-      }
+    const snapshot = getLocalActivationSnapshot(ACTIVATION_FILE, 'standard', VALID_KEYS)
+    isActivated = snapshot.isActivated
+    if (!snapshot.isActivated && snapshot.key && snapshot.expiresAt) {
+      logSystem('warn', 'license', 'Standard license expired locally.', {
+        key: snapshot.key,
+        expiresAt: snapshot.expiresAt
+      })
     }
+    return snapshot.isActivated
   } catch (e) {
     console.error('Error checking local activation:', e)
   }
@@ -207,21 +892,176 @@ function activateKeyOnline(key) {
   })
 }
 
+function activateKeyOnlineV2(key) {
+  return new Promise((resolve) => {
+    const machineId = getMachineId()
+    const cleanKey = String(key || '').trim()
+
+    if (!VALID_KEYS.includes(cleanKey)) {
+      resolve({ success: false, message: 'Key không tồn tại hoặc không hợp lệ!' })
+      return
+    }
+
+    fetchRemoteActivationValue(cleanKey, function (err, remoteRecord) {
+      if (err) {
+        resolve({ success: false, message: `Không thể kết nối đến máy chủ kích hoạt. Vui lòng kiểm tra kết nối mạng! (Lỗi: ${err.message})` })
+        return
+      }
+
+      const now = Date.now()
+      let activationData = null
+
+      if (!remoteRecord || !remoteRecord.machineId) {
+        activationData = normalizeLocalActivationRecord({
+          key: cleanKey,
+          machineId: machineId,
+          activatedAt: now,
+          expiresAt: buildExpiryTimestamp(now)
+        })
+      } else if (remoteRecord.machineId === machineId) {
+        const activatedAt = remoteRecord.activatedAt || now
+        activationData = normalizeLocalActivationRecord({
+          key: cleanKey,
+          machineId: machineId,
+          activatedAt: activatedAt,
+          expiresAt: remoteRecord.expiresAt || buildExpiryTimestamp(activatedAt)
+        })
+
+        if (activationData.expiresAt <= now) {
+          resolve({
+            success: false,
+            message: 'Key đã hết hạn sau 90 ngày sử dụng. Hãy dùng key mới hoặc trả phí gia hạn.'
+          })
+          return
+        }
+      } else {
+        resolve({ success: false, message: 'Key đã được kích hoạt trên thiết bị khác!' })
+        return
+      }
+
+      saveRemoteActivationValue(cleanKey, activationData, function (saveErr, ok) {
+        if (saveErr) {
+          resolve({ success: false, message: `Lỗi kết nối khi kích hoạt: ${saveErr.message}` })
+          return
+        }
+        if (!ok) {
+          resolve({ success: false, message: 'Đăng ký/gia hạn key lên máy chủ thất bại!' })
+          return
+        }
+
+        try {
+          writeLocalActivationFile(ACTIVATION_FILE, activationData)
+          isActivated = true
+          logSystem('info', 'license', 'Standard license activated or migrated to 90-day window.', {
+            key: cleanKey,
+            expiresAt: activationData.expiresAt
+          })
+          resolve({
+            success: true,
+            message: 'Kích hoạt bản quyền thành công!',
+            expiresAt: activationData.expiresAt
+          })
+        } catch (e) {
+          resolve({ success: false, message: 'Lưu thông tin kích hoạt cục bộ thất bại!' })
+        }
+      })
+    })
+  })
+}
+
 function checkGiveawayActivationLocal() {
   try {
-    if (fs.existsSync(GIVEAWAY_ACTIVATION_FILE)) {
-      const act = JSON.parse(fs.readFileSync(GIVEAWAY_ACTIVATION_FILE, 'utf8'))
-      const currentMachineId = getMachineId()
-      if (act && act.key && VALID_GIVEAWAY_KEYS.includes(act.key) && act.machineId === currentMachineId) {
-        isGiveawayActivated = true
-        return true
-      }
+    const snapshot = getLocalActivationSnapshot(GIVEAWAY_ACTIVATION_FILE, 'giveaway', VALID_GIVEAWAY_KEYS)
+    isGiveawayActivated = snapshot.isActivated
+    if (!snapshot.isActivated && snapshot.key && snapshot.expiresAt) {
+      logSystem('warn', 'license', 'Giveaway license expired locally.', {
+        key: snapshot.key,
+        expiresAt: snapshot.expiresAt
+      })
     }
+    return snapshot.isActivated
   } catch (e) {
     console.error('Error checking local giveaway activation:', e)
   }
   isGiveawayActivated = false
   return false
+}
+
+function activateGiveawayKeyOnlineV2(key) {
+  return new Promise((resolve) => {
+    const machineId = getMachineId()
+    const cleanKey = String(key || '').trim()
+
+    if (!VALID_GIVEAWAY_KEYS.includes(cleanKey)) {
+      resolve({ success: false, message: 'Key Giveaway khÃ´ng tá»“n táº¡i hoáº·c khÃ´ng há»£p lá»‡!' })
+      return
+    }
+
+    fetchRemoteActivationValue(cleanKey, function (err, remoteRecord) {
+      if (err) {
+        resolve({ success: false, message: `KhÃ´ng thá»ƒ káº¿t ná»‘i Ä‘áº¿n mÃ¡y chá»§ kÃ­ch hoáº¡t. Vui lÃ²ng kiá»ƒm tra káº¿t ná»‘i máº¡ng! (Lá»—i: ${err.message})` })
+        return
+      }
+
+      const now = Date.now()
+      let activationData = null
+
+      if (!remoteRecord || !remoteRecord.machineId) {
+        activationData = normalizeLocalActivationRecord({
+          key: cleanKey,
+          machineId: machineId,
+          activatedAt: now,
+          expiresAt: buildExpiryTimestamp(now)
+        })
+      } else if (remoteRecord.machineId === machineId) {
+        const activatedAt = remoteRecord.activatedAt || now
+        activationData = normalizeLocalActivationRecord({
+          key: cleanKey,
+          machineId: machineId,
+          activatedAt: activatedAt,
+          expiresAt: remoteRecord.expiresAt || buildExpiryTimestamp(activatedAt)
+        })
+
+        if (activationData.expiresAt <= now) {
+          resolve({
+            success: false,
+            message: 'Key Giveaway Ä‘Ã£ háº¿t háº¡n sau 90 ngÃ y sá»­ dá»¥ng. HÃ£y dÃ¹ng key má»›i hoáº·c tráº£ phÃ­ gia háº¡n.'
+          })
+          return
+        }
+      } else {
+        resolve({ success: false, message: 'Key Ä‘Ã£ Ä‘Æ°á»£c kÃ­ch hoáº¡t trÃªn thiáº¿t bá»‹ khÃ¡c!' })
+        return
+      }
+
+      saveRemoteActivationValue(cleanKey, activationData, function (saveErr, ok) {
+        if (saveErr) {
+          resolve({ success: false, message: `Lá»—i káº¿t ná»‘i khi kÃ­ch hoáº¡t: ${saveErr.message}` })
+          return
+        }
+        if (!ok) {
+          resolve({ success: false, message: 'ÄÄƒng kÃ½/gia háº¡n key lÃªn mÃ¡y chá»§ tháº¥t báº¡i!' })
+          return
+        }
+
+        try {
+          writeLocalActivationFile(GIVEAWAY_ACTIVATION_FILE, activationData)
+          isGiveawayActivated = true
+          logSystem('info', 'license', 'Giveaway license activated or migrated to 90-day window.', {
+            key: cleanKey,
+            expiresAt: activationData.expiresAt
+          })
+          resolve({
+            success: true,
+            message: 'KÃ­ch hoáº¡t Giveaway Premium thÃ nh cÃ´ng!',
+            expiresAt: activationData.expiresAt
+          })
+        } catch (e) {
+          resolve({ success: false, message: 'LÆ°u thÃ´ng tin kÃ­ch hoáº¡t Giveaway cá»¥c bá»™ tháº¥t báº¡i!' })
+        }
+      })
+    })
+  })
 }
 
 function activateGiveawayKeyOnline(key) {
@@ -329,9 +1169,27 @@ function activateGiveawayKeyOnline(key) {
 function loadAccounts() {
   try {
     if (fs.existsSync(ACCOUNTS_FILE)) {
-      accounts = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, 'utf8'))
+      const parsed = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, 'utf8'))
+      const rawAccounts = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed && parsed.accounts)
+          ? parsed.accounts
+          : []
+      accounts = rawAccounts.map(function (item) {
+        return hydrateAccountFromStorage(item)
+      })
+
+      if (needsAccountStorageRewrite(parsed)) {
+        saveAccounts()
+        logSystem('info', 'accounts', 'Migrated legacy account storage to encrypted schema.', {
+          accountCount: accounts.length
+        })
+      }
     }
   } catch (e) {
+    logSystem('error', 'accounts', 'Failed to load accounts file, resetting to empty.', {
+      error: e.message
+    })
     accounts = []
   }
   if (!accounts || accounts.length === 0) {
@@ -341,7 +1199,14 @@ function loadAccounts() {
 }
 
 function saveAccounts() {
-  fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2), 'utf8')
+  const payload = {
+    version: ACCOUNT_SCHEMA_VERSION,
+    updatedAt: Date.now(),
+    accounts: accounts.map(function (acc) {
+      return sanitizeAccountForStorage(acc)
+    })
+  }
+  fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(payload, null, 2), 'utf8')
 }
 
 function genId() {
@@ -637,6 +1502,14 @@ function scheduleReconnect(accountId, channel, reason) {
       reason: reason || 'reconnect'
     })
   }
+  logSystem('warn', 'channels', 'Scheduling reconnect.', {
+    accountId: accountId,
+    channel: ch,
+    attempt: attempt,
+    delayMs: delayMs,
+    reason: reason || 'reconnect'
+  })
+  updateTelemetry({ reconnectEvents: 1 })
 
   reconnectTimers[key] = setTimeout(function () {
     delete reconnectTimers[key]
@@ -674,6 +1547,11 @@ function connectChannel(accountId, channel) {
     if (mainWindow) mainWindow.webContents.send('channel-status', {
       accountId: accountId, channel: ch, connected: true
     })
+    logSystem('success', 'channels', 'Connected to Twitch channel.', {
+      accountId: accountId,
+      channel: ch,
+      anonymous: isAnon
+    })
   })
 
   ws.on('message', function (data) {
@@ -691,6 +1569,31 @@ function connectChannel(accountId, channel) {
           accountId: accountId, channel: ch, error: 'Token không hợp lệ'
         })
         try { ws.close() } catch (e) { }
+        continue
+      }
+
+      var roomState = parseTwitchRoomState(line)
+      if (roomState && mainWindow) {
+        mainWindow.webContents.send('channel-roomstate', {
+          accountId: accountId,
+          channel: ch,
+          followersOnly: roomState.followersOnly,
+          emoteOnly: roomState.emoteOnly,
+          slow: roomState.slow,
+          subsOnly: roomState.subsOnly
+        })
+        continue
+      }
+
+      var notice = parseTwitchNotice(line)
+      if (notice && isFollowersOnlyNotice(notice) && mainWindow) {
+        mainWindow.webContents.send('channel-chat-restriction', {
+          accountId: accountId,
+          channel: notice.channel || ch,
+          kind: 'followers-only',
+          message: notice.text,
+          msgId: notice.msgId
+        })
         continue
       }
 
@@ -720,6 +1623,12 @@ function connectChannel(accountId, channel) {
       if (mainWindow) mainWindow.webContents.send('channel-status', {
         accountId: accountId, channel: ch, connected: false
       })
+      logSystem('info', 'channels', 'Disconnected from Twitch channel.', {
+        accountId: accountId,
+        channel: ch,
+        manual: !!manualDisconnects[key],
+        authFailed: !!authFailedConnections[key]
+      })
       return
     }
     scheduleReconnect(accountId, ch, 'close')
@@ -729,6 +1638,11 @@ function connectChannel(accountId, channel) {
     delete connections[key]
     if (mainWindow) mainWindow.webContents.send('channel-error', {
       accountId: accountId, channel: ch, error: err.message, reconnecting: !manualDisconnects[key] && !authFailedConnections[key]
+    })
+    logSystem('error', 'channels', 'WebSocket error for channel.', {
+      accountId: accountId,
+      channel: ch,
+      error: err.message
     })
     if (!manualDisconnects[key] && !authFailedConnections[key]) {
       scheduleReconnect(accountId, ch, 'error')
@@ -835,90 +1749,6 @@ function sendGiveawayChat(text) {
   }
 }
 
-function decodeTagValue(val) {
-  if (!val) return ''
-  return val
-    .replace(/\\s/g, ' ')
-    .replace(/\\:/g, ';')
-    .replace(/\\r/g, '\r')
-    .replace(/\\n/g, '\n')
-    .replace(/\\\\/g, '\\')
-}
-
-// ── IRC parser ────────────────────────────────────────────────
-function parseTwitchMessage(line) {
-  var tags = {}
-  var rest = line
-  if (line.startsWith('@')) {
-    var tagEnd = line.indexOf(' ')
-    var tagStr = line.slice(1, tagEnd)
-    rest = line.slice(tagEnd + 1)
-    tagStr.split(';').forEach(function (part) {
-      var kv = part.split('=')
-      tags[kv[0]] = kv[1] || ''
-    })
-  }
-
-  var username = ''
-  var login = ''
-  var text = ''
-  var match = rest.match(/^:(\S+)!\S+ PRIVMSG #(\S+) :([\s\S]+)$/)
-
-  if (match) {
-    login = tags['login'] || match[1] || ''
-    username = tags['display-name'] || match[1]
-    text = match[3]
-  } else {
-    // Parse USERNOTICE (e.g. Chat Announcements /announce used by Nightbot)
-    var userNoticeMatch = rest.match(/^:tmi\.twitch\.tv USERNOTICE #(\S+) :([\s\S]+)$/)
-    if (userNoticeMatch) {
-      login = tags['login'] || ''
-      username = tags['display-name'] || tags['login'] || 'Twitch'
-      text = userNoticeMatch[2]
-    } else {
-      return null
-    }
-  }
-
-  var color = tags['color'] || '#' + intToHex(simpleHash(username))
-  var badges = tags['badges'] || ''
-
-  var replyParentMsgId = tags['reply-parent-msg-id'] || ''
-  var replyParentUser = tags['reply-parent-display-name'] || tags['reply-parent-user-login'] || ''
-  var replyParentBody = tags['reply-parent-msg-body'] ? decodeTagValue(tags['reply-parent-msg-body']) : ''
-
-  return {
-    id: tags['id'] || '',
-    username: username,
-    login: normalizeIdentity(login),
-    color: color,
-    text: text,
-    isMod: badges.indexOf('moderator') !== -1 || tags['mod'] === '1',
-    isSub: badges.indexOf('subscriber') !== -1,
-    isBroadcaster: badges.indexOf('broadcaster') !== -1,
-    isVip: badges.indexOf('vip') !== -1,
-    timestamp: Date.now(),
-    replyParentMsgId: replyParentMsgId,
-    replyParentUser: replyParentUser,
-    replyParentBody: replyParentBody
-  }
-}
-
-function simpleHash(str) {
-  var h = 0
-  for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xffffff
-  return h
-}
-
-function intToHex(n) {
-  var r = Math.max(80, (n >> 16) & 0xff)
-  var g = Math.max(80, (n >> 8) & 0xff)
-  var b = Math.max(80, n & 0xff)
-  return [r, g, b].map(function (x) { return x.toString(16).padStart(2, '0') }).join('')
-}
-
-
-// ── Window ────────────────────────────────────────────────────
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 680,
@@ -940,18 +1770,26 @@ function createWindow() {
     console.log(`[Renderer Console] ${message} (at ${sourceId}:${line})`);
   });
 
+  if (mainWindow.webContents && typeof mainWindow.webContents.on === 'function') {
+    mainWindow.webContents.on('render-process-gone', function (event, details) {
+      logSystem('error', 'system', 'Renderer process gone.', details || {})
+      updateTelemetry({ rendererCrashes: 1 })
+      saveSessionSnapshot()
+    })
+  }
+
   mainWindow.on('closed', function () {
     Object.keys(connections).forEach(function (k) { connections[k].close() })
+    saveSessionSnapshot()
     mainWindow = null
   })
 }
 
 // ── IPC ───────────────────────────────────────────────────────
 ipcMain.handle('check-activation', function () {
-  return {
-    isActivated: isActivated,
-    machineId: getMachineId()
-  }
+  const snapshot = getLocalActivationSnapshot(ACTIVATION_FILE, 'standard', VALID_KEYS)
+  isActivated = snapshot.isActivated
+  return snapshot
 })
 
 ipcMain.handle('get-app-version', function () {
@@ -959,18 +1797,119 @@ ipcMain.handle('get-app-version', function () {
 })
 
 ipcMain.handle('activate-key', async function (event, key) {
-  return await activateKeyOnline(key)
+  const managedResult = activateManagedLicenseLocally(key, 'standard')
+  if (managedResult) return managedResult
+  return await activateKeyOnlineV2(key)
 })
 
 ipcMain.handle('check-giveaway-activation', function () {
-  return {
-    isActivated: isGiveawayActivated,
-    machineId: getMachineId()
-  }
+  const snapshot = getLocalActivationSnapshot(GIVEAWAY_ACTIVATION_FILE, 'giveaway', VALID_GIVEAWAY_KEYS)
+  isGiveawayActivated = snapshot.isActivated
+  return snapshot
 })
 
 ipcMain.handle('activate-giveaway-key', async function (event, key) {
-  return await activateGiveawayKeyOnline(key)
+  const managedResult = activateManagedLicenseLocally(key, 'giveaway')
+  if (managedResult) return managedResult
+  return await activateGiveawayKeyOnlineV2(key)
+})
+
+ipcMain.handle('admin-init', function (event, adminKey) {
+  try {
+    const initResult = ensureAdminConfigured(adminKey)
+    const issuerResult = ensureIssuerInitialized(adminKey)
+    return {
+      success: true,
+      alreadyConfigured: initResult.alreadyConfigured,
+      issuerCreated: issuerResult.created
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message === 'ADMIN_KEY_INVALID'
+        ? 'Admin key không đúng.'
+        : 'Không thể khởi tạo quản trị.'
+    }
+  }
+})
+
+ipcMain.handle('admin-list-licenses', function (event, adminKey) {
+  try {
+    verifyAdminAccess(adminKey)
+    return {
+      success: true,
+      licenses: listManagedLicensesForRenderer()
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message === 'ADMIN_KEY_INVALID'
+        ? 'Admin key không đúng.'
+        : 'Admin key chưa được khởi tạo.'
+    }
+  }
+})
+
+ipcMain.handle('admin-create-license', function (event, adminKey, options) {
+  try {
+    const record = createManagedLicense(adminKey, options || {})
+    return {
+      success: true,
+      license: formatManagedLicenseForRenderer(record)
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message === 'ADMIN_KEY_INVALID'
+        ? 'Admin key không đúng.'
+        : 'Không thể tạo key mới.'
+    }
+  }
+})
+
+ipcMain.handle('admin-update-license', function (event, adminKey, licenseKey, patch) {
+  try {
+    const nextPatch = { ...(patch || {}) }
+    if (nextPatch.daysDelta) {
+      const current = getManagedLicenseRecord(licenseKey)
+      if (!current) {
+        throw new Error('LICENSE_NOT_FOUND')
+      }
+      const base = current.expiresAt > Date.now() ? current.expiresAt : Date.now()
+      nextPatch.expiresAt = base + (Number(nextPatch.daysDelta) * 24 * 60 * 60 * 1000)
+      delete nextPatch.daysDelta
+    }
+
+    const record = updateManagedLicense(adminKey, licenseKey, nextPatch)
+    syncLocalActivationFileWithManagedLicense(record)
+    return {
+      success: true,
+      license: formatManagedLicenseForRenderer(record)
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message === 'ADMIN_KEY_INVALID'
+        ? 'Admin key không đúng.'
+        : error.message === 'LICENSE_NOT_FOUND'
+          ? 'Không tìm thấy key cần cập nhật.'
+          : 'Không thể cập nhật key.'
+    }
+  }
+})
+
+ipcMain.handle('admin-reset-local-license-state', function (event, adminKey, includeAdminData) {
+  try {
+    verifyAdminAccess(adminKey)
+    return resetLocalLicenseState({ includeAdminData: !!includeAdminData })
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message === 'ADMIN_KEY_INVALID'
+        ? 'Admin key không đúng.'
+        : 'Admin key chưa được khởi tạo.'
+    }
+  }
 })
 
 ipcMain.on('start-giveaway-connection', function (event, channel, modBotAccountId) {
@@ -1023,6 +1962,50 @@ ipcMain.handle('get-accounts', function () {
   })
 })
 
+ipcMain.handle('get-app-settings', function () {
+  return loadAppSettings()
+})
+
+ipcMain.handle('save-app-settings', function (event, partialSettings) {
+  const current = loadAppSettings()
+  const next = saveAppSettings({
+    ...current,
+    ...(partialSettings || {})
+  })
+  logSystem('info', 'settings', 'Application settings saved.', {
+    keys: Object.keys(partialSettings || {})
+  })
+  return next
+})
+
+ipcMain.handle('export-app-state', function () {
+  const payload = exportAppState()
+  logSystem('info', 'settings', 'Application backup exported.', {
+    accountCount: payload.accounts.length
+  })
+  updateTelemetry({ exportedBackups: 1 })
+  return payload
+})
+
+ipcMain.handle('import-app-state', async function (event, payload) {
+  const result = importAppState(payload)
+  await hydrateMissingAccountLogins()
+  updateTelemetry({ importedBackups: 1 })
+  return result
+})
+
+ipcMain.handle('get-system-logs', function () {
+  return systemLogger ? systemLogger.getEntries() : []
+})
+
+ipcMain.handle('clear-system-logs', function () {
+  if (systemLogger) {
+    systemLogger.clear()
+  }
+  logSystem('info', 'system', 'System logs cleared by user.')
+  return true
+})
+
 ipcMain.handle('add-account', async function (event, label, token, clientId) {
   if (!isActivated && token !== 'anonymous') {
     throw new Error('Chưa kích hoạt bản quyền! Không thể thêm tài khoản Twitch thật.')
@@ -1042,6 +2025,10 @@ ipcMain.handle('add-account', async function (event, label, token, clientId) {
     }
   }
   var acc = addAccount(label, token, clientId, profileImageUrl, login)
+  logSystem('info', 'accounts', 'Added account.', {
+    label: acc.label,
+    hasToken: !!acc.token && acc.token !== 'anonymous'
+  })
   return {
     id: acc.id,
     label: acc.label,
@@ -1073,6 +2060,10 @@ ipcMain.handle('update-account', async function (event, id, label, token, client
   }
   var acc = updateAccount(id, label, token, clientId, profileImageUrl, login)
   if (!acc) return null
+  logSystem('info', 'accounts', 'Updated account.', {
+    id: id,
+    label: acc.label
+  })
   return {
     id: acc.id,
     label: acc.label,
@@ -1089,21 +2080,43 @@ ipcMain.handle('delete-account', function (event, id) {
     throw new Error('Không thể xóa tài khoản mặc định.')
   }
   deleteAccount(id)
+  logSystem('warn', 'accounts', 'Deleted account.', {
+    id: id
+  })
   return true
 })
 
 ipcMain.on('join-channel', function (event, accountId, channel) {
   addChannelToAccount(accountId, channel)
+  logSystem('info', 'channels', 'Joined channel.', {
+    accountId: accountId,
+    channel: normalizeIdentity(channel)
+  })
+  updateTelemetry({ channelJoins: 1 })
+  saveSessionSnapshot()
 })
 
 ipcMain.on('leave-channel', function (event, accountId, channel) {
   removeChannelFromAccount(accountId, channel)
+  logSystem('warn', 'channels', 'Left channel.', {
+    accountId: accountId,
+    channel: normalizeIdentity(channel)
+  })
+  updateTelemetry({ channelLeaves: 1 })
+  saveSessionSnapshot()
 })
 
 ipcMain.on('send-chat', function (event, accountId, channel, text, replyParentMsgId, replyParentUser, replyParentBody) {
   if (text && text.trim()) {
     var trimmed = text.trim()
     sendChat(accountId, channel, trimmed, replyParentMsgId)
+    logSystem('info', 'chat', 'Sent chat message.', {
+      accountId: accountId,
+      channel: normalizeIdentity(channel),
+      reply: !!replyParentMsgId,
+      length: trimmed.length
+    })
+    updateTelemetry({ sentMessages: 1 })
 
     // Echo back locally since Twitch IRC doesn't reflect own PRIVMSG to the sender
     var acc = getAccount(accountId)
@@ -1150,6 +2163,7 @@ ipcMain.on('reconnect-all', function () {
   accounts.forEach(function (acc) {
     acc.channels.forEach(function (ch) { connectChannel(acc.id, ch) })
   })
+  logSystem('info', 'channels', 'Triggered reconnect for all saved channels.')
 })
 
 ipcMain.on('open-external', function (event, url) {
@@ -1161,13 +2175,26 @@ app.whenReady().then(async function () {
   ACCOUNTS_FILE = path.join(app.getPath('userData'), 'accounts.json')
   ACTIVATION_FILE = path.join(app.getPath('userData'), 'activation.json')
   GIVEAWAY_ACTIVATION_FILE = path.join(app.getPath('userData'), 'giveaway_activation.json')
+  LICENSE_STORE_FILE = path.join(app.getPath('userData'), 'license-store.json')
+  ADMIN_CONFIG_FILE = path.join(app.getPath('userData'), 'admin-config.json')
+  ISSUER_PROFILE_FILE = path.join(app.getPath('userData'), 'issuer-profile.json')
+  ISSUER_PRIVATE_FILE = path.join(app.getPath('userData'), 'issuer-private.enc')
   MACHINE_ID_FILE = path.join(app.getPath('userData'), 'machine.id')
+  APP_SETTINGS_FILE = path.join(app.getPath('userData'), 'app-settings.json')
+  SYSTEM_LOG_FILE = path.join(app.getPath('userData'), 'system-log.json')
+  systemLogger = createLogger({ filePath: SYSTEM_LOG_FILE, maxEntries: 800 })
+  saveAppSettings(loadAppSettings())
+  updateTelemetry({ appLaunches: 1 })
 
   loadAccounts()
   await hydrateMissingAccountLogins()
   checkActivationLocal()
   checkGiveawayActivationLocal()
   createWindow()
+  saveSessionSnapshot()
+  logSystem('info', 'system', 'Application boot completed.', {
+    version: app.getVersion()
+  })
 
   // Auto Update check (Method 1: electron-updater)
   try {
@@ -1207,5 +2234,31 @@ app.whenReady().then(async function () {
 
 app.on('window-all-closed', function () {
   Object.keys(connections).forEach(function (k) { connections[k].close() })
+  saveSessionSnapshot()
   app.quit()
+})
+
+process.on('uncaughtException', function (error) {
+  try {
+    updateTelemetry({ unhandledErrors: 1 })
+    logSystem('error', 'system', 'Uncaught exception in main process.', {
+      message: error && error.message ? error.message : String(error),
+      stack: error && error.stack ? error.stack : ''
+    })
+    saveSessionSnapshot()
+  } catch (innerError) {
+    console.error('Failed while handling uncaughtException:', innerError)
+  }
+})
+
+process.on('unhandledRejection', function (reason) {
+  try {
+    updateTelemetry({ unhandledErrors: 1 })
+    logSystem('error', 'system', 'Unhandled promise rejection in main process.', {
+      reason: reason && reason.message ? reason.message : String(reason)
+    })
+    saveSessionSnapshot()
+  } catch (innerError) {
+    console.error('Failed while handling unhandledRejection:', innerError)
+  }
 })

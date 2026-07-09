@@ -230,6 +230,328 @@
     #notif-btn:hover { background: var(--color-surface3); border-color: #4a4a4e; }
     #notif-btn.active { background: rgba(var(--color-accent-rgb), 0.15); border-color: var(--color-accent); color: var(--color-accent-light); }
 
+    .toolbar-btn {
+      background: var(--color-surface2);
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-surface3);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .toolbar-btn:hover {
+      background: var(--color-surface3);
+      border-color: #4a4a4e;
+    }
+
+    #license-pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(var(--color-accent-rgb), 0.28);
+      background: rgba(var(--color-accent-rgb), 0.12);
+      color: var(--color-text-primary);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      display: none;
+    }
+
+    #license-pill.is-warning {
+      border-color: rgba(255, 123, 0, 0.35);
+      background: rgba(255, 123, 0, 0.14);
+      color: #ffd39b;
+    }
+
+    .license-status-box {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(var(--color-accent-rgb), 0.2);
+      background: rgba(var(--color-accent-rgb), 0.08);
+      color: var(--color-text-primary);
+      font-size: 13px;
+      line-height: 1.45;
+      display: none;
+    }
+
+    .license-status-box.visible {
+      display: block;
+    }
+
+    .admin-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 18px;
+    }
+
+    .admin-panel {
+      border: 1px solid var(--color-border);
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .admin-panel h3 {
+      margin: 0 0 12px;
+      font-size: 15px;
+      color: var(--color-text-primary);
+    }
+
+    .admin-panel p {
+      margin: 0 0 12px;
+      color: var(--color-text-muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .admin-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .admin-actions .toolbar-btn,
+    .admin-actions .activation-btn {
+      min-width: 110px;
+    }
+
+    .admin-inline {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .admin-inline > * {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .admin-status {
+      min-height: 22px;
+      margin-top: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-muted);
+    }
+
+    .admin-license-list {
+      max-height: 380px;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .admin-license-card {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(0, 0, 0, 0.16);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .admin-license-card strong {
+      display: block;
+      color: var(--color-text-primary);
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+
+    .admin-license-meta {
+      font-size: 12px;
+      color: var(--color-text-muted);
+      line-height: 1.5;
+    }
+
+    @media (max-width: 980px) {
+      .admin-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    #system-log-drawer {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      width: min(460px, calc(100vw - 36px));
+      max-height: min(50vh, 420px);
+      background: rgba(24, 24, 27, 0.98);
+      border: 1px solid var(--color-border);
+      border-radius: 14px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 1500;
+    }
+    #system-log-drawer.open {
+      display: flex;
+    }
+    .system-log-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--color-border);
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .system-log-header h3 {
+      font-size: 13px;
+      margin: 0;
+    }
+    .system-log-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .system-log-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px;
+      overflow-y: auto;
+    }
+    .system-log-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .system-log-section-title {
+      margin: 4px 2px 0;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-text-faint);
+    }
+    .system-log-item {
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .system-log-item[data-level="error"] {
+      border-color: rgba(233, 25, 22, 0.35);
+    }
+    .system-log-item[data-level="warn"] {
+      border-color: rgba(255, 183, 0, 0.35);
+    }
+    .system-log-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--color-text-muted);
+      font-size: 11px;
+      margin-bottom: 6px;
+    }
+    .system-log-message {
+      color: var(--color-text-primary);
+      word-break: break-word;
+    }
+    .system-log-item pre {
+      margin: 8px 0 0;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.22);
+      color: var(--color-text-muted);
+      font-size: 11px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .giveaway-history-card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .giveaway-history-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .giveaway-stat-box {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      padding: 10px;
+    }
+    .giveaway-stat-box strong {
+      display: block;
+      font-size: 18px;
+      color: #efeff1;
+    }
+    .giveaway-stat-box span {
+      font-size: 11px;
+      color: var(--color-text-muted);
+    }
+    .giveaway-history-toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .giveaway-history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+    .giveaway-history-item {
+      border: 1px solid var(--color-border);
+      background: rgba(255,255,255,0.03);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .giveaway-history-item[data-status="claimed"] {
+      border-color: rgba(46, 204, 113, 0.35);
+    }
+    .giveaway-history-item[data-status="expired"] {
+      border-color: rgba(233, 25, 22, 0.35);
+    }
+    .giveaway-history-item[data-status="rerolled"] {
+      border-color: rgba(255, 183, 0, 0.35);
+    }
+
+    .chat-toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--color-border);
+      background: rgba(255, 255, 255, 0.02);
+      flex-shrink: 0;
+    }
+    .chat-filter-input {
+      flex: 1;
+      min-width: 0;
+      background: var(--color-bg);
+      border: 1px solid var(--color-surface3);
+      border-radius: 6px;
+      color: var(--color-text-primary);
+      padding: 8px 12px;
+      font-size: 12px;
+      outline: none;
+    }
+    .chat-filter-select {
+      min-width: 100px;
+      background: var(--color-bg);
+      border: 1px solid var(--color-surface3);
+      border-radius: 6px;
+      color: var(--color-text-primary);
+      padding: 8px 10px;
+      font-size: 12px;
+      outline: none;
+    }
+
     #auto-settings-btn {
       background: var(--color-surface2);
       color: var(--color-text-primary);
@@ -460,6 +782,12 @@
       transition: background 0.2s;
     }
     .chat-send-btn:hover { background: var(--color-accent-dark); }
+    .chat-send-btn.secondary {
+      background: var(--color-surface2);
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-surface3);
+    }
+    .chat-send-btn.secondary:hover { background: var(--color-surface3); }
     .translate-chat-container {
       align-items: stretch;
     }
@@ -550,6 +878,75 @@
       cursor: pointer;
     }
     .anon-notice a:hover { text-decoration: underline; }
+
+    .chat-restriction-notice {
+      font-size: 12px;
+      color: #f6e7b0;
+      padding: 10px 12px;
+      margin: 10px 16px 0;
+      background: rgba(255, 183, 0, 0.08);
+      border: 1px solid rgba(255, 183, 0, 0.22);
+      border-radius: 8px;
+      line-height: 1.45;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .chat-restriction-notice.visible { display: flex; }
+    .chat-restriction-text { flex: 1; }
+    .chat-restriction-action {
+      border: 1px solid rgba(255, 183, 0, 0.3);
+      background: rgba(255, 183, 0, 0.14);
+      color: #ffe8a3;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .chat-restriction-action:hover { background: rgba(255, 183, 0, 0.22); }
+
+    .pending-message-bar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 8px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: rgba(255, 138, 76, 0.08);
+      border: 1px solid rgba(255, 138, 76, 0.2);
+      color: #ffcfb0;
+    }
+    .pending-message-bar.visible { display: flex; }
+    .pending-message-meta {
+      flex: 1;
+      min-width: 0;
+    }
+    .pending-message-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #ffb07c;
+      margin-bottom: 4px;
+    }
+    .pending-message-preview {
+      font-size: 12px;
+      color: var(--color-text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pending-message-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
 
     /* Status bar per panel */
     .panel-status {
@@ -2612,6 +3009,15 @@
     const activationErrorMsg = document.getElementById('activation-error-msg')
     const activateSubmitBtn = document.getElementById('activate-submit-btn')
     const bypassActivationBtn = document.getElementById('bypass-activation-btn')
+    let activationStatus = null
+    let activationHelperNote = null
+    let licensePill = null
+    let adminModal = null
+    let adminStatus = null
+    let adminKeyInput = null
+    let adminSelectedKeyInput = null
+    let adminLicenseList = null
+    let cachedAdminKey = ''
 
     // Auto Settings Elements
     const autoSettingsModal = document.getElementById('auto-settings-modal')
@@ -2643,6 +3049,7 @@
     const topbarAccountLabel = document.getElementById('topbar-account-label')
 
     const MAX_MESSAGES = 300
+    const CHAT_FILTER_DEFAULT = { search: '', type: 'all' }
     let accounts = []
     let activeAccountId = null
     let activeChannel = null // channel name of currently viewed panel for the active account
@@ -2669,6 +3076,12 @@
     let megamuEventSchedulerInterval = null
     let currentEventNotifyEditingChannelKey = null
     let toastContainer = null
+    let appSettings = null
+    let systemLogs = []
+    let systemLogDrawerEl = null
+    let systemLogListEl = null
+    let giveawayHistory = []
+    const channelRoomStates = {}
     const megamuEventReminderHistory = {}
     const MEGAMU_FIXED_EVENTS_GMT_MINUS_3 = [
       ['Blood Castle', ['03:00', '07:00', '11:00', '15:00', '19:00', '22:50']],
@@ -2812,6 +3225,990 @@
           }
         }, 220)
       }, duration)
+    }
+
+    function getChatFilter(key) {
+      const allFilters = (appSettings && appSettings.chatFiltersByChannel) || {}
+      const current = allFilters[key] || {}
+      return {
+        ...CHAT_FILTER_DEFAULT,
+        ...current
+      }
+    }
+
+    function getPendingMessages(key) {
+      const allPending = (appSettings && appSettings.pendingMessagesByChannel) || {}
+      const entries = allPending[key]
+      return Array.isArray(entries) ? entries : []
+    }
+
+    async function persistPendingMessages(key, entries) {
+      const nextByChannel = {
+        ...((appSettings && appSettings.pendingMessagesByChannel) || {})
+      }
+
+      if (entries && entries.length) {
+        nextByChannel[key] = entries
+      } else {
+        delete nextByChannel[key]
+      }
+
+      await persistAppSettings({ pendingMessagesByChannel: nextByChannel })
+    }
+
+    async function queuePendingMessage(key, payload) {
+      const current = getPendingMessages(key)
+      const next = current.concat([{
+        id: 'pending-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+        createdAt: Date.now(),
+        ...payload
+      }])
+      await persistPendingMessages(key, next)
+      updatePendingMessageBar(key)
+    }
+
+    async function removePendingMessage(key, messageId) {
+      const next = getPendingMessages(key).filter(entry => entry.id !== messageId)
+      await persistPendingMessages(key, next)
+      updatePendingMessageBar(key)
+    }
+
+    function updatePendingMessageBar(key) {
+      const c = channels[key]
+      if (!c || !c.pendingBarEl || !c.pendingPreviewEl || !c.pendingTitleEl) return
+
+      const pending = getPendingMessages(key)
+      if (!pending.length) {
+        c.pendingBarEl.classList.remove('visible')
+        c.pendingTitleEl.textContent = ''
+        c.pendingPreviewEl.textContent = ''
+        c.pendingRetryBtn.disabled = true
+        c.pendingDiscardBtn.disabled = true
+        return
+      }
+
+      const first = pending[0]
+      c.pendingTitleEl.textContent = pending.length > 1
+        ? `Có ${pending.length} tin nhắn đang chờ`
+        : 'Có 1 tin nhắn đang chờ'
+      c.pendingPreviewEl.textContent = first && first.text ? first.text : '(trống)'
+      c.pendingBarEl.classList.add('visible')
+      c.pendingRetryBtn.disabled = false
+      c.pendingDiscardBtn.disabled = false
+    }
+
+    function buildReplyPayloadForChannel(key, text) {
+      let parentId = ''
+      let parentUser = ''
+      let parentBody = ''
+
+      if (channels[key] && channels[key].replyingTo) {
+        parentId = channels[key].replyingTo.id
+        parentUser = channels[key].replyingTo.username
+        parentBody = channels[key].replyingTo.text
+      }
+
+      return {
+        text: text,
+        replyParentMsgId: parentId,
+        replyParentUser: parentUser,
+        replyParentBody: parentBody
+      }
+    }
+
+    function canSendMessageForChannel(key) {
+      const roomState = ensureChannelRoomState(key)
+      const connectionState = channelConnectionStates[key] || 'offline'
+      return connectionState === 'live' && (!roomState.followersOnlyActive || isOwnChannelForKey(key))
+    }
+
+    function sendMessagePayload(accountId, channel, payload) {
+      window.twitch.sendChat(
+        accountId,
+        channel,
+        payload.text,
+        payload.replyParentMsgId || '',
+        payload.replyParentUser || '',
+        payload.replyParentBody || ''
+      )
+    }
+
+    async function sendOrQueueChannelMessage(accountId, channel, key, payload) {
+      if (canSendMessageForChannel(key)) {
+        sendMessagePayload(accountId, channel, payload)
+        return { queued: false }
+      }
+
+      await queuePendingMessage(key, {
+        ...payload,
+        reason: ensureChannelRoomState(key).followersOnlyActive ? 'followers-only' : 'offline'
+      })
+      return { queued: true }
+    }
+
+    async function persistAppSettings(partialSettings) {
+      const next = await window.twitch.saveAppSettings({
+        ...(appSettings || {}),
+        ...(partialSettings || {})
+      })
+      appSettings = next
+      return next
+    }
+
+    function formatSystemLogTime(timestamp) {
+      const date = new Date(timestamp || Date.now())
+      return date.toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      })
+    }
+
+    function renderSystemLogs() {
+      if (!systemLogListEl) return
+
+      systemLogListEl.innerHTML = ''
+      if (!systemLogs.length) {
+        const empty = document.createElement('div')
+        empty.className = 'system-log-item'
+        empty.textContent = 'Chưa có log hệ thống.'
+        systemLogListEl.appendChild(empty)
+        return
+      }
+
+      systemLogs.slice().reverse().forEach((entry) => {
+        const item = document.createElement('div')
+        item.className = 'system-log-item'
+        item.dataset.level = entry.level || 'info'
+
+        const meta = document.createElement('div')
+        meta.className = 'system-log-meta'
+        meta.innerHTML = `<span>[${escapeHtml(entry.area || 'app')}] ${escapeHtml((entry.level || 'info').toUpperCase())}</span><span>${formatSystemLogTime(entry.timestamp)}</span>`
+
+        const message = document.createElement('div')
+        message.className = 'system-log-message'
+        message.textContent = entry.message || ''
+
+        item.appendChild(meta)
+        item.appendChild(message)
+        systemLogListEl.appendChild(item)
+      })
+    }
+
+    function formatDateTime(timestamp) {
+      if (!timestamp) return 'N/A'
+      const date = new Date(timestamp)
+      if (Number.isNaN(date.getTime())) return 'N/A'
+      return date.toLocaleString('vi-VN')
+    }
+
+    function createSystemLogCard(options) {
+      const opts = options || {}
+      const item = document.createElement('div')
+      item.className = 'system-log-item'
+      if (opts.level) {
+        item.dataset.level = opts.level
+      }
+
+      const meta = document.createElement('div')
+      meta.className = 'system-log-meta'
+      meta.innerHTML = `<span>${opts.title || ''}</span><span>${opts.time || ''}</span>`
+      item.appendChild(meta)
+
+      const message = document.createElement('div')
+      message.className = 'system-log-message'
+      message.textContent = opts.message || ''
+      item.appendChild(message)
+
+      if (opts.details) {
+        const details = document.createElement('pre')
+        details.textContent = opts.details
+        item.appendChild(details)
+      }
+
+      return item
+    }
+
+    function renderDiagnosticsSection(container) {
+      const settings = appSettings || {}
+      const telemetry = (settings && settings.telemetry) || {}
+      const snapshot = (settings && settings.lastSessionSnapshot) || {}
+      const connectedChannels = Array.isArray(snapshot.connectedChannels) ? snapshot.connectedChannels : []
+      const reconnectCount = Number(telemetry.reconnectEvents || 0)
+      const messageCount = Number(telemetry.sentMessages || 0)
+      const errorCount = Number(telemetry.unhandledErrors || 0) + Number(telemetry.rendererCrashes || 0)
+
+      const section = document.createElement('div')
+      section.className = 'system-log-section'
+
+      const title = document.createElement('div')
+      title.className = 'system-log-section-title'
+      title.textContent = 'Diagnostics'
+      section.appendChild(title)
+
+      section.appendChild(createSystemLogCard({
+        level: errorCount > 0 ? 'warn' : 'info',
+        title: 'Telemetry',
+        time: formatDateTime(snapshot.savedAt),
+        message: `Launches: ${Number(telemetry.appLaunches || 0)} | Reconnects: ${reconnectCount} | Sent: ${messageCount} | Errors: ${errorCount}`,
+        details: JSON.stringify(telemetry, null, 2)
+      }))
+
+      section.appendChild(createSystemLogCard({
+        title: 'Last Session Snapshot',
+        time: formatDateTime(snapshot.savedAt),
+        message: `Accounts: ${Number(snapshot.accountCount || 0)} | Connected channels: ${connectedChannels.length}`,
+        details: JSON.stringify(snapshot, null, 2)
+      }))
+
+      container.appendChild(section)
+    }
+
+    function renderSystemLogs() {
+      if (!systemLogListEl) return
+
+      systemLogListEl.innerHTML = ''
+      renderDiagnosticsSection(systemLogListEl)
+
+      const entries = Array.isArray(systemLogs) ? systemLogs.slice().reverse() : []
+      if (!entries.length) {
+        const empty = document.createElement('div')
+        empty.className = 'system-log-item'
+        empty.textContent = 'ChÆ°a cÃ³ log há»‡ thá»‘ng.'
+        systemLogListEl.appendChild(empty)
+        return
+      }
+
+      const section = document.createElement('div')
+      section.className = 'system-log-section'
+
+      const title = document.createElement('div')
+      title.className = 'system-log-section-title'
+      title.textContent = 'System Events'
+      section.appendChild(title)
+
+      entries.forEach((entry) => {
+        section.appendChild(createSystemLogCard({
+          level: entry.level || 'info',
+          title: `[${entry.area || 'app'}] ${(entry.level || 'info').toUpperCase()}`,
+          time: formatSystemLogTime(entry.timestamp),
+          message: entry.message || ''
+        }))
+      })
+
+      systemLogListEl.appendChild(section)
+    }
+
+    function pushSystemLog(entry) {
+      if (!entry) return
+      systemLogs.push(entry)
+      if (systemLogs.length > 800) {
+        systemLogs = systemLogs.slice(-800)
+      }
+      renderSystemLogs()
+    }
+
+    function applyChatFilterToElement(filter, element, msg) {
+      if (!element) return
+      const search = String(filter.search || '').trim().toLowerCase()
+      const type = filter.type || 'all'
+      let visible = true
+
+      if (search) {
+        const haystack = `${msg.username || ''} ${msg.login || ''} ${msg.text || ''}`.toLowerCase()
+        visible = haystack.includes(search)
+      }
+
+      if (visible && type === 'mentions') {
+        visible = element.classList.contains('msg-mention')
+      } else if (visible && type === 'replies') {
+        visible = !!(msg.replyParentMsgId || msg.replyParentUser)
+      } else if (visible && type === 'staff') {
+        visible = !!(msg.isBroadcaster || msg.isMod || msg.isVip)
+      }
+
+      element.style.display = visible ? '' : 'none'
+    }
+
+    function refreshChannelChatFilter(key) {
+      const c = channels[key]
+      if (!c || !c.chat) return
+
+      const filter = getChatFilter(key)
+      const items = Array.from(c.chat.querySelectorAll('.msg'))
+      items.forEach((item) => {
+        applyChatFilterToElement(filter, item, item.__msgData || {})
+      })
+    }
+
+    function createTopbarActions() {
+      const topbar = document.getElementById('topbar')
+      if (!topbar || document.getElementById('export-settings-btn')) return
+
+      const exportBtn = document.createElement('button')
+      exportBtn.id = 'export-settings-btn'
+      exportBtn.className = 'toolbar-btn'
+      exportBtn.type = 'button'
+      exportBtn.textContent = 'Backup'
+
+      const importBtn = document.createElement('button')
+      importBtn.id = 'import-settings-btn'
+      importBtn.className = 'toolbar-btn'
+      importBtn.type = 'button'
+      importBtn.textContent = 'Restore'
+
+      const logBtn = document.createElement('button')
+      logBtn.id = 'system-log-btn'
+      logBtn.className = 'toolbar-btn'
+      logBtn.type = 'button'
+      logBtn.textContent = 'Logs'
+
+      const fileInput = document.createElement('input')
+      fileInput.id = 'import-settings-input'
+      fileInput.type = 'file'
+      fileInput.accept = 'application/json'
+      fileInput.style.display = 'none'
+
+      topbar.appendChild(exportBtn)
+      topbar.appendChild(importBtn)
+      topbar.appendChild(logBtn)
+      topbar.appendChild(fileInput)
+
+      exportBtn.addEventListener('click', async () => {
+        try {
+          const payload = await window.twitch.exportAppState()
+          const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+          const url = URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = `twitch-chat-viewer-backup-${Date.now()}.json`
+          link.click()
+          URL.revokeObjectURL(url)
+          showToast('Đã xuất file sao lưu cấu hình.')
+        } catch (error) {
+          showToast('Xuất sao lưu thất bại.', 'error')
+        }
+      })
+
+      importBtn.addEventListener('click', () => fileInput.click())
+      fileInput.addEventListener('change', async (event) => {
+        const file = event.target.files && event.target.files[0]
+        if (!file) return
+
+        try {
+          const text = await file.text()
+          const payload = JSON.parse(text)
+          await window.twitch.importAppState(payload)
+          appSettings = await window.twitch.getAppSettings()
+          await loadAndRenderAccounts()
+          showToast('Đã nhập cấu hình từ file sao lưu.')
+        } catch (error) {
+          showToast('Không thể nhập file sao lưu.', 'error')
+        } finally {
+          fileInput.value = ''
+        }
+      })
+
+      logBtn.addEventListener('click', () => {
+        if (systemLogDrawerEl) {
+          systemLogDrawerEl.classList.toggle('open')
+        }
+      })
+    }
+
+    function ensureActivationStatusUi() {
+      if (!activationOverlay) return
+
+      if (!activationStatus) {
+        activationStatus = document.getElementById('activation-status')
+      }
+      if (!activationStatus) {
+        activationStatus = document.createElement('div')
+        activationStatus.id = 'activation-status'
+        activationStatus.className = 'license-status-box'
+        const submitBtn = document.getElementById('activate-submit-btn')
+        if (submitBtn && submitBtn.parentNode) {
+          submitBtn.parentNode.insertBefore(activationStatus, submitBtn)
+        }
+      }
+
+      if (!activationHelperNote) {
+        activationHelperNote = document.getElementById('activation-helper-note')
+      }
+      if (!activationHelperNote) {
+        activationHelperNote = document.createElement('div')
+        activationHelperNote.id = 'activation-helper-note'
+        activationHelperNote.style.marginTop = '8px'
+        activationHelperNote.style.fontSize = '12px'
+        activationHelperNote.style.color = '#adadb8'
+        activationHelperNote.textContent = 'Ô này chỉ nhận key sử dụng như TV-... hoặc GW-.... Admin key dùng trong nút "Quản trị key" bên dưới.'
+        const errorBox = document.getElementById('activation-error-msg')
+        if (errorBox && errorBox.parentNode) {
+          errorBox.parentNode.appendChild(activationHelperNote)
+        }
+      }
+
+      const topbar = document.getElementById('topbar')
+      if (topbar && !licensePill) {
+        licensePill = document.getElementById('license-pill')
+      }
+      if (topbar && !licensePill) {
+        licensePill = document.createElement('div')
+        licensePill.id = 'license-pill'
+        topbar.insertBefore(licensePill, document.getElementById('channel-input'))
+      }
+
+      const modalBody = activationOverlay.querySelector('.modal-body')
+      if (modalBody && !document.getElementById('open-admin-btn')) {
+        const wrap = document.createElement('div')
+        wrap.className = 'admin-actions'
+        const btn = document.createElement('button')
+        btn.id = 'open-admin-btn'
+        btn.type = 'button'
+        btn.className = 'toolbar-btn'
+        btn.textContent = 'Quản trị key'
+        btn.addEventListener('click', () => {
+          openAdminCenter()
+        })
+        wrap.appendChild(btn)
+        modalBody.appendChild(wrap)
+      }
+    }
+
+    function setActivationSummary(snapshot, options = {}) {
+      ensureActivationStatusUi()
+      if (!activationStatus || !licensePill) return
+
+      const isActive = !!(snapshot && snapshot.isActivated)
+      const remainingDays = Number((snapshot && snapshot.remainingDays) || 0)
+      const expiresAt = Number((snapshot && snapshot.expiresAt) || 0)
+      const showExpired = !!options.showExpired
+
+      if (isActive && expiresAt) {
+        const expiryLabel = new Date(expiresAt).toLocaleString('vi-VN')
+        const dayLabel = remainingDays === 1 ? '1 ngày' : `${remainingDays} ngày`
+        activationStatus.textContent = `Bạn còn ${dayLabel} sử dụng phần mềm. Hết hạn vào ${expiryLabel}.`
+        activationStatus.classList.add('visible')
+        activationStatus.style.color = remainingDays <= 7 ? '#ffd39b' : '#22c55e'
+
+        licensePill.style.display = 'block'
+        licensePill.textContent = `Còn ${dayLabel}`
+        licensePill.classList.toggle('is-warning', remainingDays <= 7)
+        return
+      }
+
+      if (showExpired && expiresAt) {
+        activationStatus.textContent = `Bản quyền đã hết hạn vào ${new Date(expiresAt).toLocaleString('vi-VN')}. Hãy nhập key mới hoặc gia hạn.`
+        activationStatus.classList.add('visible')
+        activationStatus.style.color = '#ff8d8d'
+      } else {
+        activationStatus.textContent = ''
+        activationStatus.classList.remove('visible')
+      }
+
+      licensePill.style.display = 'none'
+      licensePill.textContent = ''
+      licensePill.classList.remove('is-warning')
+    }
+
+    function ensureAdminModalUi() {
+      if (adminModal) return adminModal
+
+      adminModal = document.createElement('div')
+      adminModal.id = 'admin-modal'
+      adminModal.className = 'modal-overlay'
+      adminModal.style.display = 'none'
+      adminModal.style.zIndex = '13050'
+      adminModal.style.alignItems = 'center'
+      adminModal.style.justifyContent = 'center'
+      adminModal.innerHTML = `
+        <div class="modal-card" style="max-width: 1100px; width: calc(100vw - 60px);">
+          <div class="modal-header">
+            <h2>Admin Center</h2>
+            <span class="modal-close-btn" id="admin-close-btn">&times;</span>
+          </div>
+          <div class="modal-body">
+            <div class="admin-grid">
+              <div class="admin-panel">
+                <h3>Khởi tạo quản trị</h3>
+                <p>Nhập admin key để khởi tạo hoặc đăng nhập khu quản trị tích hợp trong app.</p>
+                <div class="form-group">
+                  <label for="admin-key-input">Admin Key</label>
+                  <input type="password" id="admin-key-input" placeholder="Nhập admin key của bạn" />
+                </div>
+                <div class="admin-actions">
+                  <button id="admin-init-btn" type="button" class="activation-btn">Khởi tạo / Đăng nhập</button>
+                  <button id="admin-refresh-btn" type="button" class="toolbar-btn">Tải danh sách key</button>
+                  <button id="admin-reset-local-btn" type="button" class="toolbar-btn">Reset key local</button>
+                </div>
+                <div id="admin-status" class="admin-status"></div>
+              </div>
+              <div class="admin-panel">
+                <h3>Tạo key mới</h3>
+                <div class="admin-inline">
+                  <div class="form-group">
+                    <label for="admin-license-product">Loại key</label>
+                    <select id="admin-license-product">
+                      <option value="standard">TV Standard</option>
+                      <option value="giveaway">Giveaway Premium</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="admin-license-days">Số ngày</label>
+                    <input type="number" id="admin-license-days" min="1" value="90" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="admin-license-note">Ghi chú</label>
+                  <input type="text" id="admin-license-note" placeholder="Ví dụ: khách test tháng 7" />
+                </div>
+                <div class="admin-actions">
+                  <button id="admin-create-license-btn" type="button" class="activation-btn">Tạo key</button>
+                </div>
+              </div>
+            </div>
+            <div class="admin-grid" style="margin-top: 18px;">
+              <div class="admin-panel">
+                <h3>Cập nhật key</h3>
+                <div class="form-group">
+                  <label for="admin-selected-key">Key cần thao tác</label>
+                  <input type="text" id="admin-selected-key" placeholder="TV-XXXX-XXXX-XXXX hoặc GW-XXXX-XXXX-XXXX" />
+                </div>
+                <div class="admin-inline">
+                  <div class="form-group">
+                    <label for="admin-renew-days">Gia hạn thêm ngày</label>
+                    <input type="number" id="admin-renew-days" min="1" value="90" />
+                  </div>
+                  <div class="form-group">
+                    <label for="admin-license-status-select">Trạng thái</label>
+                    <select id="admin-license-status-select">
+                      <option value="active">Kích hoạt</option>
+                      <option value="revoked">Thu hồi</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="admin-actions">
+                  <button id="admin-renew-license-btn" type="button" class="activation-btn">Gia hạn key</button>
+                  <button id="admin-update-status-btn" type="button" class="toolbar-btn">Cập nhật trạng thái</button>
+                </div>
+              </div>
+              <div class="admin-panel">
+                <h3>Danh sách key quản trị</h3>
+                <div id="admin-license-list" class="admin-license-list"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `
+
+      document.body.appendChild(adminModal)
+
+      adminStatus = adminModal.querySelector('#admin-status')
+      adminKeyInput = adminModal.querySelector('#admin-key-input')
+      adminSelectedKeyInput = adminModal.querySelector('#admin-selected-key')
+      adminLicenseList = adminModal.querySelector('#admin-license-list')
+
+      adminModal.querySelector('#admin-close-btn').addEventListener('click', closeAdminCenter)
+      adminModal.addEventListener('click', (event) => {
+        if (event.target === adminModal) {
+          closeAdminCenter()
+        }
+      })
+
+      adminModal.querySelector('#admin-init-btn').addEventListener('click', handleAdminInit)
+      adminModal.querySelector('#admin-refresh-btn').addEventListener('click', () => refreshAdminLicenses())
+      adminModal.querySelector('#admin-create-license-btn').addEventListener('click', handleAdminCreateLicense)
+      adminModal.querySelector('#admin-renew-license-btn').addEventListener('click', handleAdminRenewLicense)
+      adminModal.querySelector('#admin-update-status-btn').addEventListener('click', handleAdminUpdateStatus)
+      adminModal.querySelector('#admin-reset-local-btn').addEventListener('click', handleAdminResetLocal)
+
+      return adminModal
+    }
+
+    function openAdminCenter(prefillValue = '') {
+      ensureAdminModalUi()
+      if (prefillValue && adminKeyInput) {
+        adminKeyInput.value = prefillValue
+      }
+      if (activationOverlay) {
+        activationOverlay.style.pointerEvents = 'none'
+      }
+      adminModal.style.display = 'flex'
+      adminModal.classList.add('open')
+    }
+
+    function closeAdminCenter() {
+      if (!adminModal) return
+      adminModal.style.display = 'none'
+      adminModal.classList.remove('open')
+      if (activationOverlay) {
+        activationOverlay.style.pointerEvents = ''
+      }
+    }
+
+    function getAdminKeyValue() {
+      if (!adminKeyInput) return ''
+      cachedAdminKey = adminKeyInput.value.trim()
+      return cachedAdminKey
+    }
+
+    function setAdminStatus(message, tone = 'info') {
+      if (!adminStatus) return
+      adminStatus.textContent = message || ''
+      adminStatus.style.color = tone === 'error' ? '#ff8d8d' : tone === 'success' ? '#22c55e' : '#adadb8'
+    }
+
+    function renderAdminLicenses(items) {
+      if (!adminLicenseList) return
+      adminLicenseList.innerHTML = ''
+      const licenses = Array.isArray(items) ? items : []
+      if (!licenses.length) {
+        const empty = document.createElement('div')
+        empty.className = 'admin-license-card'
+        empty.textContent = 'Chưa có key nào được quản trị tạo.'
+        adminLicenseList.appendChild(empty)
+        return
+      }
+
+      licenses.forEach((item) => {
+        const card = document.createElement('div')
+        card.className = 'admin-license-card'
+        const remaining = Number(item.remainingDays || 0)
+        const activated = item.activatedMachineId ? ` | Máy kích hoạt: ${item.activatedMachineId}` : ''
+        card.innerHTML = `
+          <strong>${item.key}</strong>
+          <div class="admin-license-meta">
+            Loại: ${item.product} | Trạng thái: ${item.status} | Còn: ${remaining} ngày<br />
+            Hết hạn: ${item.expiresAt ? new Date(item.expiresAt).toLocaleString('vi-VN') : 'N/A'}${activated}<br />
+            Ghi chú: ${item.note || '-'}
+          </div>
+        `
+        card.addEventListener('click', () => {
+          if (adminSelectedKeyInput) adminSelectedKeyInput.value = item.key
+        })
+        adminLicenseList.appendChild(card)
+      })
+    }
+
+    async function refreshAdminLicenses() {
+      ensureAdminModalUi()
+      const adminKey = getAdminKeyValue()
+      if (!adminKey) {
+        setAdminStatus('Hãy nhập admin key trước.', 'error')
+        return
+      }
+
+      const result = await window.twitch.adminListLicenses(adminKey)
+      if (!result.success) {
+        setAdminStatus(result.message || 'Không thể tải danh sách key.', 'error')
+        return
+      }
+
+      renderAdminLicenses(result.licenses)
+      setAdminStatus(`Đã tải ${result.licenses.length} key quản trị.`, 'success')
+    }
+
+    async function handleAdminInit() {
+      ensureAdminModalUi()
+      const adminKey = getAdminKeyValue()
+      if (!adminKey) {
+        setAdminStatus('Hãy nhập admin key.', 'error')
+        return
+      }
+
+      const result = await window.twitch.adminInit(adminKey)
+      if (!result.success) {
+        setAdminStatus(result.message || 'Không thể khởi tạo quản trị.', 'error')
+        return
+      }
+
+      setAdminStatus(result.alreadyConfigured ? 'Đăng nhập quản trị thành công.' : 'Khởi tạo quản trị thành công.', 'success')
+      await refreshAdminLicenses()
+    }
+
+    async function handleAdminCreateLicense() {
+      ensureAdminModalUi()
+      const adminKey = getAdminKeyValue()
+      if (!adminKey) {
+        setAdminStatus('Hãy nhập admin key.', 'error')
+        return
+      }
+
+      const product = adminModal.querySelector('#admin-license-product').value
+      const daysValid = Number(adminModal.querySelector('#admin-license-days').value || 90)
+      const note = adminModal.querySelector('#admin-license-note').value.trim()
+      const result = await window.twitch.adminCreateLicense(adminKey, { product, daysValid, note })
+      if (!result.success) {
+        setAdminStatus(result.message || 'Không thể tạo key.', 'error')
+        return
+      }
+
+      if (adminSelectedKeyInput) adminSelectedKeyInput.value = result.license.key
+      setAdminStatus(`Đã tạo key ${result.license.key}.`, 'success')
+      await refreshAdminLicenses()
+    }
+
+    async function handleAdminRenewLicense() {
+      ensureAdminModalUi()
+      const adminKey = getAdminKeyValue()
+      const licenseKey = adminSelectedKeyInput ? adminSelectedKeyInput.value.trim() : ''
+      if (!adminKey || !licenseKey) {
+        setAdminStatus('Cần nhập admin key và key cần gia hạn.', 'error')
+        return
+      }
+
+      const daysDelta = Number(adminModal.querySelector('#admin-renew-days').value || 90)
+      const result = await window.twitch.adminUpdateLicense(adminKey, licenseKey, { daysDelta })
+      if (!result.success) {
+        setAdminStatus(result.message || 'Không thể gia hạn key.', 'error')
+        return
+      }
+
+      setAdminStatus(`Đã gia hạn ${licenseKey} thêm ${daysDelta} ngày.`, 'success')
+      await refreshAdminLicenses()
+    }
+
+    async function handleAdminUpdateStatus() {
+      ensureAdminModalUi()
+      const adminKey = getAdminKeyValue()
+      const licenseKey = adminSelectedKeyInput ? adminSelectedKeyInput.value.trim() : ''
+      if (!adminKey || !licenseKey) {
+        setAdminStatus('Cần nhập admin key và key cần cập nhật.', 'error')
+        return
+      }
+
+      const status = adminModal.querySelector('#admin-license-status-select').value
+      const result = await window.twitch.adminUpdateLicense(adminKey, licenseKey, { status })
+      if (!result.success) {
+        setAdminStatus(result.message || 'Không thể cập nhật trạng thái key.', 'error')
+        return
+      }
+
+      setAdminStatus(`Đã cập nhật ${licenseKey} sang trạng thái ${status}.`, 'success')
+      await refreshAdminLicenses()
+    }
+
+    async function handleAdminResetLocal() {
+      ensureAdminModalUi()
+      const adminKey = getAdminKeyValue()
+      if (!adminKey) {
+        setAdminStatus('Hãy nhập admin key trước khi reset.', 'error')
+        return
+      }
+
+      const result = await window.twitch.adminResetLocalLicenseState(adminKey, false)
+      if (!result.success) {
+        setAdminStatus(result.message || 'Không thể reset key local.', 'error')
+        return
+      }
+
+      isActivated = false
+      isGiveawayActivated = false
+      setActivationSummary(null)
+      giveawayActivationOverlay.style.display = 'flex'
+      activationOverlay.classList.add('open')
+      setAdminStatus('Đã reset key local trên máy này. Bạn có thể test kích hoạt lại ngay.', 'success')
+    }
+
+    function createSystemLogDrawer() {
+      if (document.getElementById('system-log-drawer')) {
+        systemLogDrawerEl = document.getElementById('system-log-drawer')
+        systemLogListEl = document.getElementById('system-log-list')
+        return
+      }
+
+      systemLogDrawerEl = document.createElement('div')
+      systemLogDrawerEl.id = 'system-log-drawer'
+
+      const header = document.createElement('div')
+      header.className = 'system-log-header'
+
+      const title = document.createElement('h3')
+      title.textContent = 'Nhật ký hệ thống'
+
+      const actions = document.createElement('div')
+      actions.className = 'system-log-actions'
+
+      const clearBtn = document.createElement('button')
+      clearBtn.id = 'clear-system-log-btn'
+      clearBtn.className = 'toolbar-btn'
+      clearBtn.type = 'button'
+      clearBtn.textContent = 'Xóa log'
+
+      const closeBtn = document.createElement('button')
+      closeBtn.id = 'close-system-log-btn'
+      closeBtn.className = 'toolbar-btn'
+      closeBtn.type = 'button'
+      closeBtn.textContent = 'Đóng'
+
+      actions.appendChild(clearBtn)
+      actions.appendChild(closeBtn)
+      header.appendChild(title)
+      header.appendChild(actions)
+
+      systemLogListEl = document.createElement('div')
+      systemLogListEl.id = 'system-log-list'
+      systemLogListEl.className = 'system-log-list'
+
+      systemLogDrawerEl.appendChild(header)
+      systemLogDrawerEl.appendChild(systemLogListEl)
+      document.body.appendChild(systemLogDrawerEl)
+
+      closeBtn.addEventListener('click', () => {
+        systemLogDrawerEl.classList.remove('open')
+      })
+
+      clearBtn.addEventListener('click', async () => {
+        await window.twitch.clearSystemLogs()
+        systemLogs = []
+        renderSystemLogs()
+        showToast('Đã xóa nhật ký hệ thống.')
+      })
+    }
+
+    function computeGiveawayDashboard(history) {
+      const items = Array.isArray(history) ? history : []
+      const dashboard = {
+        totalSessions: items.length,
+        totalParticipants: 0,
+        totalClaims: 0,
+        totalExpired: 0,
+        totalRerolls: 0
+      }
+
+      items.forEach((entry) => {
+        dashboard.totalParticipants += Number(entry.participantCount || 0)
+        if (entry.status === 'claimed') dashboard.totalClaims += 1
+        if (entry.status === 'expired') dashboard.totalExpired += 1
+        if (entry.status === 'rerolled') dashboard.totalRerolls += 1
+      })
+
+      return dashboard
+    }
+
+    function renderGiveawayHistory() {
+      const historyList = document.getElementById('gw-history-list')
+      const statsWrap = document.getElementById('gw-history-stats')
+      if (!historyList || !statsWrap) return
+
+      const dashboard = computeGiveawayDashboard(giveawayHistory)
+      const stats = [
+        ['Phiên đã lưu', dashboard.totalSessions],
+        ['Người tham gia', dashboard.totalParticipants],
+        ['Claim thành công', dashboard.totalClaims],
+        ['Hết hạn / Reroll', dashboard.totalExpired + dashboard.totalRerolls]
+      ]
+
+      statsWrap.innerHTML = ''
+      stats.forEach(([label, value]) => {
+        const box = document.createElement('div')
+        box.className = 'giveaway-stat-box'
+        box.innerHTML = `<strong>${value}</strong><span>${label}</span>`
+        statsWrap.appendChild(box)
+      })
+
+      historyList.innerHTML = ''
+      if (!giveawayHistory.length) {
+        const empty = document.createElement('div')
+        empty.className = 'giveaway-history-item'
+        empty.textContent = 'Chưa có lịch sử giveaway.'
+        historyList.appendChild(empty)
+        return
+      }
+
+      giveawayHistory.slice().reverse().forEach((entry) => {
+        const item = document.createElement('div')
+        item.className = 'giveaway-history-item'
+        item.dataset.status = entry.status || 'pending'
+        item.innerHTML =
+          `<div style="display:flex;justify-content:space-between;gap:8px;color:var(--color-text-muted);font-size:11px;">
+            <span>${escapeHtml(entry.channel || '-')}</span>
+            <span>${formatSystemLogTime(entry.timestamp)}</span>
+          </div>
+          <div style="font-weight:700;color:#efeff1;margin-top:4px;">@${escapeHtml(entry.winner || '-')} - ${escapeHtml(entry.status || 'unknown')}</div>
+          <div style="margin-top:4px;color:var(--color-text-primary);">
+            Prize: ${escapeHtml(entry.awardName || '-')} | Character: ${escapeHtml(entry.characterName || '-')} | Participants: ${Number(entry.participantCount || 0)}
+          </div>`
+        historyList.appendChild(item)
+      })
+    }
+
+    function ensureGiveawayHistoryPanel() {
+      if (document.getElementById('gw-history-list')) return
+      const rightColumn = document.querySelector('.giveaway-right')
+      if (!rightColumn) return
+
+      const card = document.createElement('div')
+      card.className = 'giveaway-card giveaway-history-card'
+
+      const title = document.createElement('h3')
+      title.textContent = 'Lịch sử Giveaway'
+
+      const statsWrap = document.createElement('div')
+      statsWrap.id = 'gw-history-stats'
+      statsWrap.className = 'giveaway-history-stats'
+
+      const toolbar = document.createElement('div')
+      toolbar.className = 'giveaway-history-toolbar'
+
+      const exportBtn = document.createElement('button')
+      exportBtn.id = 'gw-history-export-btn'
+      exportBtn.type = 'button'
+      exportBtn.className = 'giveaway-btn btn-secondary'
+      exportBtn.textContent = 'Xuất JSON'
+
+      const clearBtn = document.createElement('button')
+      clearBtn.id = 'gw-history-clear-btn'
+      clearBtn.type = 'button'
+      clearBtn.className = 'giveaway-btn btn-secondary'
+      clearBtn.textContent = 'Xóa lịch sử'
+
+      const list = document.createElement('div')
+      list.id = 'gw-history-list'
+      list.className = 'giveaway-history-list'
+
+      toolbar.appendChild(exportBtn)
+      toolbar.appendChild(clearBtn)
+      card.appendChild(title)
+      card.appendChild(statsWrap)
+      card.appendChild(toolbar)
+      card.appendChild(list)
+      rightColumn.appendChild(card)
+
+      exportBtn.addEventListener('click', () => {
+        const blob = new Blob([JSON.stringify(giveawayHistory, null, 2)], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `giveaway-history-${Date.now()}.json`
+        link.click()
+        URL.revokeObjectURL(url)
+      })
+
+      clearBtn.addEventListener('click', async () => {
+        giveawayHistory = []
+        const nextDashboard = computeGiveawayDashboard(giveawayHistory)
+        await persistAppSettings({
+          giveawayHistory: giveawayHistory,
+          giveawayDashboard: nextDashboard
+        })
+        renderGiveawayHistory()
+        showToast('Đã xóa lịch sử giveaway.')
+      })
+    }
+
+    async function saveGiveawayHistoryEntry(entry) {
+      giveawayHistory.push(entry)
+      if (giveawayHistory.length > 200) {
+        giveawayHistory = giveawayHistory.slice(-200)
+      }
+
+      const nextDashboard = computeGiveawayDashboard(giveawayHistory)
+      await persistAppSettings({
+        giveawayHistory: giveawayHistory,
+        giveawayDashboard: nextDashboard
+      })
+      renderGiveawayHistory()
     }
 
     let currentEditingChannelKey = null
@@ -2974,8 +4371,16 @@
     // ── Activation Event Listeners ─────────────────────────────────
     activateSubmitBtn.addEventListener('click', async function() {
       const key = activationKeyInput.value.trim()
+      const looksLikeUserLicenseKey = /^((TV|GW)-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4})$/i.test(key)
       activationErrorMsg.style.display = 'none'
       activationErrorMsg.textContent = ''
+
+      if (key && !looksLikeUserLicenseKey) {
+        openAdminCenter(key)
+        activationErrorMsg.textContent = 'Chuỗi này trông giống admin key. Hãy dùng trong "Quản trị key", không phải ô kích hoạt bản quyền.'
+        activationErrorMsg.style.display = 'block'
+        return
+      }
 
       if (!key) {
         activationErrorMsg.textContent = 'Vui lòng nhập Key kích hoạt!'
@@ -2988,9 +4393,21 @@
 
       try {
         const res = await window.twitch.activateKey(key)
+        const expiryText = res && res.expiresAt
+          ? ('\nHạn sử dụng đến: ' + new Date(res.expiresAt).toLocaleString('vi-VN'))
+          : ''
         if (res.success) {
           alert('Kích hoạt bản quyền thành công!')
           isActivated = true
+          setActivationSummary({
+            isActivated: true,
+            expiresAt: res.expiresAt,
+            remainingDays: res.remainingDays || 0
+          })
+          if (activationStatus && res.expiresAt) {
+            activationStatus.textContent = `Bản quyền có hiệu lực đến ${new Date(res.expiresAt).toLocaleString('vi-VN')}`
+            activationStatus.style.color = '#22c55e'
+          }
           activationOverlay.classList.remove('open')
           
           // Remove lock state from add button
@@ -3000,7 +4417,7 @@
           await loadAndRenderAccounts()
 
           // Open guide on first activation
-          if (!localStorage.getItem('guide_shown')) {
+          if (!(appSettings && appSettings.guideShown)) {
             openGuideModal()
           }
         } else {
@@ -3019,7 +4436,7 @@
     bypassActivationBtn.addEventListener('click', function() {
       activationOverlay.classList.remove('open')
       applyBypassRestrictions()
-      if (!localStorage.getItem('guide_shown')) {
+      if (!(appSettings && appSettings.guideShown)) {
         openGuideModal()
       }
     })
@@ -3097,7 +4514,7 @@
       }
     })
 
-    saveAutoSettingsBtn.addEventListener('click', function() {
+    saveAutoSettingsBtn.addEventListener('click', async function() {
       if (currentEditingChannelKey) {
         const settings = getChannelAutoSettings(currentEditingChannelKey)
         settings.joinEnable = autoJoinEnableCheckbox.checked
@@ -3107,7 +4524,7 @@
         settings.claimEnable = autoClaimEnableCheckbox.checked
         settings.claimReward = autoClaimRewardInput.value.trim()
         
-        localStorage.setItem('auto_settings_by_channel', JSON.stringify(autoSettingsByChannel))
+        await persistAppSettings({ autoSettingsByChannel: autoSettingsByChannel })
         resetAutoBotTimers(currentEditingChannelKey)
         
         updateChannelAutoButtonState(currentEditingChannelKey)
@@ -3441,14 +4858,14 @@
     }
 
     if (saveEventNotifyBtn) {
-      saveEventNotifyBtn.addEventListener('click', function() {
+      saveEventNotifyBtn.addEventListener('click', async function() {
         if (!currentEventNotifyEditingChannelKey) return
 
         const settings = getChannelEventNotifierSettings(currentEventNotifyEditingChannelKey)
         settings.enabled = eventNotifyEnableCheckbox.checked
         settings.template = eventNotifyTemplateInput.value.trim()
 
-        localStorage.setItem('event_notifier_settings_by_channel', JSON.stringify(eventNotifierSettingsByChannel))
+        await persistAppSettings({ eventNotifierSettingsByChannel: eventNotifierSettingsByChannel })
         updateChannelEventNotifierButtonState(currentEventNotifyEditingChannelKey)
         eventNotifyModal.classList.remove('open')
         ensureMegamuEventSchedulerRunning()
@@ -3487,7 +4904,7 @@
 
     function closeGuideModal() {
       guideModal.classList.remove('open')
-      localStorage.setItem('guide_shown', 'true')
+      persistAppSettings({ guideShown: true })
     }
 
     if (guideBtn) guideBtn.addEventListener('click', openGuideModal)
@@ -3830,6 +5247,90 @@
       return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0')
     }
 
+    function getChannelKey(accountId, channel) {
+      return accountId + ':' + channel.toLowerCase().trim()
+    }
+
+    function getDefaultStatusText(channel) {
+      return 'Đang xem: #' + channel
+    }
+
+    function normalizeChannelIdentity(value) {
+      return String(value || '').trim().replace(/^#/, '').toLowerCase()
+    }
+
+    function isOwnChannelForKey(key) {
+      const c = channels[key]
+      if (!c) return false
+
+      const acc = accounts.find(a => a.id === c.accountId)
+      if (!acc || !acc.hasToken) return false
+
+      const accountLogin = normalizeChannelIdentity(acc.login)
+      const channelName = normalizeChannelIdentity(c.channel)
+      return !!accountLogin && accountLogin === channelName
+    }
+
+    function formatFollowersOnlyMinutes(minutes) {
+      if (minutes === null || minutes === undefined || minutes < 0) return ''
+      if (minutes === 0) return 'Bạn phải follow kênh trước khi chat.'
+      if (minutes === 1) return 'Bạn phải follow tối thiểu 1 phút trước khi chat.'
+      return `Bạn phải follow tối thiểu ${minutes} phút trước khi chat.`
+    }
+
+    function ensureChannelRoomState(key) {
+      if (!channelRoomStates[key]) {
+        channelRoomStates[key] = {
+          followersOnlyActive: false,
+          followersOnlyMinutes: null,
+          lastRestrictionMessage: ''
+        }
+      }
+      return channelRoomStates[key]
+    }
+
+    function getFollowersOnlyRestrictionText(key) {
+      const state = ensureChannelRoomState(key)
+      if (isOwnChannelForKey(key)) return ''
+      if (!state.followersOnlyActive) return ''
+      if (state.lastRestrictionMessage) return state.lastRestrictionMessage
+      return formatFollowersOnlyMinutes(state.followersOnlyMinutes) || 'Kênh này đang bật chế độ follower-only.'
+    }
+
+    function updateRestrictionNotice(key) {
+      const c = channels[key]
+      if (!c || !c.restrictionNoticeEl || !c.restrictionTextEl) return
+
+      const text = getFollowersOnlyRestrictionText(key)
+      if (!text) {
+        c.restrictionNoticeEl.classList.remove('visible')
+        c.restrictionTextEl.textContent = ''
+        return
+      }
+
+      c.restrictionTextEl.textContent = text
+      c.restrictionNoticeEl.classList.add('visible')
+    }
+
+    function updateStatusBarForChannel(key) {
+      const c = channels[key]
+      if (!c || !c.statusEl) return
+
+      const roomState = ensureChannelRoomState(key)
+      const connectionState = channelConnectionStates[key] || 'offline'
+      if (connectionState === 'live' && roomState.followersOnlyActive && !isOwnChannelForKey(key)) {
+        const detail = formatFollowersOnlyMinutes(roomState.followersOnlyMinutes)
+        c.statusEl.textContent = detail
+          ? `Follower-only: ${detail}`
+          : 'Follower-only đang bật cho kênh này'
+        return
+      }
+
+      if (connectionState === 'live') {
+        c.statusEl.textContent = getDefaultStatusText(c.channel)
+      }
+    }
+
     function getBadges(msg) {
       var b = ''
       if (msg.isBroadcaster) b += '<span class="badge broadcaster" title="Broadcaster">Broadcaster</span>'
@@ -3842,7 +5343,7 @@
     function switchTab(accountId, ch) {
       // Deactivate previous active channel
       if (activeAccountId && activeChannel) {
-        const prevKey = activeAccountId + ':' + activeChannel
+        const prevKey = getChannelKey(activeAccountId, activeChannel)
         if (channels[prevKey]) {
           channels[prevKey].tab.classList.remove('active')
           channels[prevKey].panel.classList.remove('active')
@@ -3853,7 +5354,7 @@
       activeChannel = ch
       accountActiveChannels[accountId] = ch
 
-      const key = accountId + ':' + ch
+      const key = getChannelKey(accountId, ch)
       const c = channels[key]
       if (c) {
         c.tab.classList.add('active')
@@ -3884,7 +5385,7 @@
       const ch = channel.toLowerCase().trim()
       if (!ch) return
 
-      const key = accountId + ':' + ch
+      const key = getChannelKey(accountId, ch)
       if (channels[key]) {
         if (accountId === activeAccountId) switchTab(accountId, ch)
         return
@@ -3943,8 +5444,47 @@
       chatWrap.style.display = 'flex'
       chatWrap.style.flexDirection = 'column'
 
+      const chatToolbar = document.createElement('div')
+      chatToolbar.className = 'chat-toolbar'
+
+      const chatFilterInput = document.createElement('input')
+      chatFilterInput.type = 'text'
+      chatFilterInput.className = 'chat-filter-input'
+      chatFilterInput.placeholder = 'Tìm theo user hoặc nội dung...'
+
+      const chatFilterSelect = document.createElement('select')
+      chatFilterSelect.className = 'chat-filter-select'
+      ;[
+        ['all', 'Tất cả'],
+        ['mentions', 'Mention'],
+        ['replies', 'Reply'],
+        ['staff', 'Staff']
+      ].forEach(([value, label]) => {
+        const option = document.createElement('option')
+        option.value = value
+        option.textContent = label
+        chatFilterSelect.appendChild(option)
+      })
+
       const chat = document.createElement('div')
       chat.className = 'chat'
+
+      const restrictionNotice = document.createElement('div')
+      restrictionNotice.className = 'chat-restriction-notice'
+
+      const restrictionText = document.createElement('div')
+      restrictionText.className = 'chat-restriction-text'
+
+      const restrictionAction = document.createElement('button')
+      restrictionAction.type = 'button'
+      restrictionAction.className = 'chat-restriction-action'
+      restrictionAction.textContent = 'Mở kênh để Follow'
+      restrictionAction.addEventListener('click', function() {
+        window.twitch.openExternal('https://www.twitch.tv/' + encodeURIComponent(ch))
+      })
+
+      restrictionNotice.appendChild(restrictionText)
+      restrictionNotice.appendChild(restrictionAction)
 
       const scrollBtn = document.createElement('button')
       scrollBtn.className = 'scroll-btn'
@@ -3954,6 +5494,10 @@
       statusBar.className = 'panel-status'
       statusBar.textContent = 'Đang kết nối #' + ch + '...'
 
+      chatToolbar.appendChild(chatFilterInput)
+      chatToolbar.appendChild(chatFilterSelect)
+      chatWrap.appendChild(restrictionNotice)
+      chatWrap.appendChild(chatToolbar)
       chatWrap.appendChild(chat)
       chatWrap.appendChild(scrollBtn)
 
@@ -3967,6 +5511,11 @@
       let inputField = null
       let translateInputField = null
       let translateTargetSelect = null
+      let pendingBar = null
+      let pendingTitle = null
+      let pendingPreview = null
+      let pendingRetryBtn = null
+      let pendingDiscardBtn = null
       let btnAuto = null
       let autoBotStatusIndicator = null
       let autoBotStatusText = null
@@ -4002,20 +5551,50 @@
         sendBtn.className = 'chat-send-btn'
         sendBtn.textContent = 'Gửi'
 
+        pendingBar = document.createElement('div')
+        pendingBar.className = 'pending-message-bar'
+
+        const pendingMeta = document.createElement('div')
+        pendingMeta.className = 'pending-message-meta'
+
+        pendingTitle = document.createElement('div')
+        pendingTitle.className = 'pending-message-title'
+
+        pendingPreview = document.createElement('div')
+        pendingPreview.className = 'pending-message-preview'
+
+        pendingMeta.appendChild(pendingTitle)
+        pendingMeta.appendChild(pendingPreview)
+
+        const pendingActions = document.createElement('div')
+        pendingActions.className = 'pending-message-actions'
+
+        pendingRetryBtn = document.createElement('button')
+        pendingRetryBtn.type = 'button'
+        pendingRetryBtn.className = 'chat-send-btn secondary'
+        pendingRetryBtn.textContent = 'Gửi lại'
+        pendingRetryBtn.disabled = true
+
+        pendingDiscardBtn = document.createElement('button')
+        pendingDiscardBtn.type = 'button'
+        pendingDiscardBtn.className = 'chat-send-btn secondary'
+        pendingDiscardBtn.textContent = 'Bỏ'
+        pendingDiscardBtn.disabled = true
+
+        pendingActions.appendChild(pendingRetryBtn)
+        pendingActions.appendChild(pendingDiscardBtn)
+
+        pendingBar.appendChild(pendingMeta)
+        pendingBar.appendChild(pendingActions)
+
         const performSend = () => {
           const text = inputField.value.trim()
           if (text) {
-            let parentId = ''
-            let parentUser = ''
-            let parentBody = ''
-            
-            if (channels[key] && channels[key].replyingTo) {
-              parentId = channels[key].replyingTo.id
-              parentUser = channels[key].replyingTo.username
-              parentBody = channels[key].replyingTo.text
-            }
-            
-            window.twitch.sendChat(accountId, ch, text, parentId, parentUser, parentBody)
+            sendOrQueueChannelMessage(accountId, ch, key, buildReplyPayloadForChannel(key, text)).then((result) => {
+              if (result && result.queued) {
+                showToast('Tin nhắn đã được đưa vào hàng chờ.', 'info')
+              }
+            }).catch(() => {})
             if (channels[key]) cancelReply(channels[key])
             inputField.value = ''
           }
@@ -4030,9 +5609,32 @@
           if (channels[key]) cancelReply(channels[key])
         })
 
+        pendingRetryBtn.addEventListener('click', async () => {
+          const pending = getPendingMessages(key)
+          if (!pending.length) return
+
+          if (!canSendMessageForChannel(key)) {
+            showToast('Kênh vẫn chưa sẵn sàng để gửi lại.', 'warn')
+            return
+          }
+
+          sendMessagePayload(accountId, ch, pending[0])
+          await removePendingMessage(key, pending[0].id)
+          showToast('Đã gửi lại tin nhắn đang chờ.', 'success')
+        })
+
+        pendingDiscardBtn.addEventListener('click', async () => {
+          const pending = getPendingMessages(key)
+          if (!pending.length) return
+
+          await removePendingMessage(key, pending[0].id)
+          showToast('Đã bỏ tin nhắn đang chờ.', 'info')
+        })
+
         container.appendChild(inputField)
         container.appendChild(sendBtn)
         inputWrap.appendChild(container)
+        inputWrap.appendChild(pendingBar)
 
         const translateContainer = document.createElement('div')
         translateContainer.className = 'chat-input-container translate-chat-container'
@@ -4080,17 +5682,10 @@
               throw new Error('EMPTY_TRANSLATION')
             }
 
-            let parentId = ''
-            let parentUser = ''
-            let parentBody = ''
-
-            if (channels[key] && channels[key].replyingTo) {
-              parentId = channels[key].replyingTo.id
-              parentUser = channels[key].replyingTo.username
-              parentBody = channels[key].replyingTo.text
+            const result = await sendOrQueueChannelMessage(accountId, ch, key, buildReplyPayloadForChannel(key, translatedText))
+            if (result && result.queued) {
+              showToast('Bản dịch đã được đưa vào hàng chờ.', 'info')
             }
-
-            window.twitch.sendChat(accountId, ch, translatedText, parentId, parentUser, parentBody)
             if (channels[key]) cancelReply(channels[key])
             translateInputField.value = ''
           } catch (error) {
@@ -4199,12 +5794,22 @@
 
       // Store in memory
       channelConnectionStates[key] = channelConnectionStates[key] || 'offline'
+      ensureChannelRoomState(key)
       channels[key] = {
         accountId: accountId,
         channel: ch,
         tab: tab,
         panel: panel,
         chat: chat,
+        chatFilterInput: chatFilterInput,
+        chatFilterSelect: chatFilterSelect,
+        restrictionNoticeEl: restrictionNotice,
+        restrictionTextEl: restrictionText,
+        pendingBarEl: pendingBar,
+        pendingTitleEl: pendingTitle,
+        pendingPreviewEl: pendingPreview,
+        pendingRetryBtn: pendingRetryBtn,
+        pendingDiscardBtn: pendingDiscardBtn,
         scrollBtn: scrollBtn,
         statusEl: statusBar,
         dotEl: dot,
@@ -4231,6 +5836,27 @@
         updateChannelEventNotifierButtonState(key)
       }
 
+      const initialFilter = getChatFilter(key)
+      chatFilterInput.value = initialFilter.search || ''
+      chatFilterSelect.value = initialFilter.type || 'all'
+      const persistCurrentFilter = async function () {
+        const nextFilters = {
+          ...((appSettings && appSettings.chatFiltersByChannel) || {}),
+          [key]: {
+            search: chatFilterInput.value,
+            type: chatFilterSelect.value
+          }
+        }
+        await persistAppSettings({ chatFiltersByChannel: nextFilters })
+        refreshChannelChatFilter(key)
+      }
+      chatFilterInput.addEventListener('input', persistCurrentFilter)
+      chatFilterSelect.addEventListener('change', persistCurrentFilter)
+
+      updateRestrictionNotice(key)
+      updateStatusBarForChannel(key)
+      updatePendingMessageBar(key)
+
       // Add Channel to Account on Backend if not from boot
       if (!skipJoin) {
         window.twitch.joinChannel(accountId, ch)
@@ -4248,7 +5874,7 @@
 
     function removeChannel(accountId, channel) {
       const ch = channel.toLowerCase().trim()
-      const key = accountId + ':' + ch
+      const key = getChannelKey(accountId, ch)
       if (!channels[key]) return
 
       window.twitch.leaveChannel(accountId, ch)
@@ -4256,6 +5882,7 @@
       channels[key].panel.remove()
       delete channels[key]
       delete channelConnectionStates[key]
+      delete channelRoomStates[key]
 
       renderSidebar()
 
@@ -4315,7 +5942,7 @@
       const isOurselves = msg.id.startsWith('local-') || messageIsFromAccount(msg, acc)
       if (isOurselves) return
 
-      const cooldownKey = accId + ':' + ch
+      const cooldownKey = getChannelKey(accId, ch)
       const settings = getChannelAutoSettings(cooldownKey)
       const textLower = msg.text.toLowerCase()
 
@@ -4407,7 +6034,7 @@
     window.twitch.onMessage(function(msg) {
       const accId = msg.accountId
       const ch = msg.channel
-      const key = accId + ':' + ch
+      const key = getChannelKey(accId, ch)
       const acc = accounts.find(a => a.id === accId)
 
       // Process Auto Bot logic in the background if the account is authenticated
@@ -4456,6 +6083,7 @@
       if (isMention) {
         div.classList.add('msg-mention')
       }
+      div.__msgData = { ...msg }
 
       const actionsDiv = document.createElement('div')
       actionsDiv.className = 'msg-actions'
@@ -4484,6 +6112,7 @@
       div.appendChild(actionsDiv)
 
       c.chat.appendChild(div)
+      refreshChannelChatFilter(key)
 
       if (c.autoScroll) {
         c.chat.scrollTop = c.chat.scrollHeight
@@ -4503,13 +6132,14 @@
     window.twitch.onChannelStatus(function(s) {
       const accId = s.accountId
       const ch = s.channel
-      const key = accId + ':' + ch
+      const key = getChannelKey(accId, ch)
 
       if (!channels[key]) return
       
       if (s.connected) {
         channelConnectionStates[key] = 'live'
         channels[key].dotEl.className = 'tab-dot live'
+        updateStatusBarForChannel(key)
         channels[key].statusEl.textContent = 'Đang xem: #' + ch
       } else if (s.reconnecting) {
         channelConnectionStates[key] = 'reconnecting'
@@ -4525,12 +6155,45 @@
       }
 
       renderSidebar()
+      updatePendingMessageBar(key)
+    })
+
+    window.twitch.onChannelRoomState(function(state) {
+      const accId = state.accountId
+      const ch = state.channel
+      const key = getChannelKey(accId, ch)
+      const roomState = ensureChannelRoomState(key)
+
+      roomState.followersOnlyMinutes = state.followersOnly
+      roomState.followersOnlyActive = state.followersOnly !== null && state.followersOnly >= 0
+      if (!roomState.followersOnlyActive) {
+        roomState.lastRestrictionMessage = ''
+      }
+
+      updateRestrictionNotice(key)
+      updateStatusBarForChannel(key)
+      updatePendingMessageBar(key)
+    })
+
+    window.twitch.onChannelChatRestriction(function(state) {
+      const accId = state.accountId
+      const ch = state.channel
+      const key = getChannelKey(accId, ch)
+      const roomState = ensureChannelRoomState(key)
+
+      if (state.kind === 'followers-only') {
+        roomState.followersOnlyActive = true
+        roomState.lastRestrictionMessage = state.message || 'Bạn cần follow kênh này trước khi chat.'
+        updateRestrictionNotice(key)
+        updateStatusBarForChannel(key)
+        updatePendingMessageBar(key)
+      }
     })
 
     window.twitch.onChannelError(function(e) {
       const accId = e.accountId
       const ch = e.channel
-      const key = accId + ':' + ch
+      const key = getChannelKey(accId, ch)
 
       if (!channels[key]) return
 
@@ -4880,6 +6543,21 @@
     const giveawayConnectionBadge = document.getElementById('giveaway-connection-badge')
     const giveawayConnectionText = document.getElementById('giveaway-connection-text')
 
+    function buildGiveawayHistoryEntry(status, overrides) {
+      const selectedAward = giveawayWinnerAward || getSelectedMegamuAward() || null
+      return {
+        timestamp: Date.now(),
+        channel: gwChannelInput ? gwChannelInput.value.trim().toLowerCase() : '',
+        status: status,
+        winner: giveawayWinner || '',
+        characterName: giveawayWinnerCharacterName || '',
+        awardId: selectedAward ? String(selectedAward.id || '') : '',
+        awardName: selectedAward ? (selectedAward.name || `Award #${selectedAward.id || ''}`) : '',
+        participantCount: giveawayParticipants.length,
+        ...((overrides && typeof overrides === 'object') ? overrides : {})
+      }
+    }
+
     // Sidebar button click handler
     if (giveawaySidebarBtn) {
       giveawaySidebarBtn.addEventListener('click', () => {
@@ -5134,6 +6812,10 @@
         isGiveawayActivated = act.isActivated
         if (isGiveawayActivated) {
           giveawayActivationOverlay.style.display = 'none'
+          if (giveawayActivationStatus && act.expiresAt) {
+            giveawayActivationStatus.textContent = `Giveaway key có hiệu lực đến ${new Date(act.expiresAt).toLocaleString('vi-VN')}`
+            giveawayActivationStatus.style.color = '#00ff2b'
+          }
         } else {
           giveawayActivationOverlay.style.display = 'flex'
           if (giveawayActivationStatus) {
@@ -5162,8 +6844,11 @@
 
         try {
           const result = await window.twitch.activateGiveawayKey(key)
+          const expiryText = result && result.expiresAt
+            ? (' | Hạn sử dụng đến: ' + new Date(result.expiresAt).toLocaleString('vi-VN'))
+            : ''
           if (result.success) {
-            giveawayActivationStatus.textContent = result.message
+            giveawayActivationStatus.textContent = result.message + expiryText
             giveawayActivationStatus.style.color = '#00ff2b'
             setTimeout(() => {
               isGiveawayActivated = true
@@ -5241,12 +6926,14 @@
         // Close modal first
         gwWinnerModal.style.display = 'none'
 
-        // Run roll animation then select winner
+        // Announce next prize by default, then run roll animation and select winner
         const latestAward = getSelectedMegamuAward()
+        if (latestAward) {
+          addGiveawayLog('info', `Đã reset quà và lấy quà mới nhất: "${latestAward.name || latestAward.id}".`)
+          announceNextGiveawayAward(latestAward)
+        }
+
         runGiveawayRollAnimation(eligible, (finalWinner) => {
-          if (latestAward) {
-            addGiveawayLog('info', `Đã reset quà và lấy quà mới nhất: "${latestAward.name || latestAward.id}".`)
-          }
           finalizeWinner(finalWinner.username)
         })
       })
@@ -5318,7 +7005,7 @@
     })
 
     // Save Giveaway Settings
-    function saveGiveawaySettings() {
+    async function saveGiveawaySettings() {
       const settings = {
         channel: gwChannelInput.value.trim(),
         keyword: gwKeywordInput.value.trim(),
@@ -5334,12 +7021,16 @@
         allowSub: gwAllowSubCheckbox ? gwAllowSubCheckbox.checked : true,
         allowRegular: gwAllowRegularCheckbox ? gwAllowRegularCheckbox.checked : true
       }
-      localStorage.setItem('giveaway_settings', JSON.stringify(settings))
+      await persistAppSettings({ giveawaySettings: settings })
     }
 
     // Load Giveaway Settings
     function loadGiveawaySettings() {
-      const saved = localStorage.getItem('giveaway_settings')
+      const savedFromSettings = appSettings && appSettings.giveawaySettings
+      const legacySaved = !savedFromSettings ? localStorage.getItem('giveaway_settings') : null
+      const saved = savedFromSettings
+        ? JSON.stringify(savedFromSettings)
+        : legacySaved
       if (saved) {
         try {
           const settings = JSON.parse(saved)
@@ -5370,6 +7061,12 @@
           
           toggleGiveawayRoleCheckboxes()
           updateSelectedAwardUI()
+          if (!savedFromSettings && legacySaved) {
+            persistAppSettings({ giveawaySettings: settings }).catch(() => {})
+            try {
+              localStorage.removeItem('giveaway_settings')
+            } catch (storageError) {}
+          }
         } catch (e) {
           console.error('Lỗi load settings giveaway:', e)
         }
@@ -5695,6 +7392,11 @@
         gwWinnerModal.style.display = 'flex'
       }
 
+      saveGiveawayHistoryEntry(buildGiveawayHistoryEntry('claimed', {
+        winner: username,
+        characterName: characterName
+      }))
+
       // Send announcement
       if (modBotAccountId) {
         const msg = `🎉 @${giveawayWinner} [ENG] Congratulations! To claim and prove you are not a BOT, solve: ${giveawayMathProblem} = ? and type: ${confirmPrefix}[answer] [character name] (e.g. ${confirmPrefix}15 HeroName) in ${limitSeconds}s! / [POR] Parabéns! Para confirmar e provar que você não é um BOT, resolva: ${giveawayMathProblem} = ? e digite: ${confirmPrefix}[resposta] [nome do personagem] em ${limitSeconds}s!`
@@ -5746,6 +7448,8 @@
 
       // Update character name display
       updateGiveawayCharacterName(characterName)
+
+      saveGiveawayHistoryEntry(buildGiveawayHistoryEntry('expired'))
 
       // Send announcement
       const modBotAccountId = gwModBotSelect.value
@@ -5850,6 +7554,7 @@
     // Host Reroll / Roll back Click
     if (gwWinnerRerollBtn) {
       gwWinnerRerollBtn.addEventListener('click', () => {
+        saveGiveawayHistoryEntry(buildGiveawayHistoryEntry('rerolled'))
         // Remove winner from winners list so they are uncrossed and eligible again
         giveawayWinnerNames = giveawayWinnerNames.filter(name => name !== giveawayWinner)
         updateGiveawayParticipantsUI()
@@ -6022,23 +7727,26 @@
               handleGiveawayClaim(username, characterName)
             }
           }
-        } else if (giveawayState === 'claimed') {
-          let characterName = textTrim
-          if (characterName.startsWith('#')) {
-            characterName = characterName.slice(1).trim()
-          }
-          if (characterName) {
-            updateGiveawayCharacterName(characterName)
-            addGiveawayLog('info', `@${username} đã cung cấp tên nhân vật: ${characterName}`)
-          }
         }
       }
     })
 
     // ── Application Initialization ─────────────────────────────────
     async function init() {
+      appSettings = await window.twitch.getAppSettings()
+      systemLogs = await window.twitch.getSystemLogs()
+      giveawayHistory = Array.isArray(appSettings && appSettings.giveawayHistory) ? appSettings.giveawayHistory : []
+      ensureActivationStatusUi()
+      ensureAdminModalUi()
+      createTopbarActions()
+      createSystemLogDrawer()
+      renderSystemLogs()
+      window.twitch.onSystemLogEntry(pushSystemLog)
+      ensureGiveawayHistoryPanel()
+      renderGiveawayHistory()
+
       // Initialize Transparency Mode
-      const isTransparent = localStorage.getItem('is_transparent') === 'true'
+      const isTransparent = !!(appSettings && appSettings.transparencyEnabled)
       if (isTransparent) {
         if (transparencyBtn) transparencyBtn.classList.add('active')
         window.twitch.setWindowOpacity(0.7)
@@ -6047,9 +7755,9 @@
       }
 
       if (transparencyBtn) {
-        transparencyBtn.addEventListener('click', () => {
+        transparencyBtn.addEventListener('click', async () => {
           const active = transparencyBtn.classList.toggle('active')
-          localStorage.setItem('is_transparent', active ? 'true' : 'false')
+          await persistAppSettings({ transparencyEnabled: active })
           window.twitch.setWindowOpacity(active ? 0.7 : 1.0)
         })
       }
@@ -6103,14 +7811,13 @@
       }
 
       function saveTheme(t) {
-        localStorage.setItem('app_theme', JSON.stringify(t))
+        persistAppSettings({ theme: t })
       }
 
       function loadTheme() {
-        try {
-          const raw = localStorage.getItem('app_theme')
-          if (raw) return { ...THEME_DEFAULTS, ...JSON.parse(raw) }
-        } catch(e) {}
+        if (appSettings && appSettings.theme) {
+          return { ...THEME_DEFAULTS, ...appSettings.theme }
+        }
         return { ...THEME_DEFAULTS }
       }
 
@@ -6234,22 +7941,17 @@
       }
 
       // Load auto settings
-      const savedAuto = localStorage.getItem('auto_settings_by_channel')
-      if (savedAuto) {
-        try {
-          autoSettingsByChannel = JSON.parse(savedAuto)
-        } catch(e) {}
-      }
-      const savedEventNotifier = localStorage.getItem('event_notifier_settings_by_channel')
-      if (savedEventNotifier) {
-        try {
-          eventNotifierSettingsByChannel = JSON.parse(savedEventNotifier)
-        } catch(e) {}
-      }
+      autoSettingsByChannel = { ...((appSettings && appSettings.autoSettingsByChannel) || {}) }
+      eventNotifierSettingsByChannel = { ...((appSettings && appSettings.eventNotifierSettingsByChannel) || {}) }
       
       // Check activation status
       const act = await window.twitch.checkActivation()
       isActivated = act.isActivated
+      setActivationSummary(act, { showExpired: !act.isActivated && !!act.expiresAt })
+      if (isActivated && activationStatus && act.expiresAt) {
+        activationStatus.textContent = `Bản quyền có hiệu lực đến ${new Date(act.expiresAt).toLocaleString('vi-VN')}`
+        activationStatus.style.color = '#22c55e'
+      }
 
       // Check giveaway activation status
       initGiveawayActivationCheck()
@@ -6273,7 +7975,7 @@
         if (accounts.length > 0) {
           selectAccount(accounts[0].id)
         }
-        if (!localStorage.getItem('guide_shown')) {
+        if (!(appSettings && appSettings.guideShown)) {
           openGuideModal()
         }
       } else {
