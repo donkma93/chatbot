@@ -1,6 +1,6 @@
 {
   "name": "twitch-chat-viewer",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Twitch Chat Viewer - Windows Desktop App",
   "main": "main.js",
   "scripts": {
@@ -24,7 +24,8 @@
       {
         "provider": "github",
         "owner": "donkma93",
-        "repo": "chatbot"
+        "repo": "chatbot",
+        "releaseType": "release"
       }
     ],
     "win": {
