@@ -1333,52 +1333,198 @@ async function hydrateMissingAccountLogins() {
   if (changed) saveAccounts()
 }
 
-// ── Helix Profile Fetcher ──────────────────────────────────────
-function fetchUserProfile(token, clientId) {
-  return new Promise((resolve, reject) => {
-    if (!token || token === 'anonymous' || !clientId) {
-      resolve(null)
-      return
+// ── Helix helpers ──────────────────────────────────────────────
+function cleanOAuthToken(token) {
+  const text = String(token || '').trim()
+  if (!text || text === 'anonymous') return ''
+  return text.startsWith('oauth:') ? text.substring(6) : text
+}
+
+function findHelixCredentials(preferredAccountId) {
+  if (preferredAccountId) {
+    const preferred = getAccount(preferredAccountId)
+    if (preferred && preferred.token && preferred.token !== 'anonymous' && preferred.clientId) {
+      return {
+        token: cleanOAuthToken(preferred.token),
+        clientId: String(preferred.clientId || '').trim()
+      }
     }
-    const cleanToken = token.startsWith('oauth:') ? token.substring(6) : token
+  }
+
+  for (let i = 0; i < accounts.length; i++) {
+    const acc = accounts[i]
+    if (acc && acc.token && acc.token !== 'anonymous' && acc.clientId) {
+      return {
+        token: cleanOAuthToken(acc.token),
+        clientId: String(acc.clientId || '').trim()
+      }
+    }
+  }
+  return null
+}
+
+function helixGetJson(pathWithQuery, token, clientId) {
+  return new Promise(function (resolve, reject) {
     const options = {
       hostname: 'api.twitch.tv',
-      path: '/helix/users',
+      path: pathWithQuery,
       method: 'GET',
       headers: {
-        'Authorization': 'Bearer ' + cleanToken,
-        'Client-Id': clientId.trim()
+        'Authorization': 'Bearer ' + token,
+        'Client-Id': clientId
       }
     }
 
-    const req = https.request(options, (res) => {
+    const req = https.request(options, function (res) {
       let data = ''
-      res.on('data', (chunk) => { data += chunk })
-      res.on('end', () => {
+      res.on('data', function (chunk) { data += chunk })
+      res.on('end', function () {
         try {
           if (res.statusCode !== 200) {
-            reject(new Error('Twitch API error: ' + res.statusCode))
+            reject(new Error('Twitch API error: ' + res.statusCode + ' ' + String(data || '').slice(0, 180)))
             return
           }
-          const parsed = JSON.parse(data)
-          if (parsed && parsed.data && parsed.data.length > 0) {
-            resolve({
-              login: parsed.data[0].login,
-              displayName: parsed.data[0].display_name,
-              profileImageUrl: parsed.data[0].profile_image_url
-            })
-          } else {
-            resolve(null)
-          }
+          resolve(JSON.parse(data))
         } catch (e) {
           reject(e)
         }
       })
     })
 
-    req.on('error', (err) => { reject(err) })
+    req.on('error', function (err) { reject(err) })
     req.end()
   })
+}
+
+function fetchUserProfile(token, clientId) {
+  return new Promise((resolve, reject) => {
+    if (!token || token === 'anonymous' || !clientId) {
+      resolve(null)
+      return
+    }
+    const cleanToken = cleanOAuthToken(token)
+    helixGetJson('/helix/users', cleanToken, String(clientId || '').trim())
+      .then(function (parsed) {
+        if (parsed && parsed.data && parsed.data.length > 0) {
+          resolve({
+            login: parsed.data[0].login,
+            displayName: parsed.data[0].display_name,
+            profileImageUrl: parsed.data[0].profile_image_url
+          })
+        } else {
+          resolve(null)
+        }
+      })
+      .catch(reject)
+  })
+}
+
+// Public fallback: Twitch live thumbnail CDN returns 200 when live,
+// 302 → 404_preview when offline (works without OAuth / Client ID).
+function checkChannelLiveViaPreview(login) {
+  return new Promise(function (resolve) {
+    const name = normalizeIdentity(login)
+    if (!name) {
+      resolve(false)
+      return
+    }
+    const options = {
+      hostname: 'static-cdn.jtvnw.net',
+      path: '/previews-ttv/live_user_' + encodeURIComponent(name) + '-80x45.jpg',
+      method: 'HEAD',
+      timeout: 8000
+    }
+    const req = https.request(options, function (res) {
+      const status = res.statusCode || 0
+      // Consume any body and settle based on status / redirect target
+      res.resume()
+      if (status >= 300 && status < 400) {
+        const location = String(res.headers.location || '')
+        resolve(!/404_preview/i.test(location))
+        return
+      }
+      resolve(status === 200)
+    })
+    req.on('timeout', function () {
+      req.destroy()
+      resolve(false)
+    })
+    req.on('error', function () {
+      resolve(false)
+    })
+    req.end()
+  })
+}
+
+async function fetchChannelsLiveMapViaPreview(names) {
+  const result = {}
+  names.forEach(function (name) { result[name] = false })
+  // Limit concurrency to avoid hammering CDN
+  const concurrency = 6
+  let index = 0
+  async function worker() {
+    while (index < names.length) {
+      const i = index++
+      const name = names[i]
+      result[name] = await checkChannelLiveViaPreview(name)
+    }
+  }
+  const workers = []
+  for (let w = 0; w < Math.min(concurrency, names.length); w++) {
+    workers.push(worker())
+  }
+  await Promise.all(workers)
+  return { success: true, liveMap: result, source: 'preview-cdn' }
+}
+
+// Check which channels are currently streaming live (Helix /streams, preview CDN fallback)
+async function fetchChannelsLiveMap(channelNames, preferredAccountId) {
+  const names = Array.from(new Set(
+    (Array.isArray(channelNames) ? channelNames : [])
+      .map(function (name) { return normalizeIdentity(name) })
+      .filter(Boolean)
+  ))
+
+  const result = {}
+  names.forEach(function (name) { result[name] = false })
+  if (!names.length) {
+    return { success: true, liveMap: result, source: 'empty' }
+  }
+
+  const creds = findHelixCredentials(preferredAccountId)
+  if (creds && creds.token && creds.clientId) {
+    try {
+      // Helix allows multiple user_login params; batch to stay safe
+      const batchSize = 80
+      for (let i = 0; i < names.length; i += batchSize) {
+        const batch = names.slice(i, i + batchSize)
+        const query = batch.map(function (name) {
+          return 'user_login=' + encodeURIComponent(name)
+        }).join('&')
+        const parsed = await helixGetJson('/helix/streams?' + query, creds.token, creds.clientId)
+        const rows = parsed && Array.isArray(parsed.data) ? parsed.data : []
+        rows.forEach(function (row) {
+          const login = normalizeIdentity(row && row.user_login)
+          if (login) result[login] = true
+        })
+      }
+      return { success: true, liveMap: result, source: 'helix' }
+    } catch (error) {
+      // Fall through to public preview check
+      console.warn('Helix live check failed, falling back to preview CDN:', error && error.message)
+    }
+  }
+
+  try {
+    return await fetchChannelsLiveMapViaPreview(names)
+  } catch (error) {
+    return {
+      success: false,
+      liveMap: result,
+      message: error && error.message ? error.message : 'Failed to check live streams',
+      source: 'error'
+    }
+  }
 }
 
 // ── Account CRUD ──────────────────────────────────────────────
@@ -2027,6 +2173,10 @@ ipcMain.on('send-giveaway-chat', function (event, text) {
 
 ipcMain.handle('megamu-get-awards', async function (event, dv, key) {
   return await getMegamuAwards(dv, key)
+})
+
+ipcMain.handle('check-channels-live', async function (event, channelNames, preferredAccountId) {
+  return fetchChannelsLiveMap(channelNames, preferredAccountId)
 })
 
 ipcMain.handle('get-accounts', function () {

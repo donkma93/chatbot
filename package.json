@@ -1,6 +1,6 @@
 {
   "name": "twitch-chat-viewer",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "Twitch Chat Viewer - Windows Desktop App",
   "main": "main.js",
   "scripts": {

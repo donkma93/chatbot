@@ -635,7 +635,7 @@
       font-size: 13px;
       font-weight: 600;
       color: var(--color-text-muted);
-      cursor: pointer;
+      cursor: grab;
       border-bottom: 2px solid transparent;
       white-space: nowrap;
       transition: all 0.15s;
@@ -643,15 +643,40 @@
     }
     .tab:hover { color: var(--color-text-primary); background: rgba(255, 255, 255, 0.02); }
     .tab.active { color: var(--color-text-primary); border-bottom-color: var(--color-accent); background: rgba(var(--color-accent-rgb), 0.03); }
+    .tab.dragging { opacity: 0.5; }
+    .tab.drag-over { box-shadow: inset 0 -2px 0 var(--color-accent); }
+    .tab.channel-live { color: var(--color-text-primary); }
+    .tab.channel-offline { opacity: 0.72; }
 
     .tab-dot {
       width: 8px; height: 8px;
       border-radius: 50%;
-      background: #53535f;
+      background: #3a3a40;
       flex-shrink: 0;
+      box-shadow: none;
+      transition: background 0.2s, box-shadow 0.2s, opacity 0.2s;
+      opacity: 0.55;
     }
-    .tab-dot.live { background: #00b31b; }
-    .tab-dot.error { background: #e91916; }
+    .tab-dot.live {
+      background: #00e676;
+      opacity: 1;
+      box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.25), 0 0 10px rgba(0, 230, 118, 0.85);
+      animation: livePulse 1.6s ease-in-out infinite;
+    }
+    .tab-dot.reconnecting {
+      background: #ffb300;
+      opacity: 1;
+      box-shadow: 0 0 8px rgba(255, 179, 0, 0.65);
+    }
+    .tab-dot.error {
+      background: #e91916;
+      opacity: 1;
+      box-shadow: 0 0 8px rgba(233, 25, 22, 0.7);
+    }
+    @keyframes livePulse {
+      0%, 100% { box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.2), 0 0 8px rgba(0, 230, 118, 0.7); }
+      50% { box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.35), 0 0 14px rgba(0, 230, 118, 1); }
+    }
 
     .tab-unread {
       background: var(--color-accent);
@@ -680,6 +705,8 @@
       flex: 1;
       position: relative;
       overflow: hidden;
+      min-height: 0;
+      min-width: 0;
     }
 
     .panel {
@@ -687,8 +714,264 @@
       inset: 0;
       display: none;
       flex-direction: column;
+      min-height: 0;
+      min-width: 0;
+      background: var(--color-bg);
     }
     .panel.active { display: flex; }
+
+    .panel-header {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      flex-shrink: 0;
+      cursor: pointer;
+      user-select: none;
+    }
+    .panel-header-title {
+      flex: 1;
+      min-width: 0;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .panel-header-close {
+      font-size: 14px;
+      color: var(--color-text-faint);
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .panel-header-close:hover {
+      color: #e91916;
+      background: rgba(233, 25, 22, 0.12);
+    }
+
+    /* Multi-channel columns (vertical columns side-by-side) */
+    #panels.grid-mode {
+      display: flex !important;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: stretch;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      gap: 8px;
+      padding: 8px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: #0a0a0c;
+    }
+    #panels.grid-mode .panel {
+      position: relative !important;
+      inset: auto !important;
+      top: auto !important;
+      left: auto !important;
+      right: auto !important;
+      bottom: auto !important;
+      flex: 1 1 0;
+      width: auto;
+      height: 100%;
+      min-width: 220px;
+      min-height: 0;
+      max-width: none;
+      max-height: 100%;
+      display: none;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+      transition: border-color 0.2s, box-shadow 0.2s, opacity 0.2s, filter 0.2s;
+    }
+    #panels.grid-mode .panel.grid-visible {
+      display: flex !important;
+    }
+    #panels.grid-mode .panel.channel-live {
+      border-color: rgba(0, 230, 118, 0.45);
+      box-shadow: 0 0 0 1px rgba(0, 230, 118, 0.2), 0 0 16px rgba(0, 230, 118, 0.18), 0 2px 10px rgba(0, 0, 0, 0.35);
+      opacity: 1;
+      filter: none;
+    }
+    #panels.grid-mode .panel.channel-live .panel-header {
+      background: linear-gradient(180deg, rgba(0, 230, 118, 0.12), var(--color-surface));
+    }
+    #panels.grid-mode .panel.channel-offline {
+      border-color: rgba(255, 255, 255, 0.06);
+      box-shadow: none;
+      opacity: 0.62;
+      filter: grayscale(0.35) brightness(0.88);
+    }
+    #panels.grid-mode .panel.channel-offline .panel-header {
+      background: rgba(20, 20, 24, 0.95);
+      color: #7a7a84;
+    }
+    #panels.grid-mode .panel.channel-reconnecting {
+      border-color: rgba(255, 179, 0, 0.45);
+      box-shadow: 0 0 12px rgba(255, 179, 0, 0.18);
+      opacity: 0.9;
+    }
+    #panels.grid-mode .panel.grid-focused {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 1px rgba(var(--color-accent-rgb), 0.5), 0 0 18px rgba(var(--color-accent-rgb), 0.25);
+      z-index: 1;
+      opacity: 1;
+      filter: none;
+    }
+    #panels.grid-mode .panel.channel-live.grid-focused {
+      border-color: #00e676;
+      box-shadow: 0 0 0 1px rgba(0, 230, 118, 0.55), 0 0 22px rgba(0, 230, 118, 0.3);
+    }
+    #panels.grid-mode .panel.drag-over {
+      outline: 2px dashed var(--color-accent-light);
+      outline-offset: -3px;
+    }
+    #panels.grid-mode .panel.dragging {
+      opacity: 0.55;
+    }
+    #panels.grid-mode .grid-placeholder {
+      flex: 1 1 0;
+      min-width: 220px;
+      height: 100%;
+      border: 1px dashed rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.015);
+      pointer-events: none;
+    }
+    #panels.grid-mode .panel-header {
+      display: flex;
+      cursor: grab;
+    }
+    #panels.grid-mode .panel-header:active {
+      cursor: grabbing;
+    }
+    #panels.grid-mode .panel.panel-mention-flash {
+      animation: panelMentionFlash 1s ease-in-out 3;
+    }
+    #panels.grid-mode .panel.panel-mention-flash .panel-header {
+      background: #111 !important;
+      color: #fff;
+    }
+    @keyframes panelMentionFlash {
+      0%, 100% { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15); }
+      50% { box-shadow: 0 0 0 2px #fff, 0 0 18px rgba(255, 255, 255, 0.35); }
+    }
+    #panels.grid-mode .chat {
+      padding: 8px 10px;
+      gap: 3px;
+    }
+    #panels.grid-mode .msg {
+      padding: 3px 5px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    #panels.grid-mode .msg-time { font-size: 10px; margin-right: 5px; }
+    #panels.grid-mode .chat-toolbar {
+      padding: 6px 8px;
+      gap: 6px;
+    }
+    #panels.grid-mode .chat-filter-input,
+    #panels.grid-mode .chat-filter-select {
+      padding: 6px 8px;
+      font-size: 12px;
+    }
+    #panels.grid-mode .chat-filter-select { min-width: 84px; }
+    #panels.grid-mode .chat-input-wrap {
+      padding: 8px 10px;
+      gap: 6px;
+    }
+    #panels.grid-mode .chat-input-field,
+    #panels.grid-mode .chat-send-btn,
+    #panels.grid-mode .translate-target-select {
+      padding: 7px 9px;
+      font-size: 12px;
+    }
+    #panels.grid-mode .auto-bot-row {
+      gap: 6px;
+    }
+    #panels.grid-mode .auto-settings-btn {
+      padding: 5px 8px;
+      font-size: 11px;
+    }
+    #panels.grid-mode .auto-bot-info {
+      font-size: 11px;
+    }
+    #panels.grid-mode .panel-status {
+      font-size: 11px;
+      padding: 4px 8px;
+    }
+    #panels.grid-mode .anon-notice {
+      font-size: 12px;
+      padding: 8px;
+    }
+    #panels.grid-mode .translate-chat-container {
+      display: flex;
+      gap: 6px;
+    }
+    #panels.grid-mode .translate-target-select {
+      min-width: 56px;
+      padding: 7px 6px;
+      font-size: 11px;
+    }
+    #panels.grid-mode .translate-send-btn {
+      min-width: 72px;
+      padding: 0 10px;
+      font-size: 12px;
+    }
+    #panels.grid-mode .pending-message-bar {
+      padding: 5px 8px;
+      font-size: 11px;
+    }
+
+    #view-mode-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    #view-mode-toggle {
+      background: var(--color-surface2);
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-surface3);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    #view-mode-toggle:hover {
+      background: var(--color-surface3);
+      border-color: #4a4a4e;
+    }
+    #view-mode-toggle.active {
+      background: rgba(var(--color-accent-rgb), 0.15);
+      border-color: var(--color-accent);
+      color: var(--color-accent-light);
+    }
+    #grid-size-select {
+      background: var(--color-bg);
+      border: 1px solid var(--color-surface3);
+      border-radius: 6px;
+      color: var(--color-text-primary);
+      padding: 7px 8px;
+      font-size: 12px;
+      outline: none;
+      display: none;
+    }
+    #grid-size-select.visible {
+      display: block;
+    }
+    body.chat-grid-mode #tabs-container {
+      display: none;
+    }
 
     .chat {
       flex: 1;
@@ -790,6 +1073,9 @@
     .chat-send-btn.secondary:hover { background: var(--color-surface3); }
     .translate-chat-container {
       align-items: stretch;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed #2f2f35;
     }
     .translate-target-select {
       min-width: 88px;
@@ -801,16 +1087,27 @@
       font-size: 12px;
       outline: none;
       cursor: pointer;
+      flex-shrink: 0;
     }
     .translate-target-select:focus {
       border-color: var(--color-accent);
     }
     .translate-chat-field {
       border-style: dashed;
+      border-color: rgba(145, 71, 255, 0.45);
+    }
+    .translate-chat-field::placeholder {
+      color: #a970ff;
+      opacity: 0.75;
     }
     .translate-send-btn {
       min-width: 94px;
       padding: 0 14px;
+      background: #6b3fd4;
+      flex-shrink: 0;
+    }
+    .translate-send-btn:hover {
+      background: #5a32b8;
     }
 
     /* Auto Bot Row */
@@ -991,8 +1288,18 @@
       color: var(--color-text-faint);
       gap: 14px;
       font-size: 14px;
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background: var(--color-bg);
     }
     #empty-state svg { opacity: 0.25; }
+    #panels.grid-mode #empty-state {
+      position: absolute;
+      inset: 0;
+      grid-column: 1 / -1;
+      grid-row: 1 / -1;
+    }
 
     /* ── Modal Overlay & Card ────────────────────────────────────── */
     .modal-overlay {
@@ -1586,20 +1893,47 @@
       transform: none;
     }
 
-    /* Highlight mention message */
+    /* Highlight mention message — bôi đen nổi bật khi bị tag */
     .msg.msg-mention {
-      background: rgba(255, 176, 0, 0.08) !important;
-      border-left: 3px solid #ffb000 !important;
+      background: #0a0a0a !important;
+      border-left: 3px solid #ffffff !important;
       border-radius: 0 6px 6px 0;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+    }
+    .msg.msg-mention .username,
+    .msg.msg-mention .msg-text {
+      color: #ffffff !important;
+      font-weight: 700 !important;
+    }
+    .msg.msg-mention .msg-time {
+      color: #cfcfcf !important;
+      font-weight: 600;
+    }
+    .msg.msg-mention mark.mention-token {
+      background: #000;
+      color: #fff;
+      font-weight: 800;
+      padding: 0 3px;
+      border-radius: 3px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+    }
+    #panels.grid-mode .msg.msg-mention {
+      background: #000 !important;
+      border-left-color: #fff !important;
     }
     
     /* Blinking tab when mentioned */
     .tab.tab-mention-flash {
       animation: tabBlink 1s infinite alternate;
-      border-bottom-color: #ffb000 !important;
+      border-bottom-color: #ffffff !important;
+      background: #111 !important;
+      color: #fff !important;
     }
     .tab.tab-mention-flash .tab-dot {
-      background: #ffb000 !important;
+      background: #fff !important;
+      opacity: 1 !important;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.8) !important;
+      animation: none !important;
     }
     
     @keyframes tabBlink {
@@ -2444,8 +2778,10 @@
       <!-- Generated dynamically -->
     </div>
     <button id="add-account-btn" title="Quản lý tài khoản">+</button>
-    <button id="giveaway-sidebar-btn" class="account-btn" style="background: rgba(145, 71, 255, 0.1); border: 1px dashed rgba(145, 71, 255, 0.4); color: #a970ff; margin-top: 10px; font-size: 20px; display: flex; align-items: center; justify-content: center; box-shadow: none;" title="Chương trình Giveaway">🎁</button>
-    <button id="transparency-btn" title="Chế độ trong suốt">👻</button>
+    <!-- TEMP: ẩn Giveaway Premium — đổi display:none thành display:flex để bật lại -->
+    <button id="giveaway-sidebar-btn" class="account-btn" style="background: rgba(145, 71, 255, 0.1); border: 1px dashed rgba(145, 71, 255, 0.4); color: #a970ff; margin-top: 10px; font-size: 20px; display: none; align-items: center; justify-content: center; box-shadow: none;" title="Chương trình Giveaway">🎁</button>
+    <!-- TEMP: ẩn chế độ trong suốt — xóa display:none để bật lại -->
+    <button id="transparency-btn" title="Chế độ trong suốt" style="display: none;">👻</button>
     <button id="theme-btn" title="Tùy chỉnh màu sắc">🎨</button>
     <button id="guide-btn" title="Hướng dẫn sử dụng">?</button>
     <div id="version-label">v1.0.2</div>
@@ -2536,6 +2872,17 @@
       <div id="topbar-account-label">Tải khoản: <b>Đang tải...</b></div>
       <input id="channel-input" type="text" placeholder="Thêm channel (vd: xqc, ninja...)" maxlength="50" />
       <button id="add-btn">+ Thêm</button>
+      <div id="view-mode-controls">
+        <button id="view-mode-toggle" type="button" title="Chuyển chế độ xem: Tab hoặc Cột dọc multi-channel">▥ Cột</button>
+        <select id="grid-size-select" title="Số cột dọc hiển thị cùng lúc">
+          <option value="2">2 cột</option>
+          <option value="3" selected>3 cột</option>
+          <option value="4">4 cột</option>
+          <option value="5">5 cột</option>
+          <option value="6">6 cột</option>
+          <option value="8">8 cột</option>
+        </select>
+      </div>
       <button id="notif-btn" title="Bật/tắt thông báo">🔔</button>
     </div>
 
@@ -2782,6 +3129,21 @@
 
         <h3>Tài khoản đã lưu</h3>
         <div id="modal-accounts-list"></div>
+
+        <hr class="modal-divider" />
+
+        <!-- Chỉ hiện với bản quyền chủ (owner). Key khách TV-/GW- không thấy mục này. -->
+        <div id="account-license-settings" class="admin-panel" style="margin-top: 4px; display: none;">
+          <h3 style="margin-bottom: 8px;">Cài đặt bản quyền</h3>
+          <p id="account-license-status-text" style="margin-bottom: 12px;">Đang tải trạng thái bản quyền...</p>
+          <div class="admin-actions" style="margin-top: 0;">
+            <button type="button" id="account-open-admin-btn" class="activation-btn">Quản trị key</button>
+            <button type="button" id="account-renew-key-btn" class="toolbar-btn">Nhập / gia hạn key</button>
+          </div>
+          <p style="margin: 10px 0 0; font-size: 12px; color: var(--color-text-muted);">
+            Dùng <b>Quản trị key</b> để tạo hoặc gia hạn key cho tài khoản khác. Dùng <b>Nhập / gia hạn key</b> để kích hoạt key trên máy này.
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -2856,50 +3218,6 @@
         </div>
 
         <button type="button" id="save-auto-settings-btn" style="background: #9147ff; color: white; border: none; border-radius: 6px; padding: 11px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; width: 100%; margin-top: 10px;">Lưu cấu hình Auto</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MEGAMU Event Notifier Modal -->
-  <div id="event-notify-modal" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2>Thông báo Event MEGAMU 📅</h2>
-        <span class="event-notify-close-btn modal-close-btn">&times;</span>
-      </div>
-      <div class="modal-body">
-        <h3>1. Bật thông báo bot cho kênh này</h3>
-        <div class="form-group checkbox-group">
-          <input type="checkbox" id="event-notify-enable" />
-          <label for="event-notify-enable">Bật nhắn chat trước 5 phút</label>
-        </div>
-
-        <div class="form-group">
-          <label>Nguồn lịch:</label>
-          <div style="font-size: 12px; color: #a970ff; font-weight: 500; background: rgba(145, 71, 255, 0.05); border: 1px dashed rgba(145, 71, 255, 0.2); padding: 8px 12px; border-radius: 6px; line-height: 1.4;">
-            App dùng <b>lịch cố định nội bộ</b>: các event thường được đổi từ <b>GMT-3</b> sang <b>GMT+7</b>; ILLUSION và ICE TEAM lặp rank liên tục theo giờ <b>GMT+7</b>.
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Thời điểm thông báo:</label>
-          <div style="font-size: 12px; color: #a970ff; font-weight: 500; background: rgba(145, 71, 255, 0.05); border: 1px dashed rgba(145, 71, 255, 0.2); padding: 8px 12px; border-radius: 6px; line-height: 1.4;">
-            Bot sẽ nhắn trên chat <b>5 phút trước giờ bắt đầu</b> của từng event sắp diễn ra.
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="event-notify-template">Mẫu tin nhắn:</label>
-          <input type="text" id="event-notify-template" placeholder="Ví dụ: ⏰ 5 phút nữa sẽ diễn ra {event} lúc {time_gmt7} (GMT+7)" />
-          <span class="help-text">Dùng <code>{event}</code> và <code>{time_gmt7}</code> trong nội dung.</span>
-        </div>
-
-        <hr class="modal-divider" style="margin: 15px 0;" />
-
-        <h3>2. Event sắp diễn ra (GMT+7)</h3>
-        <div id="event-notify-upcoming-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
-
-        <button type="button" id="save-event-notify-btn" style="background: #9147ff; color: white; border: none; border-radius: 6px; padding: 11px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; width: 100%; margin-top: 10px;">Lưu cấu hình Event</button>
       </div>
     </div>
   </div>
@@ -3028,12 +3346,6 @@
     const autoClaimEnableCheckbox = document.getElementById('auto-claim-enable')
     const autoClaimRewardInput = document.getElementById('auto-claim-reward')
     const saveAutoSettingsBtn = document.getElementById('save-auto-settings-btn')
-    const eventNotifyModal = document.getElementById('event-notify-modal')
-    const eventNotifyCloseBtn = document.querySelector('.event-notify-close-btn')
-    const eventNotifyEnableCheckbox = document.getElementById('event-notify-enable')
-    const eventNotifyTemplateInput = document.getElementById('event-notify-template')
-    const eventNotifyUpcomingList = document.getElementById('event-notify-upcoming-list')
-    const saveEventNotifyBtn = document.getElementById('save-event-notify-btn')
 
     // Modal
     const accountModal = document.getElementById('account-modal')
@@ -3050,10 +3362,14 @@
 
     const MAX_MESSAGES = 300
     const CHAT_FILTER_DEFAULT = { search: '', type: 'all' }
+    const GRID_SIZE_OPTIONS = [2, 3, 4, 5, 6, 8] // max vertical columns side-by-side
     let accounts = []
     let activeAccountId = null
     let activeChannel = null // channel name of currently viewed panel for the active account
     let accountActiveChannels = {} // accountId -> channelName
+    let chatViewMode = 'tabs' // 'tabs' | 'grid'
+    let chatGridSize = 3 // max columns in column layout
+    let channelOrderByAccount = {} // accountId -> [channelName...]
     let notifEnabled = false
     let isActivated = false
     let isGiveawayActivated = false
@@ -3072,9 +3388,6 @@
     let giveawayWinnerAward = null
 
     let autoSettingsByChannel = {}
-    let eventNotifierSettingsByChannel = {}
-    let megamuEventSchedulerInterval = null
-    let currentEventNotifyEditingChannelKey = null
     let toastContainer = null
     let appSettings = null
     let systemLogs = []
@@ -3082,36 +3395,6 @@
     let systemLogListEl = null
     let giveawayHistory = []
     const channelRoomStates = {}
-    const megamuEventReminderHistory = {}
-    const MEGAMU_FIXED_EVENTS_GMT_MINUS_3 = [
-      ['Blood Castle', ['03:00', '07:00', '11:00', '15:00', '19:00', '22:50']],
-      ['Chaos Castle', ['01:00', '05:00', '09:00', '13:00', '17:00', '20:50']],
-      ['Devil Square', ['01:30', '03:30', '05:30', '07:30', '09:30', '11:30', '13:30', '15:30', '17:30', '19:30', '21:30', '23:30']],
-      ['Moss Merchant', ['02:15', '08:15', '14:15', '20:15']],
-      ['Skeleton King', ['00:05', '04:05', '08:05', '12:05', '16:05', '20:05']],
-      ['Red Dragon', ['00:15', '04:15', '08:15', '12:15', '16:15', '20:15']],
-      ['Dragão Dourado', ['00:25', '04:25', '08:25', '12:25', '16:25', '20:25']],
-      ['White Wizard', ['00:50', '04:50', '08:50', '12:50', '16:50', '20:50']],
-      ['Moon Rabbit', ['02:15', '06:15', '10:15', '14:15', '18:15', '22:15']],
-      ['Invasion of Demons', ['01:25', '05:25', '09:25', '13:25', '17:25', '21:25']],
-      ['MEGADROP', ['13:15', '20:00']],
-      ['Battle Royale', ['03:55', '07:55', '11:55', '15:55', '19:55', '23:55']]
-    ]
-    const MEGAMU_RECURRING_RANK_EVENTS_GMT7 = [
-      // Reference time: 11:30 GMT+7 on June 20, 2026.
-      {
-        name: 'ILLUSION',
-        intervalMinutes: 20,
-        referenceRank: 2,
-        referenceMs: Date.UTC(2026, 5, 20, 4, 30, 0, 0)
-      },
-      {
-        name: 'ICE TEAM',
-        intervalMinutes: 40,
-        referenceRank: 1,
-        referenceMs: Date.UTC(2026, 5, 20, 4, 30, 0, 0)
-      }
-    ]
 
     function getChannelAutoSettings(key) {
       const parts = key.split(':')
@@ -3185,6 +3468,26 @@
         const compact = normalizeSearchText(candidate)
         return (normalized && lowerText.includes(normalized)) || (compact && compactText.includes(compact))
       })
+    }
+
+    function escapeRegExp(value) {
+      return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    }
+
+    // Bôi đen token @tên / tên tài khoản trong nội dung tin nhắn
+    function highlightAccountMentionsInHtml(escapedHtml, acc) {
+      const candidates = getAccountIdentityCandidates(acc)
+        .map((item) => String(item || '').trim())
+        .filter(Boolean)
+        .sort((a, b) => b.length - a.length)
+      if (!candidates.length) return escapedHtml
+
+      let result = String(escapedHtml || '')
+      candidates.forEach((candidate) => {
+        const pattern = new RegExp('(@?' + escapeRegExp(candidate) + ')', 'gi')
+        result = result.replace(pattern, '<mark class="mention-token">$1</mark>')
+      })
+      return result
     }
 
     function messageIsFromAccount(msg, acc) {
@@ -3318,7 +3621,8 @@
 
     function canSendMessageForChannel(key) {
       const connectionState = channelConnectionStates[key] || 'offline'
-      return connectionState === 'live'
+      // Chat send depends on IRC connection, not stream live status
+      return connectionState === 'connected' || connectionState === 'live'
     }
 
     function sendMessagePayload(accountId, channel, payload) {
@@ -3640,7 +3944,7 @@
         activationHelperNote.style.marginTop = '8px'
         activationHelperNote.style.fontSize = '12px'
         activationHelperNote.style.color = '#adadb8'
-        activationHelperNote.textContent = 'Ô này chỉ nhận key sử dụng như TV-... hoặc GW-.... Admin key dùng trong nút "Quản trị key" bên dưới.'
+        activationHelperNote.textContent = 'Ô này chỉ nhận key sử dụng như TV-... hoặc GW-....'
         const errorBox = document.getElementById('activation-error-msg')
         if (errorBox && errorBox.parentNode) {
           errorBox.parentNode.appendChild(activationHelperNote)
@@ -3660,7 +3964,9 @@
       const modalBody = activationOverlay.querySelector('.modal-body')
       if (modalBody && !document.getElementById('open-admin-btn')) {
         const wrap = document.createElement('div')
+        wrap.id = 'open-admin-wrap'
         wrap.className = 'admin-actions'
+        wrap.style.display = 'none'
         const btn = document.createElement('button')
         btn.id = 'open-admin-btn'
         btn.type = 'button'
@@ -3671,6 +3977,21 @@
         })
         wrap.appendChild(btn)
         modalBody.appendChild(wrap)
+      }
+    }
+
+    function isOwnerLicenseActivation(snapshot) {
+      return !!(snapshot && snapshot.source === 'owner')
+    }
+
+    function setOwnerAdminUiVisible(visible) {
+      const accountSettings = document.getElementById('account-license-settings')
+      if (accountSettings) {
+        accountSettings.style.display = visible ? 'block' : 'none'
+      }
+      const adminWrap = document.getElementById('open-admin-wrap')
+      if (adminWrap) {
+        adminWrap.style.display = visible ? 'flex' : 'none'
       }
     }
 
@@ -4583,304 +4904,6 @@
       }
     }
 
-    function getChannelEventNotifierSettings(key) {
-      if (!eventNotifierSettingsByChannel[key]) {
-        eventNotifierSettingsByChannel[key] = {
-          enabled: false,
-          template: '⏰ [MEGAMU] Còn 5 phút nữa sẽ diễn ra {event} lúc {time_gmt7} (GMT+7).'
-        }
-      }
-      return eventNotifierSettingsByChannel[key]
-    }
-
-    function openEventNotifyModal(key) {
-      currentEventNotifyEditingChannelKey = key
-      const settings = getChannelEventNotifierSettings(key)
-
-      eventNotifyEnableCheckbox.checked = settings.enabled
-      eventNotifyTemplateInput.value = settings.template || ''
-
-      const modalHeader = eventNotifyModal.querySelector('.modal-header h2')
-      if (modalHeader) {
-        const chName = key.split(':')[1]
-        modalHeader.textContent = `Thông báo Event MEGAMU - #${chName} 📅`
-      }
-
-      renderMegamuUpcomingEvents()
-      eventNotifyModal.classList.add('open')
-    }
-
-    function updateChannelEventNotifierButtonState(key) {
-      const c = channels[key]
-      if (!c || !c.eventSettingsBtn || !c.eventStatusIndicator || !c.eventStatusText) return
-
-      const settings = getChannelEventNotifierSettings(key)
-      c.eventSettingsBtn.classList.toggle('active', settings.enabled)
-
-      if (settings.enabled) {
-        c.eventStatusIndicator.className = 'auto-bot-status-indicator active'
-        c.eventStatusText.textContent = 'MEGAMU Event: Đang bật (GMT+7, báo trước 5p)'
-        c.eventStatusText.style.color = '#a970ff'
-      } else {
-        c.eventStatusIndicator.className = 'auto-bot-status-indicator'
-        c.eventStatusText.textContent = 'MEGAMU Event: Tắt'
-        c.eventStatusText.style.color = '#adadb8'
-      }
-    }
-
-    function formatTimeRemaining(targetMs) {
-      const diff = Math.max(0, targetMs - Date.now())
-      const totalMinutes = Math.floor(diff / 60000)
-      const hours = Math.floor(totalMinutes / 60)
-      const minutes = totalMinutes % 60
-
-      if (hours > 0) {
-        return `${hours}h ${String(minutes).padStart(2, '0')}m nữa`
-      }
-      return `${minutes}m nữa`
-    }
-
-    function shiftMegamuTimeToGmt7(dayNumber, timeText) {
-      const parts = String(timeText).split(':')
-      const hour = parseInt(parts[0], 10)
-      const minute = parseInt(parts[1], 10)
-      const totalMinutes = hour * 60 + minute + (10 * 60)
-      const dayShift = Math.floor(totalMinutes / (24 * 60))
-      const normalizedMinutes = ((totalMinutes % (24 * 60)) + (24 * 60)) % (24 * 60)
-
-      return {
-        day: dayNumber ? (((dayNumber - 1 + dayShift) % 7) + 1) : null,
-        hour: Math.floor(normalizedMinutes / 60),
-        minute: normalizedMinutes % 60
-      }
-    }
-
-    function normalizeMegamuEvents(rawEvents) {
-      const normalized = []
-
-      rawEvents.forEach((entry) => {
-        if (!Array.isArray(entry) || !entry[0]) return
-
-        if (entry.length === 2 && Array.isArray(entry[1])) {
-          entry[1].forEach((timeText) => {
-            const shifted = shiftMegamuTimeToGmt7(null, timeText)
-            normalized.push({
-              name: entry[0],
-              type: 'daily',
-              hour: shifted.hour,
-              minute: shifted.minute
-            })
-          })
-          return
-        }
-
-        if (entry.length === 3 && Array.isArray(entry[1]) && Array.isArray(entry[2])) {
-          const count = Math.min(entry[1].length, entry[2].length)
-          for (let i = 0; i < count; i++) {
-            const shifted = shiftMegamuTimeToGmt7(entry[1][i], entry[2][i])
-            normalized.push({
-              name: entry[0],
-              type: 'weekly',
-              day: shifted.day,
-              hour: shifted.hour,
-              minute: shifted.minute
-            })
-          }
-        }
-      })
-
-      return normalized
-    }
-
-    function getMegamuEvents() {
-      return normalizeMegamuEvents(MEGAMU_FIXED_EVENTS_GMT_MINUS_3).concat(
-        MEGAMU_RECURRING_RANK_EVENTS_GMT7.map((eventDef) => ({
-          ...eventDef,
-          type: 'recurring-rank'
-        }))
-      )
-    }
-
-    function getOffsetDateParts(nowMs, offsetHours) {
-      const shifted = new Date(nowMs + offsetHours * 60 * 60 * 1000)
-      return {
-        year: shifted.getUTCFullYear(),
-        month: shifted.getUTCMonth(),
-        day: shifted.getUTCDate(),
-        weekday: shifted.getUTCDay() + 1
-      }
-    }
-
-    function getNextMegamuOccurrenceMs(eventDef, nowMs) {
-      if (eventDef.type === 'recurring-rank') {
-        const intervalMs = eventDef.intervalMinutes * 60 * 1000
-        const completedIntervals = Math.floor((nowMs - eventDef.referenceMs) / intervalMs)
-        return eventDef.referenceMs + (completedIntervals + 1) * intervalMs
-      }
-
-      const offsetHours = 7
-      const offsetMs = offsetHours * 60 * 60 * 1000
-      const parts = getOffsetDateParts(nowMs, offsetHours)
-
-      if (eventDef.type === 'daily') {
-        let candidateMs = Date.UTC(parts.year, parts.month, parts.day, eventDef.hour, eventDef.minute, 0, 0) - offsetMs
-        if (candidateMs <= nowMs) candidateMs += 24 * 60 * 60 * 1000
-        return candidateMs
-      }
-
-      let daysAhead = ((eventDef.day || 1) - parts.weekday + 7) % 7
-      let candidateMs = Date.UTC(parts.year, parts.month, parts.day + daysAhead, eventDef.hour, eventDef.minute, 0, 0) - offsetMs
-      if (candidateMs <= nowMs) candidateMs += 7 * 24 * 60 * 60 * 1000
-      return candidateMs
-    }
-
-    function getMegamuEventOccurrenceName(eventDef, occurrenceMs) {
-      if (eventDef.type !== 'recurring-rank') return eventDef.name
-
-      const intervalMs = eventDef.intervalMinutes * 60 * 1000
-      const intervalOffset = Math.round((occurrenceMs - eventDef.referenceMs) / intervalMs)
-      const rank = (((eventDef.referenceRank - 1 + intervalOffset) % 5) + 5) % 5 + 1
-      return `${eventDef.name} RANK ${rank}`
-    }
-
-    function getUpcomingMegamuOccurrences(eventDef, nowMs, recurringLimit) {
-      const firstOccurrenceMs = getNextMegamuOccurrenceMs(eventDef, nowMs)
-      const count = eventDef.type === 'recurring-rank' ? recurringLimit : 1
-      const intervalMs = eventDef.type === 'recurring-rank'
-        ? eventDef.intervalMinutes * 60 * 1000
-        : 0
-
-      return Array.from({ length: count }, (_, index) => {
-        const occurrenceMs = firstOccurrenceMs + index * intervalMs
-        return {
-          name: getMegamuEventOccurrenceName(eventDef, occurrenceMs),
-          occurrenceMs
-        }
-      })
-    }
-
-    function formatGmt7Time(absoluteMs) {
-      const shifted = new Date(absoluteMs + 7 * 60 * 60 * 1000)
-      const hour = String(shifted.getUTCHours()).padStart(2, '0')
-      const minute = String(shifted.getUTCMinutes()).padStart(2, '0')
-      return `${hour}:${minute}`
-    }
-
-    function renderMegamuUpcomingEvents() {
-      if (!eventNotifyUpcomingList) return
-
-      const events = getMegamuEvents()
-      const nowMs = Date.now()
-      const upcoming = events
-        .flatMap((eventDef) => getUpcomingMegamuOccurrences(eventDef, nowMs, 12))
-        .sort((a, b) => a.occurrenceMs - b.occurrenceMs)
-        .slice(0, 12)
-
-      eventNotifyUpcomingList.innerHTML = ''
-
-      upcoming.forEach((item) => {
-        const row = document.createElement('div')
-        row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:12px; background: var(--color-sidebar); border: 1px solid var(--color-border); border-radius: 8px; padding: 10px 12px;'
-
-        const left = document.createElement('div')
-        left.style.cssText = 'display:flex; flex-direction:column; gap:2px;'
-
-        const title = document.createElement('div')
-        title.textContent = item.name
-        title.style.cssText = 'font-size:13px; font-weight:700; color: var(--color-text-primary);'
-
-        const sub = document.createElement('div')
-        sub.textContent = `Bắt đầu lúc ${formatGmt7Time(item.occurrenceMs)} (GMT+7)`
-        sub.style.cssText = 'font-size:11px; color: var(--color-text-muted);'
-
-        const right = document.createElement('div')
-        right.textContent = formatTimeRemaining(item.occurrenceMs)
-        right.style.cssText = 'font-size:12px; font-weight:700; color: #a970ff; white-space:nowrap;'
-
-        left.appendChild(title)
-        left.appendChild(sub)
-        row.appendChild(left)
-        row.appendChild(right)
-        eventNotifyUpcomingList.appendChild(row)
-      })
-    }
-
-    async function checkMegamuEventReminders() {
-      const enabledKeys = Object.keys(channels).filter((key) => getChannelEventNotifierSettings(key).enabled)
-      if (!enabledKeys.length) return
-
-      const events = getMegamuEvents()
-
-      const nowMs = Date.now()
-      const leadMs = 5 * 60 * 1000
-
-      enabledKeys.forEach((key) => {
-        const settings = getChannelEventNotifierSettings(key)
-        const channelInfo = channels[key]
-        if (!settings.enabled || !channelInfo) return
-
-        events.forEach((eventDef) => {
-          const occurrenceMs = getNextMegamuOccurrenceMs(eventDef, nowMs)
-          const diffMs = occurrenceMs - nowMs
-          if (diffMs <= 0 || diffMs > leadMs) return
-
-          const eventName = getMegamuEventOccurrenceName(eventDef, occurrenceMs)
-          const reminderKey = `${key}|${eventName}|${occurrenceMs}`
-          if (megamuEventReminderHistory[reminderKey]) return
-
-          const messageTemplate = (settings.template || '').trim() || '⏰ [MEGAMU] Còn 5 phút nữa sẽ diễn ra {event} lúc {time_gmt7} (GMT+7).'
-          const message = messageTemplate
-            .replace(/{event}/g, eventName)
-            .replace(/{time_gmt7}/g, formatGmt7Time(occurrenceMs))
-
-          window.twitch.sendChat(channelInfo.accountId, channelInfo.channel, message, '', '', '')
-          megamuEventReminderHistory[reminderKey] = true
-        })
-      })
-    }
-
-    function ensureMegamuEventSchedulerRunning() {
-      if (megamuEventSchedulerInterval) return
-
-      checkMegamuEventReminders()
-      megamuEventSchedulerInterval = setInterval(() => {
-        checkMegamuEventReminders()
-        if (eventNotifyModal && eventNotifyModal.classList.contains('open')) {
-          renderMegamuUpcomingEvents()
-        }
-      }, 15000)
-    }
-
-    if (eventNotifyCloseBtn) {
-      eventNotifyCloseBtn.addEventListener('click', function() {
-        eventNotifyModal.classList.remove('open')
-      })
-    }
-
-    if (eventNotifyModal) {
-      eventNotifyModal.addEventListener('click', function(e) {
-        if (e.target === eventNotifyModal) {
-          eventNotifyModal.classList.remove('open')
-        }
-      })
-    }
-
-    if (saveEventNotifyBtn) {
-      saveEventNotifyBtn.addEventListener('click', async function() {
-        if (!currentEventNotifyEditingChannelKey) return
-
-        const settings = getChannelEventNotifierSettings(currentEventNotifyEditingChannelKey)
-        settings.enabled = eventNotifyEnableCheckbox.checked
-        settings.template = eventNotifyTemplateInput.value.trim()
-
-        await persistAppSettings({ eventNotifierSettingsByChannel: eventNotifierSettingsByChannel })
-        updateChannelEventNotifierButtonState(currentEventNotifyEditingChannelKey)
-        eventNotifyModal.classList.remove('open')
-        ensureMegamuEventSchedulerRunning()
-        showToast('Đã lưu cấu hình thông báo Event cho kênh này!')
-      })
-    }
-
     // ── External URL ──────────────────────────────────────────────
     oauthLink.addEventListener('click', function(e) {
       e.preventDefault()
@@ -4952,6 +4975,58 @@
       if (e.target === accountModal) closeAccountModal()
     })
 
+    // License settings inside account modal (available when already activated)
+    const accountOpenAdminBtn = document.getElementById('account-open-admin-btn')
+    const accountRenewKeyBtn = document.getElementById('account-renew-key-btn')
+    if (accountOpenAdminBtn) {
+      accountOpenAdminBtn.addEventListener('click', function() {
+        openAdminCenter()
+      })
+    }
+    if (accountRenewKeyBtn) {
+      accountRenewKeyBtn.addEventListener('click', function() {
+        closeAccountModal()
+        if (activationOverlay) {
+          activationOverlay.classList.add('open')
+          if (activationKeyInput) activationKeyInput.focus()
+        }
+      })
+    }
+
+    async function refreshAccountLicenseSettingsPanel() {
+      const statusEl = document.getElementById('account-license-status-text')
+      const settingsEl = document.getElementById('account-license-settings')
+      if (!statusEl || !settingsEl) return
+
+      // Chỉ hiện với máy kích hoạt bằng bản quyền chủ (owner).
+      // Key khách (TV-/GW-/managed/legacy) không thấy mục quản trị.
+      settingsEl.style.display = 'none'
+      try {
+        const act = await window.twitch.checkActivation()
+        const isOwner = isOwnerLicenseActivation(act)
+        setOwnerAdminUiVisible(isOwner)
+        if (!isOwner) return
+
+        settingsEl.style.display = 'block'
+        if (act && act.isActivated) {
+          const days = Number(act.remainingDays || 0)
+          const dayLabel = days === 1 ? '1 ngày' : `${days} ngày`
+          const expiry = act.expiresAt
+            ? new Date(act.expiresAt).toLocaleString('vi-VN')
+            : 'không rõ'
+          statusEl.textContent = `Bản quyền chủ đang kích hoạt. Còn ${dayLabel}, hết hạn: ${expiry}.`
+          statusEl.style.color = days <= 7 ? '#ffd39b' : '#22c55e'
+        } else {
+          statusEl.textContent = 'Bản quyền chủ chưa còn hiệu lực. Vẫn có thể mở Quản trị key.'
+          statusEl.style.color = 'var(--color-text-muted)'
+        }
+      } catch (err) {
+        setOwnerAdminUiVisible(false)
+        statusEl.textContent = 'Không đọc được trạng thái bản quyền.'
+        statusEl.style.color = '#ff8d8d'
+      }
+    }
+
     function openAccountModal(editId = null) {
       accountForm.reset()
       tokenGroup.style.display = 'flex'
@@ -4986,6 +5061,7 @@
       }
 
       renderModalAccountsList()
+      refreshAccountLicenseSettingsPanel()
       accountModal.classList.add('open')
     }
 
@@ -5166,8 +5242,9 @@
         Object.keys(channels).forEach(key => {
           if (key.startsWith(acc.id + ':')) {
             hasChannels = true
+            // Sidebar green only when at least one followed channel is streaming live
+            if (channelStreamLiveStates[key]) hasLive = true
             const state = channelConnectionStates[key] || 'offline'
-            if (state === 'live') hasLive = true
             if (state === 'error' || state === 'reconnecting') hasError = true
           }
         })
@@ -5221,7 +5298,7 @@
           c.tab.style.display = 'flex'
         } else {
           c.tab.style.display = 'none'
-          c.panel.classList.remove('active')
+          c.panel.classList.remove('active', 'grid-visible', 'grid-focused')
         }
       })
 
@@ -5240,6 +5317,9 @@
           activeChannel = null
           emptyState.style.display = 'flex'
         }
+      }
+      if (isGridViewMode()) {
+        refreshGridPanels()
       }
       updateTabsDropdownVisibility()
     }
@@ -5327,20 +5407,19 @@
 
       const roomState = ensureChannelRoomState(key)
       const connectionState = channelConnectionStates[key] || 'offline'
-      if (connectionState === 'live') {
-        c.statusEl.textContent = getDefaultStatusText(c.channel)
-        return
-      }
-      if (connectionState === 'live' && roomState.followersOnlyActive && !isOwnChannelForKey(key)) {
-        const detail = formatFollowersOnlyMinutes(roomState.followersOnlyMinutes)
-        c.statusEl.textContent = detail
-          ? `Follower-only: ${detail}`
-          : 'Follower-only đang bật cho kênh này'
-        return
-      }
+      const streamLive = !!channelStreamLiveStates[key]
 
-      if (connectionState === 'live') {
-        c.statusEl.textContent = getDefaultStatusText(c.channel)
+      if (connectionState === 'connected') {
+        if (streamLive && roomState.followersOnlyActive && !isOwnChannelForKey(key)) {
+          const detail = formatFollowersOnlyMinutes(roomState.followersOnlyMinutes)
+          c.statusEl.textContent = detail
+            ? `LIVE · Follower-only: ${detail}`
+            : 'LIVE · Follower-only đang bật cho kênh này'
+          return
+        }
+        c.statusEl.textContent = streamLive
+          ? ('LIVE · ' + getDefaultStatusText(c.channel))
+          : ('OFFLINE · Đang xem chat: #' + c.channel)
       }
     }
 
@@ -5352,10 +5431,414 @@
       return b
     }
 
+    // ── View mode: tabs / multi-channel grid ─────────────────────
+    function normalizeGridSize(value) {
+      const n = Number(value)
+      return GRID_SIZE_OPTIONS.includes(n) ? n : 3
+    }
+
+    function isGridViewMode() {
+      return chatViewMode === 'grid'
+    }
+
+    // channelStreamLiveStates[key] = true only when streamer is currently broadcasting
+    const channelStreamLiveStates = {}
+    let streamLivePollTimer = null
+    let streamLivePollInFlight = false
+
+    function getDotClassForChannel(key) {
+      const streamLive = !!channelStreamLiveStates[key]
+      const conn = channelConnectionStates[key] || 'offline'
+      // Green light ONLY when channel is actually streaming live
+      if (streamLive) return 'tab-dot live'
+      if (conn === 'reconnecting') return 'tab-dot reconnecting'
+      if (conn === 'error') return 'tab-dot error'
+      // Chat connected but stream offline / offline entirely => light off
+      return 'tab-dot'
+    }
+
+    function applyChannelConnectionVisual(key) {
+      const c = channels[key]
+      if (!c) return
+      const streamLive = !!channelStreamLiveStates[key]
+      const conn = channelConnectionStates[key] || 'offline'
+      const dotClass = getDotClassForChannel(key)
+      if (c.dotEl) c.dotEl.className = dotClass
+      if (c.panelHeaderDot) c.panelHeaderDot.className = dotClass
+
+      if (c.panel) {
+        c.panel.classList.toggle('channel-live', streamLive)
+        c.panel.classList.toggle('channel-offline', !streamLive && conn !== 'reconnecting')
+        c.panel.classList.toggle('channel-reconnecting', !streamLive && conn === 'reconnecting')
+      }
+      if (c.tab) {
+        c.tab.classList.toggle('channel-live', streamLive)
+        c.tab.classList.toggle('channel-offline', !streamLive)
+      }
+    }
+
+    async function refreshStreamLiveStatuses() {
+      if (streamLivePollInFlight) return
+      if (typeof window.twitch.checkChannelsLive !== 'function') return
+
+      const keys = Object.keys(channels)
+      if (!keys.length) return
+
+      const channelNames = [...new Set(keys.map((key) => {
+        const c = channels[key]
+        return c ? String(c.channel || '').toLowerCase().trim() : ''
+      }).filter(Boolean))]
+      if (!channelNames.length) return
+
+      streamLivePollInFlight = true
+      try {
+        const preferredAccountId = activeAccountId || (accounts.find((a) => a && a.hasToken) || {}).id || null
+        const result = await window.twitch.checkChannelsLive(channelNames, preferredAccountId)
+        // Only apply when Helix succeeds — keep previous lights on credential/API failure
+        if (!result || !result.success) {
+          console.warn('Stream live check skipped:', result && result.message)
+          return
+        }
+        const liveMap = result.liveMap || {}
+
+        keys.forEach((key) => {
+          const c = channels[key]
+          if (!c) return
+          const name = String(c.channel || '').toLowerCase().trim()
+          channelStreamLiveStates[key] = !!(liveMap[name])
+          applyChannelConnectionVisual(key)
+          updateStatusBarForChannel(key)
+        })
+        renderSidebar()
+      } catch (err) {
+        console.error('Failed to refresh stream live status:', err)
+      } finally {
+        streamLivePollInFlight = false
+      }
+    }
+
+    function ensureStreamLivePolling() {
+      if (streamLivePollTimer) return
+      // First check soon after channels load, then every 60s
+      setTimeout(() => { refreshStreamLiveStatuses() }, 2500)
+      streamLivePollTimer = setInterval(() => {
+        refreshStreamLiveStatuses()
+      }, 60000)
+    }
+
+    function clearGridPlaceholders(panelsRoot) {
+      if (!panelsRoot) return
+      panelsRoot.querySelectorAll('.grid-placeholder').forEach((el) => el.remove())
+    }
+
+    function getChannelOrderList(accountId) {
+      if (!accountId) return []
+      const list = channelOrderByAccount[accountId]
+      return Array.isArray(list) ? list.slice() : []
+    }
+
+    function ensureChannelInOrder(accountId, channel) {
+      if (!accountId || !channel) return
+      const ch = String(channel).toLowerCase().trim()
+      if (!channelOrderByAccount[accountId]) channelOrderByAccount[accountId] = []
+      if (!channelOrderByAccount[accountId].includes(ch)) {
+        channelOrderByAccount[accountId].push(ch)
+      }
+    }
+
+    function removeChannelFromOrder(accountId, channel) {
+      if (!accountId || !channel || !channelOrderByAccount[accountId]) return
+      const ch = String(channel).toLowerCase().trim()
+      channelOrderByAccount[accountId] = channelOrderByAccount[accountId].filter((item) => item !== ch)
+    }
+
+    async function persistChannelOrder() {
+      await persistAppSettings({ channelOrderByAccount: { ...channelOrderByAccount } })
+    }
+
+    function getActiveAccountChannels() {
+      if (!activeAccountId) return []
+      const order = getChannelOrderList(activeAccountId)
+      const orderIndex = new Map(order.map((name, idx) => [name, idx]))
+      return Object.keys(channels)
+        .map((key) => channels[key])
+        .filter((c) => c && c.accountId === activeAccountId)
+        .sort((a, b) => {
+          const ai = orderIndex.has(a.channel) ? orderIndex.get(a.channel) : Number.MAX_SAFE_INTEGER
+          const bi = orderIndex.has(b.channel) ? orderIndex.get(b.channel) : Number.MAX_SAFE_INTEGER
+          if (ai !== bi) return ai - bi
+          return String(a.channel).localeCompare(String(b.channel))
+        })
+    }
+
+    function applyChannelOrderToDom(accountId) {
+      if (!accountId) return
+      const ordered = Object.keys(channels)
+        .map((key) => channels[key])
+        .filter((c) => c && c.accountId === accountId)
+        .sort((a, b) => {
+          const order = getChannelOrderList(accountId)
+          const ai = order.indexOf(a.channel)
+          const bi = order.indexOf(b.channel)
+          const aPos = ai === -1 ? Number.MAX_SAFE_INTEGER : ai
+          const bPos = bi === -1 ? Number.MAX_SAFE_INTEGER : bi
+          if (aPos !== bPos) return aPos - bPos
+          return String(a.channel).localeCompare(String(b.channel))
+        })
+
+      ordered.forEach((c) => {
+        if (c.tab && tabsEl) tabsEl.appendChild(c.tab)
+        if (c.panel && panelsEl) panelsEl.appendChild(c.panel)
+      })
+    }
+
+    async function reorderChannel(accountId, fromChannel, toChannel) {
+      if (!accountId || !fromChannel || !toChannel || fromChannel === toChannel) return false
+      const from = String(fromChannel).toLowerCase().trim()
+      const to = String(toChannel).toLowerCase().trim()
+      let order = getChannelOrderList(accountId)
+
+      // Rebuild order from current channels if empty/stale
+      const currentNames = Object.keys(channels)
+        .map((key) => channels[key])
+        .filter((c) => c && c.accountId === accountId)
+        .map((c) => c.channel)
+      if (!order.length) order = currentNames.slice()
+      currentNames.forEach((name) => {
+        if (!order.includes(name)) order.push(name)
+      })
+      order = order.filter((name) => currentNames.includes(name))
+
+      const fromIdx = order.indexOf(from)
+      const toIdx = order.indexOf(to)
+      if (fromIdx < 0 || toIdx < 0) return false
+
+      order.splice(fromIdx, 1)
+      order.splice(toIdx, 0, from)
+      channelOrderByAccount[accountId] = order
+      applyChannelOrderToDom(accountId)
+      if (isGridViewMode()) refreshGridPanels()
+      updateTabsDropdownVisibility()
+      await persistChannelOrder()
+      return true
+    }
+
+    function bindChannelDragAndDrop(accountId, channel, tabEl, panelEl, headerEl) {
+      const payload = `${accountId}:${channel}`
+
+      function onDragStart(e) {
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/plain', payload)
+        if (tabEl) tabEl.classList.add('dragging')
+        if (panelEl) panelEl.classList.add('dragging')
+      }
+
+      function onDragEnd() {
+        if (tabEl) tabEl.classList.remove('dragging', 'drag-over')
+        if (panelEl) panelEl.classList.remove('dragging', 'drag-over')
+        document.querySelectorAll('.tab.drag-over, .panel.drag-over').forEach((el) => {
+          el.classList.remove('drag-over')
+        })
+      }
+
+      function onDragOver(e) {
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        if (tabEl) tabEl.classList.add('drag-over')
+        if (panelEl) panelEl.classList.add('drag-over')
+      }
+
+      function onDragLeave() {
+        if (tabEl) tabEl.classList.remove('drag-over')
+        if (panelEl) panelEl.classList.remove('drag-over')
+      }
+
+      async function onDrop(e) {
+        e.preventDefault()
+        if (tabEl) tabEl.classList.remove('drag-over')
+        if (panelEl) panelEl.classList.remove('drag-over')
+        const raw = e.dataTransfer.getData('text/plain') || ''
+        const sep = raw.indexOf(':')
+        if (sep < 0) return
+        const fromAccountId = raw.slice(0, sep)
+        const fromChannel = raw.slice(sep + 1)
+        if (fromAccountId !== accountId) return
+        await reorderChannel(accountId, fromChannel, channel)
+      }
+
+      if (tabEl) {
+        tabEl.draggable = true
+        tabEl.addEventListener('dragstart', onDragStart)
+        tabEl.addEventListener('dragend', onDragEnd)
+        tabEl.addEventListener('dragover', onDragOver)
+        tabEl.addEventListener('dragleave', onDragLeave)
+        tabEl.addEventListener('drop', onDrop)
+      }
+
+      // Drag from panel header in grid mode; drop onto whole panel
+      if (headerEl) {
+        headerEl.draggable = true
+        headerEl.addEventListener('dragstart', onDragStart)
+        headerEl.addEventListener('dragend', onDragEnd)
+      }
+      if (panelEl) {
+        panelEl.addEventListener('dragover', onDragOver)
+        panelEl.addEventListener('dragleave', onDragLeave)
+        panelEl.addEventListener('drop', onDrop)
+      }
+    }
+
+    function updateViewModeControlsUi() {
+      const toggleBtn = document.getElementById('view-mode-toggle')
+      const sizeSelect = document.getElementById('grid-size-select')
+      if (toggleBtn) {
+        const gridOn = isGridViewMode()
+        toggleBtn.classList.toggle('active', gridOn)
+        toggleBtn.textContent = gridOn ? '▥ Cột' : '☰ Tab'
+        toggleBtn.title = gridOn
+          ? 'Đang ở chế độ cột dọc multi-channel. Bấm để về tab.'
+          : 'Đang ở chế độ tab. Bấm để xem nhiều kênh dạng cột dọc.'
+      }
+      if (sizeSelect) {
+        sizeSelect.value = String(chatGridSize)
+        sizeSelect.classList.toggle('visible', isGridViewMode())
+      }
+    }
+
+    function applyChatViewMode() {
+      const panelsRoot = document.getElementById('panels')
+      if (!panelsRoot) return
+
+      document.body.classList.toggle('chat-grid-mode', isGridViewMode())
+      panelsRoot.classList.toggle('grid-mode', isGridViewMode())
+      panelsRoot.dataset.gridSize = String(chatGridSize)
+      panelsRoot.style.removeProperty('--grid-cols')
+      panelsRoot.style.removeProperty('--grid-rows')
+
+      Object.keys(channels).forEach((key) => {
+        const c = channels[key]
+        if (!c || !c.panel) return
+        c.panel.classList.remove('active', 'grid-visible', 'grid-focused', 'drag-over', 'dragging', 'panel-mention-flash')
+        if (c.tab) c.tab.classList.remove('active', 'drag-over', 'dragging')
+        applyChannelConnectionVisual(key)
+      })
+
+      if (isGridViewMode()) {
+        if (activeAccountId) applyChannelOrderToDom(activeAccountId)
+        refreshGridPanels()
+      } else {
+        clearGridPlaceholders(panelsRoot)
+        if (activeAccountId && activeChannel && channels[getChannelKey(activeAccountId, activeChannel)]) {
+          if (activeAccountId) applyChannelOrderToDom(activeAccountId)
+          const key = getChannelKey(activeAccountId, activeChannel)
+          const c = channels[key]
+          if (c.tab) c.tab.classList.add('active')
+          c.panel.classList.add('active')
+          if (c.autoScroll && c.chat) c.chat.scrollTop = c.chat.scrollHeight
+        } else if (activeAccountId) {
+          applyChannelOrderToDom(activeAccountId)
+          const accChannels = getActiveAccountChannels()
+          if (accChannels.length) {
+            switchTab(activeAccountId, accChannels[0].channel)
+          }
+        }
+      }
+
+      updateViewModeControlsUi()
+      updateTabsDropdownVisibility()
+    }
+
+    function refreshGridPanels() {
+      if (!isGridViewMode()) return
+
+      const panelsRoot = document.getElementById('panels')
+      const list = getActiveAccountChannels()
+      // Column layout: one full-height column per channel, max N columns
+      const maxColumns = normalizeGridSize(chatGridSize)
+      const visible = list.slice(0, maxColumns)
+      const visibleKeys = new Set(visible.map((c) => getChannelKey(c.accountId, c.channel)))
+
+      if (panelsRoot) {
+        panelsRoot.dataset.gridSize = String(maxColumns)
+        panelsRoot.dataset.gridCols = String(visible.length || maxColumns)
+        panelsRoot.dataset.gridRows = '1'
+        panelsRoot.style.removeProperty('--grid-cols')
+        panelsRoot.style.removeProperty('--grid-rows')
+      }
+
+      Object.keys(channels).forEach((key) => {
+        const c = channels[key]
+        if (!c || !c.panel) return
+        const show = visibleKeys.has(key)
+        c.panel.classList.toggle('grid-visible', show)
+        c.panel.classList.toggle('grid-focused', false)
+        c.panel.classList.remove('active')
+        if (c.tab) {
+          c.tab.classList.remove('active')
+          c.tab.style.display = c.accountId === activeAccountId ? 'flex' : 'none'
+        }
+        applyChannelConnectionVisual(key)
+      })
+
+      clearGridPlaceholders(panelsRoot)
+
+      if (!visible.length) {
+        if (emptyState) emptyState.style.display = 'flex'
+        return
+      }
+      if (emptyState) emptyState.style.display = 'none'
+
+      let focusChannel = activeChannel
+      if (!focusChannel || !visibleKeys.has(getChannelKey(activeAccountId, focusChannel))) {
+        focusChannel = visible[0].channel
+        activeChannel = focusChannel
+        if (activeAccountId) accountActiveChannels[activeAccountId] = focusChannel
+      }
+
+      const focusKey = getChannelKey(activeAccountId, focusChannel)
+      const focusChannelInfo = channels[focusKey]
+      if (focusChannelInfo) {
+        focusChannelInfo.panel.classList.add('grid-focused')
+        if (focusChannelInfo.tab) focusChannelInfo.tab.classList.add('active')
+        focusChannelInfo.unread = 0
+        if (focusChannelInfo.unreadEl) {
+          focusChannelInfo.unreadEl.style.display = 'none'
+          focusChannelInfo.unreadEl.textContent = ''
+        }
+        focusChannelInfo.tab && focusChannelInfo.tab.classList.remove('tab-mention-flash')
+        focusChannelInfo.panel && focusChannelInfo.panel.classList.remove('panel-mention-flash')
+        if (focusChannelInfo.autoScroll && focusChannelInfo.chat) {
+          focusChannelInfo.chat.scrollTop = focusChannelInfo.chat.scrollHeight
+        }
+      }
+
+      // Apply user order: columns left-to-right
+      applyChannelOrderToDom(activeAccountId)
+      if (panelsRoot) {
+        visible.forEach((c) => {
+          if (c.panel && c.panel.parentNode === panelsRoot) {
+            panelsRoot.appendChild(c.panel)
+          }
+        })
+      }
+    }
+
+    async function setChatViewMode(mode, options = {}) {
+      const nextMode = mode === 'grid' ? 'grid' : 'tabs'
+      const nextSize = normalizeGridSize(options.gridSize != null ? options.gridSize : chatGridSize)
+      const changed = nextMode !== chatViewMode || nextSize !== chatGridSize
+      chatViewMode = nextMode
+      chatGridSize = nextSize
+      applyChatViewMode()
+      if (changed && options.persist !== false) {
+        await persistAppSettings({ chatViewMode, chatGridSize })
+      }
+    }
+
     // ── Tab Management ────────────────────────────────────────────
     function switchTab(accountId, ch) {
-      // Deactivate previous active channel
-      if (activeAccountId && activeChannel) {
+      // Deactivate previous active channel (tabs mode only hides previous panel)
+      if (activeAccountId && activeChannel && !isGridViewMode()) {
         const prevKey = getChannelKey(activeAccountId, activeChannel)
         if (channels[prevKey]) {
           channels[prevKey].tab.classList.remove('active')
@@ -5370,13 +5853,11 @@
       const key = getChannelKey(accountId, ch)
       const c = channels[key]
       if (c) {
-        c.tab.classList.add('active')
-        c.panel.classList.add('active')
-
-        // Move active tab to the beginning of the tabs list
-        const parent = c.tab.parentNode
-        if (parent && parent.firstChild !== c.tab) {
-          parent.insertBefore(c.tab, parent.firstChild)
+        if (isGridViewMode()) {
+          refreshGridPanels()
+        } else {
+          c.tab.classList.add('active')
+          c.panel.classList.add('active')
         }
 
         // Reset unread count
@@ -5450,12 +5931,43 @@
       panel.dataset.accountId = accountId
       panel.dataset.channel = ch
 
+      const panelHeader = document.createElement('div')
+      panelHeader.className = 'panel-header'
+      panelHeader.title = 'Bấm để focus kênh này trong lưới'
+
+      const panelHeaderDot = document.createElement('span')
+      panelHeaderDot.className = 'tab-dot'
+
+      const panelHeaderTitle = document.createElement('span')
+      panelHeaderTitle.className = 'panel-header-title'
+      panelHeaderTitle.textContent = '#' + ch
+
+      const panelHeaderClose = document.createElement('span')
+      panelHeaderClose.className = 'panel-header-close'
+      panelHeaderClose.textContent = '×'
+      panelHeaderClose.title = 'Đóng channel'
+      panelHeaderClose.addEventListener('click', function(e) {
+        e.stopPropagation()
+        removeChannel(accountId, ch)
+      })
+
+      panelHeader.appendChild(panelHeaderDot)
+      panelHeader.appendChild(panelHeaderTitle)
+      panelHeader.appendChild(panelHeaderClose)
+      panelHeader.addEventListener('click', function() {
+        switchTab(accountId, ch)
+      })
+
+      // Drag-and-drop reorder for tabs + grid cells
+      bindChannelDragAndDrop(accountId, ch, tab, panel, panelHeader)
+
       const chatWrap = document.createElement('div')
       chatWrap.style.position = 'relative'
       chatWrap.style.flex = '1'
       chatWrap.style.overflow = 'hidden'
       chatWrap.style.display = 'flex'
       chatWrap.style.flexDirection = 'column'
+      chatWrap.style.minHeight = '0'
 
       const chatToolbar = document.createElement('div')
       chatToolbar.className = 'chat-toolbar'
@@ -5532,9 +6044,6 @@
       let btnAuto = null
       let autoBotStatusIndicator = null
       let autoBotStatusText = null
-      let btnEventNotify = null
-      let eventStatusIndicator = null
-      let eventStatusText = null
 
       if (acc && acc.hasToken) {
         replyPreviewBar = document.createElement('div')
@@ -5747,34 +6256,6 @@
         autoBotRow.appendChild(autoBotInfo)
         autoBotRow.appendChild(btnAuto)
         inputWrap.appendChild(autoBotRow)
-
-        const eventBotRow = document.createElement('div')
-        eventBotRow.className = 'auto-bot-row'
-
-        const eventBotInfo = document.createElement('div')
-        eventBotInfo.className = 'auto-bot-info'
-
-        eventStatusIndicator = document.createElement('div')
-        eventStatusIndicator.className = 'auto-bot-status-indicator'
-
-        eventStatusText = document.createElement('span')
-        eventStatusText.textContent = 'MEGAMU Event: Tắt'
-
-        eventBotInfo.appendChild(eventStatusIndicator)
-        eventBotInfo.appendChild(eventStatusText)
-
-        btnEventNotify = document.createElement('button')
-        btnEventNotify.type = 'button'
-        btnEventNotify.className = 'auto-settings-btn'
-        btnEventNotify.innerHTML = '📅 Event'
-        btnEventNotify.title = 'Cài đặt thông báo Event MEGAMU cho kênh này'
-        btnEventNotify.addEventListener('click', function() {
-          openEventNotifyModal(key)
-        })
-
-        eventBotRow.appendChild(eventBotInfo)
-        eventBotRow.appendChild(btnEventNotify)
-        inputWrap.appendChild(eventBotRow)
       } else {
         const notice = document.createElement('div')
         notice.className = 'anon-notice'
@@ -5787,6 +6268,7 @@
         inputWrap.appendChild(notice)
       }
 
+      panel.appendChild(panelHeader)
       panel.appendChild(chatWrap)
       panel.appendChild(inputWrap)
       panel.appendChild(statusBar)
@@ -5813,6 +6295,8 @@
         channel: ch,
         tab: tab,
         panel: panel,
+        panelHeader: panelHeader,
+        panelHeaderTitle: panelHeaderTitle,
         chat: chat,
         chatFilterInput: chatFilterInput,
         chatFilterSelect: chatFilterSelect,
@@ -5826,6 +6310,7 @@
         scrollBtn: scrollBtn,
         statusEl: statusBar,
         dotEl: dot,
+        panelHeaderDot: panelHeaderDot,
         unreadEl: unreadBadge,
         unread: 0,
         autoScroll: true,
@@ -5838,15 +6323,13 @@
         replyingTo: null,
         autoSettingsBtn: acc && acc.hasToken ? btnAuto : null,
         autoStatusIndicator: acc && acc.hasToken ? autoBotStatusIndicator : null,
-        autoStatusText: acc && acc.hasToken ? autoBotStatusText : null,
-        eventSettingsBtn: acc && acc.hasToken ? btnEventNotify : null,
-        eventStatusIndicator: acc && acc.hasToken ? eventStatusIndicator : null,
-        eventStatusText: acc && acc.hasToken ? eventStatusText : null
+        autoStatusText: acc && acc.hasToken ? autoBotStatusText : null
       }
+
+      applyChannelConnectionVisual(key)
 
       if (acc && acc.hasToken) {
         updateChannelAutoButtonState(key)
-        updateChannelEventNotifierButtonState(key)
       }
 
       const initialFilter = getChatFilter(key)
@@ -5875,14 +6358,32 @@
         window.twitch.joinChannel(accountId, ch)
       }
 
+      ensureChannelInOrder(accountId, ch)
+      applyChannelOrderToDom(accountId)
+      if (!skipJoin) {
+        persistChannelOrder().catch(() => {})
+      }
+
       // Display/visibility handling
       if (accountId === activeAccountId) {
         tab.style.display = 'flex'
-        switchTab(accountId, ch)
+        if (isGridViewMode()) {
+          if (!activeChannel) activeChannel = ch
+          accountActiveChannels[accountId] = activeChannel || ch
+          refreshGridPanels()
+        } else {
+          switchTab(accountId, ch)
+        }
       } else {
         tab.style.display = 'none'
       }
       updateTabsDropdownVisibility()
+
+      // Re-check Helix live status so the green light only lights for real streams
+      ensureStreamLivePolling()
+      if (!skipJoin) {
+        setTimeout(() => { refreshStreamLiveStatuses() }, 800)
+      }
     }
 
     function removeChannel(accountId, channel) {
@@ -5895,7 +6396,10 @@
       channels[key].panel.remove()
       delete channels[key]
       delete channelConnectionStates[key]
+      delete channelStreamLiveStates[key]
       delete channelRoomStates[key]
+      removeChannelFromOrder(accountId, ch)
+      persistChannelOrder().catch(() => {})
 
       renderSidebar()
 
@@ -5912,6 +6416,8 @@
         } else {
           emptyState.style.display = 'flex'
         }
+      } else if (isGridViewMode() && accountId === activeAccountId) {
+        refreshGridPanels()
       }
       updateTabsDropdownVisibility()
     }
@@ -6088,13 +6594,25 @@
 
       div.appendChild(mainLine)
 
-      // Highlight mention
+      // Highlight when message tags this account (login/label/@name)
       let isMention = false
-      if (acc && acc.label && acc.label !== 'Ẩn danh') {
+      if (acc && (acc.hasToken || (acc.label && acc.label !== 'Ẩn danh'))) {
         isMention = messageReferencesAccount(msg.text, acc)
       }
       if (isMention) {
         div.classList.add('msg-mention')
+        // Also black-highlight the mention token inside message body
+        const textNode = mainLine.querySelector('.msg-text')
+        if (textNode) {
+          textNode.innerHTML = highlightAccountMentionsInHtml(textNode.innerHTML, acc)
+        }
+        if (c.panel) {
+          c.panel.classList.remove('panel-mention-flash')
+          // reflow to restart animation
+          void c.panel.offsetWidth
+          c.panel.classList.add('panel-mention-flash')
+        }
+        if (c.tab) c.tab.classList.add('tab-mention-flash')
       }
       div.__msgData = { ...msg }
 
@@ -6131,16 +6649,30 @@
         c.chat.scrollTop = c.chat.scrollHeight
       }
 
-      // Process unread badge
-      if (activeAccountId !== accId || activeChannel !== ch) {
+      // Process unread badge (skip when panel is currently visible in grid)
+      const isFocused = activeAccountId === accId && activeChannel === ch
+      const isVisibleInGrid = isGridViewMode() && c.panel && c.panel.classList.contains('grid-visible')
+      if (!isFocused && !isVisibleInGrid) {
         c.unread++
         c.unreadEl.textContent = c.unread > 99 ? '99+' : c.unread
         c.unreadEl.style.display = 'inline-block'
-        if (isMention) {
+        if (isMention && c.tab) {
           c.tab.classList.add('tab-mention-flash')
         }
+      } else if (isMention && isFocused && c.tab) {
+        // Keep brief flash even on focused channel, then clear quickly
+        c.tab.classList.add('tab-mention-flash')
+        setTimeout(() => {
+          if (c.tab) c.tab.classList.remove('tab-mention-flash')
+        }, 2500)
       }
     })
+
+    function setChannelConnectionDot(c, className) {
+      if (!c) return
+      if (c.dotEl) c.dotEl.className = className
+      if (c.panelHeaderDot) c.panelHeaderDot.className = className
+    }
 
     window.twitch.onChannelStatus(function(s) {
       const accId = s.accountId
@@ -6149,21 +6681,25 @@
 
       if (!channels[key]) return
       
+      // IRC connection state (chat), separate from stream live status
       if (s.connected) {
-        channelConnectionStates[key] = 'live'
-        channels[key].dotEl.className = 'tab-dot live'
+        channelConnectionStates[key] = 'connected'
+        applyChannelConnectionVisual(key)
         updateStatusBarForChannel(key)
-        channels[key].statusEl.textContent = 'Đang xem: #' + ch
+        const streamLive = !!channelStreamLiveStates[key]
+        channels[key].statusEl.textContent = streamLive
+          ? ('LIVE · Đang xem: #' + ch)
+          : ('OFFLINE · Đang xem chat: #' + ch)
       } else if (s.reconnecting) {
         channelConnectionStates[key] = 'reconnecting'
-        channels[key].dotEl.className = 'tab-dot'
+        applyChannelConnectionVisual(key)
         const retrySeconds = s.retryInMs ? Math.max(1, Math.ceil(s.retryInMs / 1000)) : null
         channels[key].statusEl.textContent = retrySeconds
           ? `Mất kết nối, đang tự nối lại sau ${retrySeconds}s...`
           : 'Mất kết nối, đang tự nối lại...'
       } else {
         channelConnectionStates[key] = 'offline'
-        channels[key].dotEl.className = 'tab-dot'
+        applyChannelConnectionVisual(key)
         channels[key].statusEl.textContent = 'Đã ngắt kết nối'
       }
 
@@ -6209,13 +6745,27 @@
       if (!channels[key]) return
 
       channelConnectionStates[key] = e.reconnecting ? 'reconnecting' : 'error'
-      channels[key].dotEl.className = 'tab-dot error'
+      applyChannelConnectionVisual(key)
       channels[key].statusEl.textContent = e.reconnecting
         ? ('Lỗi: ' + e.error + ' - đang thử kết nối lại...')
         : ('Lỗi: ' + e.error)
 
       renderSidebar()
     })
+
+    // ── View mode (tabs / multi-channel grid) ─────────────────────
+    const viewModeToggleBtn = document.getElementById('view-mode-toggle')
+    const gridSizeSelect = document.getElementById('grid-size-select')
+    if (viewModeToggleBtn) {
+      viewModeToggleBtn.addEventListener('click', async function() {
+        await setChatViewMode(isGridViewMode() ? 'tabs' : 'grid')
+      })
+    }
+    if (gridSizeSelect) {
+      gridSizeSelect.addEventListener('change', async function() {
+        await setChatViewMode('grid', { gridSize: gridSizeSelect.value })
+      })
+    }
 
     // ── Join Channel Event Handlers ────────────────────────────────
     addBtn.addEventListener('click', function() {
@@ -6569,9 +7119,18 @@
       }
     }
 
+    // TEMP: Giveaway Premium UI ẩn — set true để bật lại nút sidebar
+    const FEATURE_GIVEAWAY_UI_ENABLED = false
+
     // Sidebar button click handler
     if (giveawaySidebarBtn) {
+      if (!FEATURE_GIVEAWAY_UI_ENABLED) {
+        giveawaySidebarBtn.style.display = 'none'
+        if (giveawayContentEl) giveawayContentEl.style.display = 'none'
+      }
       giveawaySidebarBtn.addEventListener('click', () => {
+        if (!FEATURE_GIVEAWAY_UI_ENABLED) return
+
         // Toggle active states in sidebar
         document.querySelectorAll('.account-btn').forEach(btn => {
           btn.classList.remove('active')
@@ -7747,6 +8306,9 @@
       appSettings = await window.twitch.getAppSettings()
       systemLogs = await window.twitch.getSystemLogs()
       giveawayHistory = Array.isArray(appSettings && appSettings.giveawayHistory) ? appSettings.giveawayHistory : []
+      chatViewMode = (appSettings && appSettings.chatViewMode === 'grid') ? 'grid' : 'tabs'
+      chatGridSize = normalizeGridSize(appSettings && appSettings.chatGridSize)
+      channelOrderByAccount = { ...((appSettings && appSettings.channelOrderByAccount) || {}) }
       ensureActivationStatusUi()
       ensureAdminModalUi()
       createTopbarActions()
@@ -7755,22 +8317,34 @@
       window.twitch.onSystemLogEntry(pushSystemLog)
       ensureGiveawayHistoryPanel()
       renderGiveawayHistory()
+      updateViewModeControlsUi()
+
+      // TEMP: chế độ trong suốt ẩn — set true để bật lại
+      const FEATURE_TRANSPARENCY_UI_ENABLED = false
 
       // Initialize Transparency Mode
-      const isTransparent = !!(appSettings && appSettings.transparencyEnabled)
-      if (isTransparent) {
-        if (transparencyBtn) transparencyBtn.classList.add('active')
-        window.twitch.setWindowOpacity(0.7)
-      } else {
+      if (!FEATURE_TRANSPARENCY_UI_ENABLED) {
+        if (transparencyBtn) transparencyBtn.style.display = 'none'
         window.twitch.setWindowOpacity(1.0)
-      }
+        if (appSettings && appSettings.transparencyEnabled) {
+          await persistAppSettings({ transparencyEnabled: false })
+        }
+      } else {
+        const isTransparent = !!(appSettings && appSettings.transparencyEnabled)
+        if (isTransparent) {
+          if (transparencyBtn) transparencyBtn.classList.add('active')
+          window.twitch.setWindowOpacity(0.7)
+        } else {
+          window.twitch.setWindowOpacity(1.0)
+        }
 
-      if (transparencyBtn) {
-        transparencyBtn.addEventListener('click', async () => {
-          const active = transparencyBtn.classList.toggle('active')
-          await persistAppSettings({ transparencyEnabled: active })
-          window.twitch.setWindowOpacity(active ? 0.7 : 1.0)
-        })
+        if (transparencyBtn) {
+          transparencyBtn.addEventListener('click', async () => {
+            const active = transparencyBtn.classList.toggle('active')
+            await persistAppSettings({ transparencyEnabled: active })
+            window.twitch.setWindowOpacity(active ? 0.7 : 1.0)
+          })
+        }
       }
 
       // ── Theme Customizer ────────────────────────────────────────────
@@ -7953,11 +8527,11 @@
 
       // Load auto settings
       autoSettingsByChannel = { ...((appSettings && appSettings.autoSettingsByChannel) || {}) }
-      eventNotifierSettingsByChannel = { ...((appSettings && appSettings.eventNotifierSettingsByChannel) || {}) }
-      
+
       // Check activation status
       const act = await window.twitch.checkActivation()
       isActivated = act.isActivated
+      setOwnerAdminUiVisible(isOwnerLicenseActivation(act))
       setActivationSummary(act, { showExpired: !act.isActivated && !!act.expiresAt })
       if (isActivated && activationStatus && act.expiresAt) {
         activationStatus.textContent = `Bản quyền có hiệu lực đến ${new Date(act.expiresAt).toLocaleString('vi-VN')}`
@@ -7994,11 +8568,13 @@
         applyBypassRestrictions()
       }
 
+      // Apply saved multi-channel view (tabs/grid) after channels are restored
+      applyChatViewMode()
+
       // Periodic Auto Bot status indicator updater (every 10 seconds)
       setInterval(() => {
         for (const key in channels) {
           updateChannelAutoButtonState(key)
-          updateChannelEventNotifierButtonState(key)
         }
       }, 10000)
 
@@ -8007,7 +8583,9 @@
 
       // Start connection on backend for all channels
       window.twitch.reconnectAll()
-      ensureMegamuEventSchedulerRunning()
+
+      // Poll Helix /streams so green lights only for channels that are actually live
+      ensureStreamLivePolling()
     }
 
     window.addEventListener('DOMContentLoaded', init)

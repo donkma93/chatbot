@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('twitch', {
   leaveChannel: (accountId, channel) => ipcRenderer.send('leave-channel', accountId, channel),
   sendChat: (accountId, channel, text, replyParentMsgId, replyParentUser, replyParentBody) => ipcRenderer.send('send-chat', accountId, channel, text, replyParentMsgId, replyParentUser, replyParentBody),
   reconnectAll: () => ipcRenderer.send('reconnect-all'),
+  checkChannelsLive: (channelNames, preferredAccountId) => ipcRenderer.invoke('check-channels-live', channelNames, preferredAccountId),
 
   // Settings
   toggleNotifications: (enabled) => ipcRenderer.send('toggle-notifications', enabled),
