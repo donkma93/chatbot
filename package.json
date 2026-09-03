@@ -1,6 +1,6 @@
 {
   "name": "twitch-chat-viewer",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "Twitch Chat Viewer Desktop App",
   "author": "donkma93",
   "main": "main.js",
@@ -57,8 +57,11 @@
           ]
         }
       ],
-      "icon": "megamu-logo.png",
+      "icon": "build/icon.png",
       "category": "public.app-category.utilities",
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
       "artifactName": "${productName}-${version}-mac-${arch}.${ext}"
     },
     "dmg": {
