@@ -1,13 +1,19 @@
 {
   "name": "twitch-chat-viewer",
-  "version": "1.0.13",
-  "description": "Twitch Chat Viewer - Windows Desktop App",
+  "version": "1.0.14",
+  "description": "Twitch Chat Viewer Desktop App",
+  "author": "donkma93",
   "main": "main.js",
   "scripts": {
-    "start": "node_modules\\electron\\dist\\electron.exe .",
+    "start": "electron .",
+    "test": "node tests/app-state.test.js && node tests/license-manager.test.js && node tests/secure-store.test.js && node tests/twitch-irc.test.js",
     "install-deps": "npm install",
     "dist": "electron-builder --win",
-    "dist:publish": "electron-builder --win --publish always"
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:all": "electron-builder -mw",
+    "dist:publish": "electron-builder --win --publish always",
+    "dist:mac:publish": "electron-builder --mac --publish always"
   },
   "dependencies": {
     "electron-updater": "^6.3.9",
@@ -33,6 +39,30 @@
         "nsis",
         "portable"
       ]
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "megamu-logo.png",
+      "category": "public.app-category.utilities",
+      "artifactName": "${productName}-${version}-mac-${arch}.${ext}"
+    },
+    "dmg": {
+      "artifactName": "${productName}-${version}-mac-${arch}.${ext}"
     },
     "nsis": {
       "artifactName": "${productName}-Setup-${version}.${ext}"
